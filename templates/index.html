@@ -3,40 +3,97 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>A & A </title>
+  <title>SWIFT FINANCIAL SERVICES</title>
   {% include "_pwa_head.html" %}
 
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
       min-height: 100vh;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-family: 'Space Grotesk', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
       overflow-x: hidden;
       overflow-y: auto;
       position: relative;
-      background-color: #f0f3fb;
+      background: linear-gradient(140deg, rgba(253, 247, 255, 0.95), rgba(233, 247, 255, 0.9));
+      color: #0f172a;
     }
 
-    /* Live Background */
-    #background {
+    /* Animated Nature Background */
+    .nature-bg {
       position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background-color: #cfd8f3;
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
-      transition: background-image 2s ease-in-out;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      z-index: -3;
+    }
+
+    .nature-bg::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: 
+        radial-gradient(circle at 20% 80%, rgba(34, 197, 94, 0.3) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(59, 130, 246, 0.3) 0%, transparent 50%),
+        radial-gradient(circle at 40% 40%, rgba(168, 85, 247, 0.2) 0%, transparent 40%);
+      animation: pulse 8s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
+
+    .floating-particles {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
       z-index: -2;
+      overflow: hidden;
+    }
+
+    .particle {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      animation: float 15s infinite;
+    }
+
+    @keyframes float {
+      0%, 100% {
+        transform: translateY(100vh) rotate(0deg);
+        opacity: 0;
+      }
+      10% {
+        opacity: 1;
+      }
+      90% {
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(-100vh) rotate(720deg);
+        opacity: 0;
+      }
     }
 
     #overlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.3);
+      background: rgba(0, 0, 0, 0.2);
       z-index: -1;
     }
 
@@ -144,8 +201,8 @@
       color: white;
       font-size: 3.5rem;
       margin-bottom: 10px;
-      text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.7);
-      font-weight: 300;
+      text-shadow: 0 0 30px rgba(34, 211, 238, 0.5);
+      font-weight: 700;
       letter-spacing: 2px;
     }
 
@@ -153,7 +210,7 @@
       color: rgba(255, 255, 255, 0.9);
       font-size: 1.3rem;
       margin-bottom: 15px;
-      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+      text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
     }
 
     .contact-info {
@@ -161,7 +218,7 @@
       font-size: 1rem;
       margin-bottom: 40px;
       line-height: 1.6;
-      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+      text-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
     }
 
     /* Button Grid */
@@ -173,13 +230,13 @@
     }
 
     .report-button {
-      background: linear-gradient(145deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05));
+      background: linear-gradient(135deg, rgba(34, 211, 238, 0.2), rgba(59, 130, 246, 0.2));
       border: 2px solid rgba(255, 255, 255, 0.3);
       padding: 20px;
       border-radius: 15px;
       color: white;
       font-size: 16px;
-      font-weight: bold;
+      font-weight: 600;
       cursor: pointer;
       transition: all 0.3s ease;
       backdrop-filter: blur(10px);
@@ -187,21 +244,22 @@
     }
 
     .report-button:hover {
-      background: linear-gradient(145deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.15));
-      border-color: rgba(255, 255, 255, 0.5);
+      background: linear-gradient(135deg, rgba(34, 211, 238, 0.4), rgba(59, 130, 246, 0.4));
+      border-color: rgba(34, 211, 238, 0.6);
       transform: translateY(-5px);
-      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 12px 35px rgba(34, 211, 238, 0.3);
     }
 
     /* Special highlight for AFIN CLIENTS button */
     .report-button.afin-button {
-      background: linear-gradient(145deg, rgba(102, 126, 234, 0.3), rgba(118, 75, 162, 0.2));
-      border: 2px solid rgba(102, 126, 234, 0.5);
+      background: linear-gradient(135deg, rgba(168, 85, 247, 0.3), rgba(139, 92, 246, 0.2));
+      border: 2px solid rgba(168, 85, 247, 0.5);
     }
 
     .report-button.afin-button:hover {
-      background: linear-gradient(145deg, rgba(102, 126, 234, 0.4), rgba(118, 75, 162, 0.3));
-      border-color: rgba(102, 126, 234, 0.7);
+      background: linear-gradient(135deg, rgba(168, 85, 247, 0.5), rgba(139, 92, 246, 0.4));
+      border-color: rgba(168, 85, 247, 0.7);
+      box-shadow: 0 12px 35px rgba(168, 85, 247, 0.4);
     }
 
     /* Clients Modal */
@@ -587,8 +645,9 @@
 </head>
 
 <body data-allowed-pages="{{ allowed_pages | tojson if allowed_pages else 'null' }}">
-  <!-- Live Background -->
-  <div id="background"></div>
+  <!-- Animated Nature Background -->
+  <div class="nature-bg"></div>
+  <div class="floating-particles" id="particles"></div>
   <div id="overlay"></div>
 
   <!-- Modern Square Clock -->
@@ -613,8 +672,8 @@
 
   <!-- Main Content -->
   <div class="main-content">
-    <h1>A & A FINANCE </h1>
-    <p class="subtitle">Professional Financial Reports </p>
+    <h1>SWIFT FINANCIAL SERVICES</h1>
+    <p class="subtitle">Professional Financial Management</p>
 
     <div class="contact-info">
       📍 SHIVAM GROVER<br>
@@ -781,26 +840,20 @@
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
   <script>
-    // Beautiful European & North American Landscapes - Daily Rotation
-    const beautifulLandscapes = [
-      'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1920&q=80', // Dolomites sunrise
-      'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1920&q=80', // Glacier lake
-      'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1920&q=80', // Sunrise valley
-      'https://images.unsplash.com/photo-1499346030926-9a72daac6c63?auto=format&fit=crop&w=1920&q=80', // Norwegian fjord
-      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1920&q=80', // Maldives beach
-      'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1920&q=80', // Alpine lake
-      'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=1920&q=80', // Pine valley
-      'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1920&q=80', // Grand Teton
-      'https://images.unsplash.com/photo-1500530855697-49564a33f3b7?auto=format&fit=crop&w=1920&q=80', // Mountain river
-      'https://images.unsplash.com/photo-1506765515384-028b60a970df?auto=format&fit=crop&w=1920&q=80'  // Misty forest
-    ];
-
-    const fallbackImages = [
-      "url('data:image/svg+xml,%3Csvg xmlns=\"http://www.w3.org/2000/svg\" width=\"1920\" height=\"1080\"%3E%3Cdefs%3E%3ClinearGradient id=\"sky\" x1=\"0%25\" y1=\"0%25\" x2=\"0%25\" y2=\"100%25\"%3E%3Cstop offset=\"0%25\" stop-color=\"%239ab4ff\"/%3E%3Cstop offset=\"100%25\" stop-color=\"%23f3ecff\"/%3E%3C/linearGradient%3E%3ClinearGradient id=\"m1\" x1=\"0%25\" y1=\"0%25\" x2=\"100%25\" y2=\"100%25\"%3E%3Cstop offset=\"0%25\" stop-color=\"%235c6fb0\"/%3E%3Cstop offset=\"100%25\" stop-color=\"%23354874\"/%3E%3C/linearGradient%3E%3ClinearGradient id=\"m2\" x1=\"0%25\" y1=\"0%25\" x2=\"100%25\" y2=\"100%25\"%3E%3Cstop offset=\"0%25\" stop-color=\"%238da3c8\"/%3E%3Cstop offset=\"100%25\" stop-color=\"%23516692\"/%3E%3C/linearGradient%3E%3Cdefs%3E%3Crect width=\"1920\" height=\"1080\" fill=\"url(%23sky)\"/%3E%3Cpath d=\"M-200 900 L500 500 L1100 900 Z\" fill=\"url(%23m1)\" opacity=\"0.9\"/%3E%3Cpath d=\"M300 950 L1100 420 L1900 950 Z\" fill=\"url(%23m2)\" opacity=\"0.85\"/%3E%3C/svg%3E')",
-      "url('data:image/svg+xml,%3Csvg xmlns=\"http://www.w3.org/2000/svg\" width=\"1920\" height=\"1080\"%3E%3Cdefs%3E%3ClinearGradient id=\"sky2\" x1=\"0%25\" y1=\"0%25\" x2=\"0%25\" y2=\"100%25\"%3E%3Cstop offset=\"0%25\" stop-color=\"%23ffd3a5\"/%3E%3Cstop offset=\"100%25\" stop-color=\"%23fd6585\"/%3E%3C/linearGradient%3E%3ClinearGradient id=\"sea\" x1=\"0%25\" y1=\"0%25\" x2=\"100%25\" y2=\"0%25\"%3E%3Cstop offset=\"0%25\" stop-color=\"%23007adf\"/%3E%3Cstop offset=\"100%25\" stop-color=\"%2350c9c3\"/%3E%3C/linearGradient%3E%3Cdefs%3E%3Crect width=\"1920\" height=\"1080\" fill=\"url(%23sky2)\"/%3E%3Crect y=\"620\" width=\"1920\" height=\"460\" fill=\"url(%23sea)\"/%3E%3Cpath d=\"M0 640 Q240 580 480 640 T960 640 T1440 640 T1920 640 V720 H0 Z\" fill=\"rgba(255,255,255,0.4)\"/%3E%3Ccircle cx=\"420\" cy=\"320\" r=\"110\" fill=\"%23ffe7c3\"/%3E%3C/svg%3E')",
-      "url('data:image/svg+xml,%3Csvg xmlns=\"http://www.w3.org/2000/svg\" width=\"1920\" height=\"1080\"%3E%3Cdefs%3E%3ClinearGradient id=\"sky3\" x1=\"0%25\" y1=\"0%25\" x2=\"100%25\" y2=\"100%25\"%3E%3Cstop offset=\"0%25\" stop-color=\"%230c94d7\"/%3E%3Cstop offset=\"100%25\" stop-color=\"%2306beb6\"/%3E%3C/linearGradient%3E%3ClinearGradient id=\"forest1\" x1=\"0%25\" y1=\"0%25\" x2=\"100%25\" y2=\"100%25\"%3E%3Cstop offset=\"0%25\" stop-color=\"%23046a38\"/%3E%3Cstop offset=\"100%25\" stop-color=\"%2302a46f\"/%3E%3C/linearGradient%3E%3Cdefs%3E%3Crect width=\"1920\" height=\"1080\" fill=\"url(%23sky3)\"/%3E%3Cpath d=\"M0 840 L220 620 L360 900 L520 640 L660 940 L820 660 L960 960 L1120 640 L1260 940 L1420 640 L1560 940 L1760 640 L1920 900 L1920 1080 L0 1080 Z\" fill=\"url(%23forest1)\" opacity=\"0.9\"/%3E%3C/svg%3E')"
-    ];
-
+    // Create floating particles
+    function createParticles() {
+      const container = document.getElementById('particles');
+      if (!container) return;
+      for (let i = 0; i < 50; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.style.left = Math.random() * 100 + '%';
+        particle.style.animationDelay = Math.random() * 15 + 's';
+        particle.style.animationDuration = (10 + Math.random() * 10) + 's';
+        container.appendChild(particle);
+      }
+    }
+    createParticles();
 
     // User's allowed pages (passed from Flask via data attribute)
     const allowedPages = JSON.parse(document.body.getAttribute('data-allowed-pages') || 'null');
@@ -825,25 +878,9 @@
     // Run on page load
     document.addEventListener('DOMContentLoaded', function() {
       filterButtonsByPermissions();
-      setDailyBackground();
       updateClock();
       setInterval(updateClock, 1000);
     });
-
-    // Set permanent background image
-    function setDailyBackground() {
-      const backgroundEl = document.getElementById('background');
-      if (!backgroundEl) return;
-
-      // Use permanent background image
-      const imageUrl = '/static/image3d.jpg';
-      backgroundEl.style.backgroundImage = `url(${imageUrl})`;
-      backgroundEl.style.backgroundSize = 'cover';
-      backgroundEl.style.backgroundPosition = 'center';
-      backgroundEl.style.backgroundRepeat = 'no-repeat';
-
-      console.log('Permanent background image set:', imageUrl);
-    }
 
     // Update clock
     function updateClock() {
