@@ -43,8 +43,9 @@
             font-family: 'Space Grotesk', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
             background: linear-gradient(140deg, rgba(253, 247, 255, 0.95), rgba(233, 247, 255, 0.9)), var(--bg);
             color: #0f172a;
-            min-height: 100vh;
+            height: 100vh;
             line-height: 1.5;
+            overflow: hidden;
         }
 
         body::before {
@@ -60,17 +61,20 @@
         .page-body {
             position: relative;
             z-index: 1;
-            padding-bottom: 4rem;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
         .app-header {
             background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(243, 245, 255, 0.98));
             backdrop-filter: blur(14px);
             border-bottom: 1px solid var(--panel-stroke);
-            padding: 3rem 0 6rem;
+            padding: 2rem 0 4rem;
             margin-bottom: 0;
             position: relative;
             overflow: hidden;
+            flex-shrink: 0;
         }
 
         .app-header::after {
@@ -125,9 +129,14 @@
         }
 
         .page-shell {
-            margin-top: -70px;
+            margin-top: -50px;
             position: relative;
             z-index: 2;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-y: auto;
         }
 
         .layout-grid {
