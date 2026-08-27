@@ -1,9 +1,9 @@
 {
-  "name": "loanexter",
+  "name": "vishu",
   "description": "Loan Management System",
   "type": "service",
   "image": {
-    "repository": "vishuadv/loanexter",
+    "repository": "vishuadv/vishu",
     "tag": "latest"
   },
   "ports": [
@@ -15,7 +15,7 @@
   "envVars": [
     {
       "name": "DATABASE_URL",
-      "value": "postgresql://username:password@ep-xxx.region.aws.neon.tech/loanexter"
+      "value": "postgresql://username:password@ep-xxx.region.aws.neon.tech/vishu"
     },
     {
       "name": "SECRET_KEY",

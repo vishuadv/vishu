@@ -4,7 +4,7 @@ This guide will help you deploy the Loan Management System on Northflank using N
 
 ## Prerequisites
 
-1. **GitHub Repository**: Your code is already pushed to https://github.com/vishuadv/loanexter
+1. **GitHub Repository**: Your code is already pushed to https://github.com/vishuadv/vishu
 2. **Neon Database Account**: Create a free account at https://neon.tech
 3. **Northflank Account**: Create a free account at https://northflank.com
 
@@ -13,14 +13,14 @@ This guide will help you deploy the Loan Management System on Northflank using N
 1. Sign up/login to [Neon Console](https://console.neon.tech)
 2. Create a new project:
    - Click "Create a project"
-   - Choose a name (e.g., "loanexter")
+   - Choose a name (e.g., "vishu")
    - Select a region closest to your users
    - Click "Create project"
 3. Get your connection string:
    - Go to your project dashboard
    - Click "Connection Details"
    - Copy the connection string (format: `postgresql://username:password@ep-xxx.region.aws.neon.tech/neondb`)
-4. Note: Replace `neondb` with `loanexter` in the connection string
+4. Note: Replace `neondb` with `vishu` in the connection string
 
 ## Step 2: Deploy on Northflank
 
@@ -30,16 +30,16 @@ This guide will help you deploy the Loan Management System on Northflank using N
 2. Create a new account or login
 3. Click "Create a service" → "Git service"
 4. Connect your GitHub account
-5. Select the `vishuadv/loanexter` repository
+5. Select the `vishuadv/vishu` repository
 6. Configure the service:
-   - **Name**: loanexter
+   - **Name**: vishu
    - **Branch**: main
    - **Build context**: /
    - **Dockerfile path**: Dockerfile
    - **Port**: 8080
 7. Add environment variables:
    ```
-   DATABASE_URL=postgresql://username:password@ep-xxx.region.aws.neon.tech/loanexter
+   DATABASE_URL=postgresql://username:password@ep-xxx.region.aws.neon.tech/vishu
    SECRET_KEY=generate-a-secure-random-key
    ADMIN_USERNAME=shivam
    ADMIN_PASSWORD=Raaina@20
@@ -56,13 +56,13 @@ This guide will help you deploy the Loan Management System on Northflank using N
 1. Build and push Docker image to GitHub Container Registry:
    ```bash
    echo $GITHUB_TOKEN | docker login ghcr.io -u vishuadv --password-stdin
-   docker build -t ghcr.io/vishuadv/loanexter:latest .
-   docker push ghcr.io/vishuadv/loanexter:latest
+   docker build -t ghcr.io/vishuadv/vishu:latest .
+   docker push ghcr.io/vishuadv/vishu:latest
    ```
 
 2. On Northflank:
    - Create a new service → "Container service"
-   - Image: `ghcr.io/vishuadv/loanexter:latest`
+   - Image: `ghcr.io/vishuadv/vishu:latest`
    - Port: 8080
    - Add the same environment variables as above
 
@@ -72,7 +72,7 @@ In Northflank, add these environment variables to your service:
 
 | Variable | Value | Description |
 |----------|-------|-------------|
-| `DATABASE_URL` | Your Neon connection string | PostgreSQL database URL |
+| `DATABASE_URL` | Your Neon connection string (postgresql://username:password@ep-xxx.region.aws.neon.tech/vishu) | PostgreSQL database URL |
 | `SECRET_KEY` | Generate a secure key | Flask session encryption |
 | `ADMIN_USERNAME` | shivam | Admin username |
 | `ADMIN_PASSWORD` | Raaina@20 | Admin password (change in production) |
@@ -96,7 +96,7 @@ The application will automatically create tables on first run. However, you may 
 ## Step 5: Access Your Application
 
 After deployment, Northflank will provide:
-- A public URL (e.g., `https://loanexter-xxx.northflank.app`)
+- A public URL (e.g., `https://vishu-xxx.northflank.app`)
 - Service logs
 - Metrics and monitoring
 
