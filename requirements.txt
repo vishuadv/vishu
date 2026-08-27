@@ -13,4 +13,5 @@ Pillow==9.0.1
 pdfkit==1.0.0
 requests==2.31.0
 python-dotenv==1.0.0
-Flask-WTF==1.1.1
+Flask-WTF==1.2.1
+Werkzeug==2.3.7
