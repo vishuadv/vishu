@@ -121,10 +121,6 @@
         .login-container {
             position: relative;
             z-index: 1;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             padding: 2rem;
         }
 
@@ -237,12 +233,16 @@
 
         /* Clock Styles */
         .clock-container {
+            position: fixed;
+            top: 50%;
+            right: 30px;
+            transform: translateY(-50%);
             text-align: center;
-            margin-bottom: 2rem;
+            z-index: 100;
         }
 
         #istSvgClock {
-            width: 200px;
+            width: 300px;
             height: auto;
             display: block;
             margin: 0 auto;
