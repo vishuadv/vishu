@@ -15,11 +15,11 @@
   "envVars": [
     {
       "name": "DATABASE_URL",
-      "value": "postgresql://username:password@ep-xxx.region.aws.neon.tech/vishu"
+      "value": "postgresql://neondb_owner:npg_QVE8drDmhSJ3@ep-withered-breeze-ayuqwmuj-pooler.c-5.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
     },
     {
       "name": "SECRET_KEY",
-      "value": "your-secret-key-here"
+      "value": "15713ea317f9d55efd642794784e09435d1d383842e6d6d7486f90c543174e72"
     },
     {
       "name": "ADMIN_USERNAME",
