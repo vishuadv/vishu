@@ -4,8 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - SWIFT FINANCIAL SERVICES</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.css" rel="stylesheet">
+    {% include "_pwa_head.html" %}
+
+    <!-- ✅ CACHE-BUSTED RESOURCES -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css?v=20250829" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css?v=20250829" rel="stylesheet">
+    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
@@ -37,8 +45,6 @@
             color: #0f172a;
             min-height: 100vh;
             line-height: 1.5;
-            position: relative;
-            overflow-x: hidden;
         }
 
         body::before {
@@ -49,398 +55,297 @@
                         radial-gradient(circle at 82% 15%, rgba(14, 165, 233, 0.18), transparent 45%),
                         radial-gradient(circle at 60% 80%, rgba(236, 72, 153, 0.14), transparent 50%);
             pointer-events: none;
-            z-index: 0;
         }
 
-        /* Animated Nature Background */
-        .nature-bg {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-            z-index: -3;
+        .page-body {
+            position: relative;
+            z-index: 1;
+            padding-bottom: 4rem;
         }
 
-        .nature-bg::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: 
-                radial-gradient(circle at 20% 80%, rgba(34, 197, 94, 0.3) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(59, 130, 246, 0.3) 0%, transparent 50%),
-                radial-gradient(circle at 40% 40%, rgba(168, 85, 247, 0.2) 0%, transparent 40%);
-            animation: pulse 8s ease-in-out infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 0.6; }
-            50% { opacity: 1; }
-        }
-
-        .floating-particles {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -2;
+        .app-header {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(243, 245, 255, 0.98));
+            backdrop-filter: blur(14px);
+            border-bottom: 1px solid var(--panel-stroke);
+            padding: 3rem 0 6rem;
+            margin-bottom: 0;
+            position: relative;
             overflow: hidden;
         }
 
-        .particle {
+        .app-header::after {
+            content: '';
             position: absolute;
-            width: 4px;
-            height: 4px;
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            animation: float 15s infinite;
+            inset: auto -40% -60% -40%;
+            height: 320px;
+            background: radial-gradient(circle, rgba(124, 58, 237, 0.35), transparent 70%);
+            filter: blur(80px);
         }
 
-        @keyframes float {
-            0%, 100% {
-                transform: translateY(100vh) rotate(0deg);
-                opacity: 0;
-            }
-            10% {
-                opacity: 1;
-            }
-            90% {
-                opacity: 1;
-            }
-            100% {
-                transform: translateY(-100vh) rotate(720deg);
-                opacity: 0;
-            }
+        .app-title {
+            font-size: clamp(2rem, 3vw, 2.8rem);
+            font-weight: 700;
+            margin-bottom: 0.5rem;
         }
 
-        .login-container {
+        .hero-subtitle {
+            color: var(--secondary);
+            max-width: 520px;
+            margin-bottom: 1rem;
+        }
+
+        .hero-actions {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .badge-live {
+            background: rgba(108, 43, 217, 0.12);
+            color: var(--primary-strong);
+            padding: 0.35rem 0.85rem;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .time-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            background: rgba(14, 165, 233, 0.12);
+            border: 1px solid rgba(14, 165, 233, 0.25);
+            border-radius: 999px;
+            padding: 0.35rem 1rem;
+            font-family: 'Space Grotesk', monospace;
+            font-size: 0.9rem;
+        }
+
+        .page-shell {
+            margin-top: -70px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .layout-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .card-clean {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.99), rgba(255, 255, 255, 0.92));
+            border-radius: var(--radius);
+            border: 1px solid var(--panel-stroke);
+            padding: 2.2rem;
+            box-shadow: var(--shadow-soft);
+            position: relative;
+            overflow: visible;
+        }
+
+        .card-clean::after {
+            content: '';
+            position: absolute;
+            inset: -80% auto auto -30%;
+            width: 360px;
+            height: 360px;
+            background: radial-gradient(circle, rgba(236, 72, 153, 0.12), transparent 60%);
+            opacity: 0.5;
+        }
+
+        .card-clean > * {
             position: relative;
             z-index: 1;
-            padding: 2rem;
         }
 
-        .login-card {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
-            backdrop-filter: blur(20px);
-            border-radius: var(--radius);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 3rem;
-            max-width: 450px;
-            width: 100%;
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+        .card-clean.span-2 {
+            grid-column: span 2;
         }
 
-        .login-header {
-            text-align: center;
-            margin-bottom: 2rem;
+        @media (max-width: 992px) {
+            .card-clean.span-2 {
+                grid-column: span 1;
+            }
         }
 
-        .login-header i {
-            font-size: 4rem;
-            color: #22d3ee;
-            filter: drop-shadow(0 0 20px rgba(34, 211, 238, 0.5));
-            margin-bottom: 1rem;
+        .section-title {
+            font-size: 0.95rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--secondary);
+            margin-bottom: 1.25rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.65rem;
+            background: rgba(124, 58, 237, 0.08);
+            padding: 0.35rem 0.85rem;
+            border-radius: 999px;
         }
 
-        .login-header h1 {
-            font-size: 2rem;
-            font-weight: 700;
-            color: white;
-            margin-bottom: 0.5rem;
-            text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
-        }
-
-        .login-header .company-name {
+        .section-title i {
+            color: var(--primary);
             font-size: 1.2rem;
-            color: rgba(255, 255, 255, 0.9);
-            font-weight: 500;
-            margin-bottom: 1rem;
         }
 
-        .contact-info {
-            color: rgba(255, 255, 255, 0.8);
-            font-size: 0.9rem;
-            margin-bottom: 1.5rem;
+        label.form-label {
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--muted);
         }
 
-        .form-control {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 12px;
-            padding: 14px 16px;
-            color: white;
+        .form-control,
+        .form-select {
+            background: rgba(37, 99, 235, 0.04);
+            border: 1px solid rgba(37, 99, 235, 0.15);
+            border-radius: 14px;
+            padding: 0.9rem 1rem;
+            color: #0f172a;
             transition: var(--transition);
         }
 
-        .form-control:focus {
-            background: rgba(255, 255, 255, 0.15);
-            border-color: #22d3ee;
-            box-shadow: 0 0 20px rgba(34, 211, 238, 0.3);
-            color: white;
+        .form-control:focus,
+        .form-select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 25px rgba(37, 99, 235, 0.15);
+            outline: none;
         }
 
-        .form-control::placeholder {
-            color: rgba(255, 255, 255, 0.5);
-        }
-
-        .input-group-text {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-right: none;
-            color: rgba(255, 255, 255, 0.7);
-            border-radius: 12px 0 0 12px;
-        }
-
-        .form-control {
-            border-left: none;
-            border-radius: 0 12px 12px 0;
-        }
-
-        .btn-login {
-            background: linear-gradient(135deg, #22d3ee 0%, #3b82f6 100%);
-            border: none;
-            border-radius: 12px;
-            padding: 14px;
+        .btn {
+            border-radius: 14px;
+            border: 1px solid transparent;
             font-weight: 600;
-            color: white;
+            letter-spacing: 0.02em;
+            padding: 0.75rem 1rem;
             transition: var(--transition);
-            box-shadow: 0 10px 30px rgba(34, 211, 238, 0.3);
         }
 
-        .btn-login:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 15px 40px rgba(34, 211, 238, 0.4);
-            background: linear-gradient(135deg, #3b82f6 0%, #22d3ee 100%);
+        .btn:hover,
+        .btn:focus-visible {
+            transform: translateY(-1px);
+            box-shadow: 0 12px 25px rgba(124, 58, 237, 0.18);
         }
 
-        .alert {
-            border-radius: 12px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: white;
-            backdrop-filter: blur(10px);
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-strong));
+            border-color: var(--primary);
         }
 
-        .alert-danger {
-            background: rgba(239, 68, 68, 0.2);
-            border-color: rgba(239, 68, 68, 0.4);
-        }
-
-        /* Clock Styles */
-        .clock-container {
-            position: fixed;
-            top: 50%;
-            right: 30px;
-            transform: translateY(-50%);
-            text-align: center;
-            z-index: 100;
+        .clock-card {
+            padding: 0;
+            width: min(520px, 100%);
         }
 
         #istSvgClock {
-            width: 300px;
+            width: 100%;
             height: auto;
             display: block;
-            margin: 0 auto;
+            border-radius: 26px;
+            overflow: visible;
+            background: none;
+            box-shadow: none;
+            margin-bottom: -0.2rem;
         }
 
         #istSvgClock .clockCircle {
             fill: none;
-            stroke: rgba(255, 255, 255, 0.2);
+            stroke: rgba(255, 255, 255, 0.08);
         }
 
         #istSvgClock .clockCircle.hour {
             stroke-width: 6;
- opacity: 0.5;
         }
 
         #istSvgClock .clockCircle.minute,
         #istSvgClock .clockCircle.second {
             stroke-width: 3;
-            opacity: 0.3;
         }
 
         #istSvgClock .clockArc {
             fill: none;
+            stroke: #20e0ff;
+            filter: url(#clockGlow);
             stroke-linecap: round;
         }
 
-        #istSvgClock .clockArc.hour {
-            stroke: #22d3ee;
-            filter: drop-shadow(0 0 8px rgba(34, 211, 238, 0.6));
-        }
-
         #istSvgClock .clockArc.minute {
-            stroke: #3b82f6;
-            filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.6));
+            stroke: #4c7dff;
         }
 
         #istSvgClock .clockArc.second {
-            stroke: #a855f7;
-            filter: drop-shadow(0 0 8px rgba(168, 85, 247, 0.6));
+            stroke: #12ffe7;
         }
 
         #istSvgClock .clockDot {
-            fill: #22d3ee;
-            filter: drop-shadow(0 0 10px rgba(34, 211, 238, 0.8));
+            fill: #70f8ff;
+            filter: url(#clockGlow);
         }
 
         #istSvgClock .caption {
             font-family: 'Space Grotesk', sans-serif;
-            fill: rgba(255, 255, 255, 0.9);
+            fill: rgba(240, 249, 255, 0.85);
         }
 
         #istSvgClock .timeText {
-            font-size: 2.5rem;
+            font-size: 3.2rem;
             font-weight: 600;
-            fill: white;
-            filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.5));
+            fill: #d8b4fe;
+            filter: drop-shadow(0 0 8px rgba(192, 132, 252, 0.55));
         }
 
         .clock-caption {
-            margin-top: 0.5rem;
+            margin-top: -0.2rem;
             text-align: center;
-            font-size: 1rem;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #6d28d9;
             letter-spacing: 0.02em;
+            text-shadow: 0 0 12px rgba(124, 58, 237, 0.45);
         }
 
         .clock-caption .clock-date {
             margin-left: 0.4rem;
-            color: rgba(255, 255, 255, 0.7);
+            color: #5b21b6;
         }
 
+        .alert {
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.98);
+            border: 1px solid var(--panel-stroke);
+            color: #0f172a;
+        }
+
+        .alert-danger {
+            background: rgba(244, 63, 94, 0.1);
+            border-color: rgba(244, 63, 94, 0.3);
+            color: var(--danger);
+        }
+
+        /* Responsive tweaks */
         @media (max-width: 768px) {
-            .login-card {
-                padding: 2rem;
-                margin: 1rem;
-            }
-
-            .login-header h1 {
-                font-size: 1.5rem;
-            }
-
-            #istSvgClock {
-                width: 150px;
-            }
-
-            #istSvgClock .timeText {
-                font-size: 2rem;
-            }
+            .hero-actions { flex-direction: column; align-items: flex-start; }
+            .card-clean { padding: 1.5rem; }
         }
     </style>
-</head>
-<body>
-    <div class="nature-bg"></div>
-    <div class="floating-particles" id="particles"></div>
-
-    <div class="login-container">
-        <div class="login-card">
-            <div class="clock-container">
-                <svg id="istSvgClock" viewBox="0 0 1000 480">
-                    <defs>
-                        <filter id="clockGlow" x="-50%" y="-50%" width="200%" height="200%">
-                            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-                            <feMerge>
-                                <feMergeNode in="coloredBlur"/>
-                                <feMergeNode in="SourceGraphic"/>
-                            </feMerge>
-                        </filter>
-                    </defs>
-                    <circle class="clockCircle hour" cx="500" cy="240" r="150" />
-                    <circle class="clockCircle minute" cx="500" cy="240" r="170" />
-                    <circle class="clockCircle second" cx="500" cy="240" r="190" />
-                    <path class="clockArc hour" id="arcHour" d="" />
-                    <path class="clockArc minute" id="arcMinute" d="" />
-                    <path class="clockArc second" id="arcSecond" d="" />
-                    <circle class="clockDot" id="dotHour" cx="500" cy="90" r="8" />
-                    <circle class="clockDot" id="dotMinute" cx="500" cy="70" r="6" />
-                    <circle class="clockDot" id="dotSecond" cx="500" cy="50" r="4" />
-                    <text class="caption timeText" id="timeText" x="500" y="260" text-anchor="middle">00:00:00</text>
-                    <text class="caption" id="clockDayText" x="500" y="300" text-anchor="middle" font-size="20">Monday</text>
-                    <text class="caption" id="clockDateText" x="500" y="330" text-anchor="middle" font-size="18">1 January 2024</text>
-                </svg>
-                <div class="clock-caption">
-                    <span id="live-time"></span>
-                </div>
-            </div>
-
-            <div class="login-header">
-                <i class="bi bi-shield-lock-fill"></i>
-                <h1>SWIFT FINANCIAL SERVICES</h1>
-                <p class="company-name">Professional Financial Management</p>
-                <div class="contact-info">
-                    <i class="bi bi-person"></i> SHIVAM GROVER<br>
-                    <i class="bi bi-telephone"></i> +91-8872810011
-                </div>
-            </div>
-
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="alert alert-{{ 'danger' if category == 'error' else category }}" role="alert">
-                            <i class="bi bi-exclamation-triangle"></i> {{ message }}
-                        </div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
-
-            <form method="POST" action="/login">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                <div class="mb-3">
-                    <label for="username" class="form-label text-white">Username</label>
-                    <div class="input-group">
-                        <span class="input-group-text">
-                            <i class="bi bi-person"></i>
-                        </span>
-                        <input type="text" class="form-control" id="username" name="username" required autofocus placeholder="Enter username">
-                    </div>
-                </div>
-
-                <div class="mb-4">
-                    <label for="password" class="form-label text-white">Password</label>
-                    <div class="input-group">
-                        <span class="input-group-text">
-                            <i class="bi bi-lock"></i>
-                        </span>
-                        <input type="password" class="form-control" id="password" name="password" required placeholder="Enter password">
-                    </div>
-                </div>
-
-                <button type="submit" class="btn btn-login w-100">
-                    <i class="bi bi-box-arrow-in-right"></i> Login
-                </button>
-            </form>
-
-            <div class="text-center mt-4">
-                <small class="text-white-50">
-                    <i class="bi bi-info-circle"></i> Secure login powered by SWIFT FINANCIAL SERVICES
-                </small>
-            </div>
-        </div>
-    </div>
 
     <script>
-        // Create floating particles
-        function createParticles() {
-            const container = document.getElementById('particles');
-            for (let i = 0; i < 50; i++) {
-                const particle = document.createElement('div');
-                particle.className = 'particle';
-                particle.style.left = Math.random() * 100 + '%';
-                particle.style.animationDelay = Math.random() * 15 + 's';
-                particle.style.animationDuration = (10 + Math.random() * 10) + 's';
-                container.appendChild(particle);
+        'use strict';
+
+        function updateTimeIST(){
+            const now = new Date();
+            const timeOpts = { timeZone: "Asia/Kolkata", hour12: true, hour: "2-digit", minute: "2-digit", second: "2-digit" };
+            const liveTime = document.getElementById("live-time");
+            const formatter = new Intl.DateTimeFormat("en-IN", timeOpts);
+            const timeString = formatter.format(now);
+            if (liveTime) {
+                liveTime.innerText = `${timeString} IST`;
             }
         }
-        createParticles();
 
-        // Clock functions
         function polarToCartesian(cx, cy, radius, angleDeg) {
             const rad = (angleDeg - 90) * Math.PI / 180;
             return {
@@ -512,21 +417,129 @@
             if (dateLabel) dateLabel.textContent = istNow.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
         }
 
-        function updateTimeIST(){
-            const now = new Date();
-            const timeOpts = { timeZone: "Asia/Kolkata", hour12: true, hour: "2-digit", minute: "2-digit", second: "2-digit" };
-            const liveTime = document.getElementById("live-time");
-            const formatter = new Intl.DateTimeFormat("en-IN", timeOpts);
-            const timeString = formatter.format(now);
-            if (liveTime) {
-                liveTime.innerText = `${timeString} IST`;
-            }
-        }
-
         setInterval(updateTimeIST, 1000);
-        updateTimeIST();
         updateSvgClock();
         setInterval(updateSvgClock, 100);
+
+        window.addEventListener('load', () => {
+            updateTimeIST();
+            updateSvgClock();
+        });
     </script>
+</head>
+<body class="page-body">
+
+    <!-- ✅ HERO / HEADER -->
+    <header class="app-header">
+        <div class="container">
+            <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-4">
+                <div>
+                    <div class="badge-live mb-3">Swift Financial Services</div>
+                    <h1 class="app-title">
+                        <i class="bi bi-shield-lock me-3"></i>
+                        Login
+                    </h1>
+                    <div class="hero-subtitle">
+                        <strong>SWIFT FINANCIAL SERVICES</strong><br>
+                        SHIVAM GROVER | +91-8872810011
+                    </div>
+                    <div class="hero-actions">
+                        <span class="time-badge" id="live-time">Loading...</span>
+                    </div>
+                </div>
+                <div class="clock-card mt-4 mt-lg-0">
+                    <svg id="istSvgClock" viewBox="0 0 1000 500" aria-label="Indian Standard Time clock">
+                        <defs>
+                            <filter id="clockGlow">
+                                <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
+                                <feMerge>
+                                    <feMergeNode in="coloredBlur"/>
+                                    <feMergeNode in="SourceGraphic"/>
+                                </feMerge>
+                            </filter>
+                            <filter id="clockShadow" x="-20%" y="-20%" width="140%" height="140%">
+                                <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="shadow"/>
+                                <feOffset dx="1" dy="1"/>
+                                <feMerge>
+                                    <feMergeNode/>
+                                    <feMergeNode in="SourceGraphic"/>
+                                </feMerge>
+                            </filter>
+                        </defs>
+
+                        <circle class="clockCircle hour" cx="500" cy="240" r="150" />
+                        <path id="arcHour" class="clockArc hour" />
+                        <circle id="dotHour" class="clockDot hour" r="8" />
+
+                        <circle class="clockCircle minute" cx="500" cy="240" r="170" />
+                        <path id="arcMinute" class="clockArc minute" />
+                        <circle id="dotMinute" class="clockDot minute" r="5" />
+
+                        <circle class="clockCircle second" cx="500" cy="240" r="190" />
+                        <path id="arcSecond" class="clockArc second" />
+                        <circle id="dotSecond" class="clockDot second" r="4" />
+
+                        <text id="timeText" class="caption timeText" x="500" y="240" text-anchor="middle" alignment-baseline="middle" filter="url(#clockGlow)"></text>
+                    </svg>
+                    <div class="clock-caption">
+                        <span id="clockDayText">Saturday</span>
+                        <span class="clock-date" id="clockDateText">21 February 2026</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="page-shell container py-4">
+        <div class="layout-grid">
+            <!-- ✅ LOGIN FORM -->
+            <section class="card-clean span-2">
+                <div class="section-title">
+                    <i class="bi bi-person-fill"></i>
+                    Login
+                </div>
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ 'danger' if category == 'error' else category }}" role="alert">
+                                <i class="bi bi-exclamation-triangle"></i> {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <form method="POST" action="/login">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label for="username" class="form-label">Username *</label>
+                            <input id="username" class="form-control" name="username" required autofocus placeholder="Enter username">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="password" class="form-label">Password *</label>
+                            <input type="password" id="password" class="form-control" name="password" required placeholder="Enter password">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-box-arrow-in-right"></i> Login
+                    </button>
+                </form>
+
+                <div class="text-center mt-4">
+                    <small class="text-muted">
+                        <i class="bi bi-info-circle"></i> Secure login powered by SWIFT FINANCIAL SERVICES
+                    </small>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- ✅ BOOTSTRAP JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js?v=20250829"></script>
+    {% include "_pwa_scripts.html" %}
+
 </body>
 </html>
