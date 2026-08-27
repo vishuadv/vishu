@@ -1,0 +1,46 @@
+{
+  "name": "loanexter",
+  "description": "Loan Management System",
+  "type": "service",
+  "image": {
+    "repository": "vishuadv/loanexter",
+    "tag": "latest"
+  },
+  "ports": [
+    {
+      "port": 8080,
+      "protocol": "HTTP"
+    }
+  ],
+  "envVars": [
+    {
+      "name": "DATABASE_URL",
+      "value": "postgresql://username:password@ep-xxx.region.aws.neon.tech/loanexter"
+    },
+    {
+      "name": "SECRET_KEY",
+      "value": "your-secret-key-here"
+    },
+    {
+      "name": "ADMIN_USERNAME",
+      "value": "shivam"
+    },
+    {
+      "name": "ADMIN_PASSWORD",
+      "value": "Raaina@20"
+    },
+    {
+      "name": "FLASK_DEBUG",
+      "value": "False"
+    },
+    {
+      "name": "PORT",
+      "value": "8080"
+    }
+  ],
+  "resources": {
+    "cpu": 0.5,
+    "memory": 512
+  },
+  "replicas": 1
+}
