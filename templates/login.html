@@ -3,119 +3,530 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - SHIVI PROJECT</title>
+    <title>Login - SWIFT FINANCIAL SERVICES</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.css" rel="stylesheet">
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+        :root {
+            --bg: #fef8ff;
+            --bg-accent: #e6f3ff;
+            --panel: rgba(255, 255, 255, 0.98);
+            --panel-stroke: rgba(118, 75, 207, 0.18);
+            --primary: #6c2bd9;
+            --primary-strong: #4c1d95;
+            --accent: #0ea5e9;
+            --secondary: #475569;
+            --muted: #94a3b8;
+            --danger: #f43f5e;
+            --success: #0ea37f;
+            --warning: #eab308;
+            --info: #2563eb;
+            --radius: 26px;
+            --transition: 220ms ease;
+            --shadow-soft: 0 45px 80px rgba(76, 29, 149, 0.18);
+        }
+
+        *, *::before, *::after { box-sizing: border-box; }
+
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            font-family: 'Space Grotesk', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(140deg, rgba(253, 247, 255, 0.95), rgba(233, 247, 255, 0.9)), var(--bg);
+            color: #0f172a;
+            min-height: 100vh;
+            line-height: 1.5;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at 15% 25%, rgba(124, 58, 237, 0.18), transparent 45%),
+                        radial-gradient(circle at 82% 15%, rgba(14, 165, 233, 0.18), transparent 45%),
+                        radial-gradient(circle at 60% 80%, rgba(236, 72, 153, 0.14), transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Animated Nature Background */
+        .nature-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            z-index: -3;
+        }
+
+        .nature-bg::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(34, 197, 94, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(59, 130, 246, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(168, 85, 247, 0.2) 0%, transparent 40%);
+            animation: pulse 8s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+
+        .floating-particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            animation: float 15s infinite;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        .login-container {
+            position: relative;
+            z-index: 1;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 2rem;
         }
-        
+
         .login-card {
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-            padding: 40px;
-            max-width: 400px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            backdrop-filter: blur(20px);
+            border-radius: var(--radius);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 3rem;
+            max-width: 450px;
             width: 100%;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
         }
-        
+
         .login-header {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 2rem;
         }
-        
-        .login-header h2 {
-            color: #667eea;
-            font-weight: bold;
+
+        .login-header i {
+            font-size: 4rem;
+            color: #22d3ee;
+            filter: drop-shadow(0 0 20px rgba(34, 211, 238, 0.5));
+            margin-bottom: 1rem;
         }
-        
-        .form-control {
-            border-radius: 10px;
-            padding: 12px;
-            border: 2px solid #e0e0e0;
-        }
-        
-        .form-control:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
-        }
-        
-        .btn-login {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: none;
-            border-radius: 10px;
-            padding: 12px;
-            font-weight: bold;
+
+        .login-header h1 {
+            font-size: 2rem;
+            font-weight: 700;
             color: white;
-            transition: transform 0.2s;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
         }
-        
+
+        .login-header .company-name {
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 500;
+            margin-bottom: 1rem;
+        }
+
+        .contact-info {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-control {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 14px 16px;
+            color: white;
+            transition: var(--transition);
+        }
+
+        .form-control:focus {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: #22d3ee;
+            box-shadow: 0 0 20px rgba(34, 211, 238, 0.3);
+            color: white;
+        }
+
+        .form-control::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .input-group-text {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-right: none;
+            color: rgba(255, 255, 255, 0.7);
+            border-radius: 12px 0 0 12px;
+        }
+
+        .form-control {
+            border-left: none;
+            border-radius: 0 12px 12px 0;
+        }
+
+        .btn-login {
+            background: linear-gradient(135deg, #22d3ee 0%, #3b82f6 100%);
+            border: none;
+            border-radius: 12px;
+            padding: 14px;
+            font-weight: 600;
+            color: white;
+            transition: var(--transition);
+            box-shadow: 0 10px 30px rgba(34, 211, 238, 0.3);
+        }
+
         .btn-login:hover {
             transform: translateY(-2px);
-            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+            box-shadow: 0 15px 40px rgba(34, 211, 238, 0.4);
+            background: linear-gradient(135deg, #3b82f6 0%, #22d3ee 100%);
         }
-        
+
         .alert {
-            border-radius: 10px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            backdrop-filter: blur(10px);
+        }
+
+        .alert-danger {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: rgba(239, 68, 68, 0.4);
+        }
+
+        /* Clock Styles */
+        .clock-container {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        #istSvgClock {
+            width: 200px;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+        }
+
+        #istSvgClock .clockCircle {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.2);
+        }
+
+        #istSvgClock .clockCircle.hour {
+            stroke-width: 6;
+ opacity: 0.5;
+        }
+
+        #istSvgClock .clockCircle.minute,
+        #istSvgClock .clockCircle.second {
+            stroke-width: 3;
+            opacity: 0.3;
+        }
+
+        #istSvgClock .clockArc {
+            fill: none;
+            stroke-linecap: round;
+        }
+
+        #istSvgClock .clockArc.hour {
+            stroke: #22d3ee;
+            filter: drop-shadow(0 0 8px rgba(34, 211, 238, 0.6));
+        }
+
+        #istSvgClock .clockArc.minute {
+            stroke: #3b82f6;
+            filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.6));
+        }
+
+        #istSvgClock .clockArc.second {
+            stroke: #a855f7;
+            filter: drop-shadow(0 0 8px rgba(168, 85, 247, 0.6));
+        }
+
+        #istSvgClock .clockDot {
+            fill: #22d3ee;
+            filter: drop-shadow(0 0 10px rgba(34, 211, 238, 0.8));
+        }
+
+        #istSvgClock .caption {
+            font-family: 'Space Grotesk', sans-serif;
+            fill: rgba(255, 255, 255, 0.9);
+        }
+
+        #istSvgClock .timeText {
+            font-size: 2.5rem;
+            font-weight: 600;
+            fill: white;
+            filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.5));
+        }
+
+        .clock-caption {
+            margin-top: 0.5rem;
+            text-align: center;
+            font-size: 1rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.9);
+            letter-spacing: 0.02em;
+        }
+
+        .clock-caption .clock-date {
+            margin-left: 0.4rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        @media (max-width: 768px) {
+            .login-card {
+                padding: 2rem;
+                margin: 1rem;
+            }
+
+            .login-header h1 {
+                font-size: 1.5rem;
+            }
+
+            #istSvgClock {
+                width: 150px;
+            }
+
+            #istSvgClock .timeText {
+                font-size: 2rem;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="login-card">
-        <div class="login-header">
-            <i class="bi bi-shield-lock" style="font-size: 3rem; color: #667eea;"></i>
-            <h2 class="mt-3">SHIVI PROJECT</h2>
-            <p class="text-muted">A & A FINANCE LUDHIANA</p>
-        </div>
-        
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ 'danger' if category == 'error' else category }}" role="alert">
-                        <i class="bi bi-exclamation-triangle"></i> {{ message }}
+    <div class="nature-bg"></div>
+    <div class="floating-particles" id="particles"></div>
+
+    <div class="login-container">
+        <div class="login-card">
+            <div class="clock-container">
+                <svg id="istSvgClock" viewBox="0 0 1000 480">
+                    <defs>
+                        <filter id="clockGlow" x="-50%" y="-50%" width="200%" height="200%">
+                            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                            <feMerge>
+                                <feMergeNode in="coloredBlur"/>
+                                <feMergeNode in="SourceGraphic"/>
+                            </feMerge>
+                        </filter>
+                    </defs>
+                    <circle class="clockCircle hour" cx="500" cy="240" r="150" />
+                    <circle class="clockCircle minute" cx="500" cy="240" r="170" />
+                    <circle class="clockCircle second" cx="500" cy="240" r="190" />
+                    <path class="clockArc hour" id="arcHour" d="" />
+                    <path class="clockArc minute" id="arcMinute" d="" />
+                    <path class="clockArc second" id="arcSecond" d="" />
+                    <circle class="clockDot" id="dotHour" cx="500" cy="90" r="8" />
+                    <circle class="clockDot" id="dotMinute" cx="500" cy="70" r="6" />
+                    <circle class="clockDot" id="dotSecond" cx="500" cy="50" r="4" />
+                    <text class="caption timeText" id="timeText" x="500" y="260" text-anchor="middle">00:00:00</text>
+                    <text class="caption" id="clockDayText" x="500" y="300" text-anchor="middle" font-size="20">Monday</text>
+                    <text class="caption" id="clockDateText" x="500" y="330" text-anchor="middle" font-size="18">1 January 2024</text>
+                </svg>
+                <div class="clock-caption">
+                    <span id="live-time"></span>
+                </div>
+            </div>
+
+            <div class="login-header">
+                <i class="bi bi-shield-lock-fill"></i>
+                <h1>SWIFT FINANCIAL SERVICES</h1>
+                <p class="company-name">Professional Financial Management</p>
+                <div class="contact-info">
+                    <i class="bi bi-person"></i> SHIVAM GROVER<br>
+                    <i class="bi bi-telephone"></i> +91-8872810011
+                </div>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else category }}" role="alert">
+                            <i class="bi bi-exclamation-triangle"></i> {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <form method="POST" action="/login">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <div class="mb-3">
+                    <label for="username" class="form-label text-white">Username</label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="bi bi-person"></i>
+                        </span>
+                        <input type="text" class="form-control" id="username" name="username" required autofocus placeholder="Enter username">
                     </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-        
-        <form method="POST" action="/login">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-            <div class="mb-3">
-                <label for="username" class="form-label">Username</label>
-                <div class="input-group">
-                    <span class="input-group-text">
-                        <i class="bi bi-person"></i>
-                    </span>
-                    <input type="text" class="form-control" id="username" name="username" required autofocus>
                 </div>
-            </div>
-            
-            <div class="mb-4">
-                <label for="password" class="form-label">Password</label>
-                <div class="input-group">
-                    <span class="input-group-text">
-                        <i class="bi bi-lock"></i>
-                    </span>
-                    <input type="password" class="form-control" id="password" name="password" required>
+
+                <div class="mb-4">
+                    <label for="password" class="form-label text-white">Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="bi bi-lock"></i>
+                        </span>
+                        <input type="password" class="form-control" id="password" name="password" required placeholder="Enter password">
+                    </div>
                 </div>
+
+                <button type="submit" class="btn btn-login w-100">
+                    <i class="bi bi-box-arrow-in-right"></i> Login
+                </button>
+            </form>
+
+            <div class="text-center mt-4">
+                <small class="text-white-50">
+                    <i class="bi bi-info-circle"></i> Secure login powered by SWIFT FINANCIAL SERVICES
+                </small>
             </div>
-            
-            <button type="submit" class="btn btn-login w-100">
-                <i class="bi bi-box-arrow-in-right"></i> Login
-            </button>
-        </form>
-        
-        <div class="text-center mt-4">
-            <small class="text-muted">
-                <i class="bi bi-info-circle"></i> Contact administrator for access
-            </small>
         </div>
     </div>
+
+    <script>
+        // Create floating particles
+        function createParticles() {
+            const container = document.getElementById('particles');
+            for (let i = 0; i < 50; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 15 + 's';
+                particle.style.animationDuration = (10 + Math.random() * 10) + 's';
+                container.appendChild(particle);
+            }
+        }
+        createParticles();
+
+        // Clock functions
+        function polarToCartesian(cx, cy, radius, angleDeg) {
+            const rad = (angleDeg - 90) * Math.PI / 180;
+            return {
+                x: cx + radius * Math.cos(rad),
+                y: cy + radius * Math.sin(rad)
+            };
+        }
+
+        function describeArc(cx, cy, radius, startAngle, endAngle) {
+            const start = polarToCartesian(cx, cy, radius, endAngle);
+            const end = polarToCartesian(cx, cy, radius, startAngle);
+            const arcSweep = endAngle - startAngle <= 180 ? 0 : 1;
+            return ['M', start.x, start.y, 'A', radius, radius, 0, arcSweep, 0, end.x, end.y].join(' ');
+        }
+
+        function updateSvgClock() {
+            const svg = document.getElementById('istSvgClock');
+            if (!svg) return;
+            const now = new Date();
+            const istNow = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+            const hours = istNow.getHours();
+            const minutes = istNow.getMinutes();
+            const seconds = istNow.getSeconds();
+            const millis = istNow.getMilliseconds();
+
+            const smoothSeconds = seconds + (millis / 1000);
+            const hourArc = ((hours % 12) * 60 + minutes) / 720 * 360;
+            const minuteArc = ((minutes * 60 + smoothSeconds) / 3600) * 360;
+            const secondArc = (smoothSeconds / 60) * 360;
+
+            const arcHour = document.getElementById('arcHour');
+            const arcMinute = document.getElementById('arcMinute');
+            const arcSecond = document.getElementById('arcSecond');
+            const dotHour = document.getElementById('dotHour');
+            const dotMinute = document.getElementById('dotMinute');
+            const dotSecond = document.getElementById('dotSecond');
+            const timeText = document.getElementById('timeText');
+            const dayLabel = document.getElementById('clockDayText');
+            const dateLabel = document.getElementById('clockDateText');
+
+            if (arcHour) arcHour.setAttribute('d', describeArc(500, 240, 150, 0, hourArc));
+            if (arcMinute) arcMinute.setAttribute('d', describeArc(500, 240, 170, 0, minuteArc));
+            if (arcSecond) arcSecond.setAttribute('d', describeArc(500, 240, 190, 0, secondArc));
+
+            const hourPos = polarToCartesian(500, 240, 150, hourArc);
+            if (dotHour) {
+                dotHour.setAttribute('cx', hourPos.x);
+                dotHour.setAttribute('cy', hourPos.y);
+            }
+            const minutePos = polarToCartesian(500, 240, 170, minuteArc);
+            if (dotMinute) {
+                dotMinute.setAttribute('cx', minutePos.x);
+                dotMinute.setAttribute('cy', minutePos.y);
+            }
+            const secondPos = polarToCartesian(500, 240, 190, secondArc);
+            if (dotSecond) {
+                dotSecond.setAttribute('cx', secondPos.x);
+                dotSecond.setAttribute('cy', secondPos.y);
+            }
+
+            const timeString = istNow.toLocaleTimeString('en-IN', {
+                hour: 'numeric',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true
+            });
+            if (timeText) timeText.textContent = timeString;
+            if (dayLabel) dayLabel.textContent = istNow.toLocaleDateString('en-IN', { weekday: 'long' });
+            if (dateLabel) dateLabel.textContent = istNow.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+        }
+
+        function updateTimeIST(){
+            const now = new Date();
+            const timeOpts = { timeZone: "Asia/Kolkata", hour12: true, hour: "2-digit", minute: "2-digit", second: "2-digit" };
+            const liveTime = document.getElementById("live-time");
+            const formatter = new Intl.DateTimeFormat("en-IN", timeOpts);
+            const timeString = formatter.format(now);
+            if (liveTime) {
+                liveTime.innerText = `${timeString} IST`;
+            }
+        }
+
+        setInterval(updateTimeIST, 1000);
+        updateTimeIST();
+        updateSvgClock();
+        setInterval(updateSvgClock, 100);
+    </script>
 </body>
 </html>
