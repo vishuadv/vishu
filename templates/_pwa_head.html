@@ -1,0 +1,12 @@
+<!-- PWA / Mobile -->
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#1a73e8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Critical CSS (fast first paint) -->
+<style>
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Arial}
+</style>
+
+<!-- Load full CSS -->
+<link rel="stylesheet" href="/static/styles-pwa.css" media="print" onload="this.media='all'">

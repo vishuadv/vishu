@@ -1,0 +1,2645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A & A </title>
+  {% include "_pwa_head.html" %}
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      overflow-x: hidden;
+      overflow-y: auto;
+      position: relative;
+      background-color: #f0f3fb;
+    }
+
+    /* Live Background */
+    #background {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #cfd8f3;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      transition: background-image 2s ease-in-out;
+      z-index: -2;
+    }
+
+    #overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.3);
+      z-index: -1;
+    }
+
+    /* Clock Container */
+    #clock-container {
+      display: none;
+      position: fixed;
+      top: 20px; right: 20px;
+      text-align: center;
+      z-index: 100;
+    }
+
+    /* Modern Square Clock */
+    #clock {
+      width: 200px; height: 200px;
+      border: 3px solid rgba(255, 255, 255, 0.8);
+      border-radius: 20px;
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+      position: relative;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(10px);
+    }
+
+    /* Clock Dots (instead of numbers) */
+    .dot {
+      position: absolute;
+      width: 8px; height: 8px;
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: 50%;
+    }
+
+    .dot-12 { top: 6%; left: 50%; transform: translateX(-50%); }
+    .dot-3 { top: 50%; right: 6%; transform: translateY(-50%); }
+    .dot-6 { bottom: 6%; left: 50%; transform: translateX(-50%); }
+    .dot-9 { top: 50%; left: 6%; transform: translateY(-50%); }
+
+    /* Clock Hands */
+    .hand {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.9);
+      top: 50%; left: 50%;
+      transform-origin: bottom center;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+      transform: translate(-50%, -100%) rotate(0deg);
+    }
+
+    .hour-hand {
+      width: 6px; height: 50px;
+    }
+
+    .minute-hand {
+      width: 4px; height: 70px;
+    }
+
+    .second-hand {
+      width: 2px; height: 80px;
+      background: #ff4444;
+    }
+
+    .center-dot {
+      position: absolute;
+      top: 50%; left: 50%;
+      width: 12px; height: 12px;
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 10;
+    }
+
+    /* Date and Time Display */
+    #date-time {
+      margin-top: 20px;
+      color: white;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+    }
+
+    .date-display {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .time-display {
+      font-size: 16px;
+      opacity: 0.9;
+    }
+
+    /* Main Content */
+    .main-content {
+      position: relative;
+      text-align: center;
+      width: 90%;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      z-index: 10;
+    }
+
+    h1 {
+      color: white;
+      font-size: 3.5rem;
+      margin-bottom: 10px;
+      text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.7);
+      font-weight: 300;
+      letter-spacing: 2px;
+    }
+
+    .subtitle {
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 1.3rem;
+      margin-bottom: 15px;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+    }
+
+    .contact-info {
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 1rem;
+      margin-bottom: 40px;
+      line-height: 1.6;
+      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+    }
+
+    /* Button Grid */
+    .button-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-top: 40px;
+    }
+
+    .report-button {
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05));
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      padding: 20px;
+      border-radius: 15px;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+    }
+
+    .report-button:hover {
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.15));
+      border-color: rgba(255, 255, 255, 0.5);
+      transform: translateY(-5px);
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Special highlight for AFIN CLIENTS button */
+    .report-button.afin-button {
+      background: linear-gradient(145deg, rgba(102, 126, 234, 0.3), rgba(118, 75, 162, 0.2));
+      border: 2px solid rgba(102, 126, 234, 0.5);
+    }
+
+    .report-button.afin-button:hover {
+      background: linear-gradient(145deg, rgba(102, 126, 234, 0.4), rgba(118, 75, 162, 0.3));
+      border-color: rgba(102, 126, 234, 0.7);
+    }
+
+    /* Clients Modal */
+    .clients-modal {
+      color: #fff;
+    }
+
+    .clients-modal .modal-dialog {
+      max-width: 960px;
+      width: calc(100% - 32px);
+      margin: 1.5rem auto;
+    }
+
+    .clients-modal .modal-content {
+      background: rgba(6, 6, 6, 0.88);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 18px;
+      min-height: 70vh;
+      backdrop-filter: blur(12px);
+    }
+
+    .clients-modal .modal-body {
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .clients-modal-search {
+      position: relative;
+    }
+
+    .clients-modal-search input {
+      padding-left: 42px;
+    }
+
+    .clients-modal-search i {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #6c757d;
+    }
+
+    .clients-list-container {
+      max-height: min(55vh, 500px);
+      overflow-y: auto;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      padding: 0.5rem;
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .client-result {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 1rem;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      margin-bottom: 0.5rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+    }
+
+    .client-result:hover {
+      border-color: rgba(102, 126, 234, 0.6);
+      transform: translateY(-2px);
+    }
+
+    .client-result.selected {
+      border-color: rgba(102, 126, 234, 0.9);
+      background: rgba(102, 126, 234, 0.25);
+    }
+
+    .client-result.multi-selected {
+      border-color: rgba(40, 167, 69, 0.9);
+      background: rgba(40, 167, 69, 0.25);
+    }
+
+    .client-meta {
+      font-size: 0.85rem;
+      color: rgba(255, 255, 255, 0.75);
+    }
+
+    .clients-loading {
+      border-radius: 12px;
+      padding: 2rem;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px dashed rgba(255, 255, 255, 0.25);
+    }
+
+    .toast-stack {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 2000;
+    }
+
+    .toast-message {
+      padding: 12px 18px;
+      border-radius: 12px;
+      color: #fff;
+      min-width: 260px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+      animation: fadeSlide 0.3s ease;
+    }
+
+    .toast-message.info { background: rgba(23, 162, 184, 0.9); }
+    .toast-message.success { background: rgba(40, 167, 69, 0.95); }
+    .toast-message.warning { background: rgba(255, 193, 7, 0.95); color: #1f1f1f; }
+    .toast-message.error { background: rgba(220, 53, 69, 0.95); }
+
+    @keyframes fadeSlide {
+      from { opacity: 0; transform: translateY(15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Tablet Responsiveness */
+    @media (max-width: 1024px) {
+      .main-content {
+        width: 95%;
+        padding: 30px 15px;
+      }
+      
+      .button-grid {
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 18px;
+      }
+
+      .clients-modal .modal-dialog {
+        max-width: none;
+      }
+
+      .clients-modal .modal-content {
+        min-height: 80vh;
+      }
+    }
+
+    /* Mobile Responsiveness */
+    @media (max-width: 768px) {
+      #clock-container {
+        position: relative;
+        top: auto;
+        right: auto;
+        margin: 14px auto 0;
+        width: fit-content;
+      }
+
+      #clock {
+        width: 130px; height: 130px;
+      }
+      
+      .dot-12 { top: 6%; left: 50%; transform: translateX(-50%); }
+      .dot-3 { top: 50%; right: 6%; transform: translateY(-50%); }
+      .dot-6 { bottom: 6%; left: 50%; transform: translateX(-50%); }
+      .dot-9 { top: 50%; left: 6%; transform: translateY(-50%); }
+      
+      .hour-hand {
+        width: 5px; height: 40px;
+      }
+      
+      .minute-hand {
+        width: 3px; height: 55px;
+      }
+      
+      .second-hand {
+        width: 2px; height: 60px;
+      }
+
+      #date-time {
+        margin-top: 15px;
+      }
+      
+      .date-display {
+        font-size: 14px;
+      }
+      
+      .time-display {
+        font-size: 12px;
+      }
+
+      .main-content {
+        padding: 20px 15px;
+        width: 98%;
+        min-height: auto;
+        justify-content: flex-start;
+      }
+
+      h1 { 
+        font-size: 2.8rem;
+        margin-bottom: 15px;
+      }
+      
+      .subtitle {
+        font-size: 1.1rem;
+        margin-bottom: 12px;
+      }
+      
+      .contact-info {
+        font-size: 0.9rem;
+        margin-bottom: 30px;
+      }
+
+      .button-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+        margin-top: 30px;
+      }
+      
+      .report-button {
+        padding: 18px;
+        font-size: 15px;
+      }
+
+      .clients-modal .modal-dialog {
+        margin: 0;
+        width: 100%;
+        max-width: 100%;
+      }
+
+      .clients-modal .modal-content {
+        border-radius: 0;
+        min-height: 100vh;
+      }
+
+      .clients-modal .modal-body {
+        padding: 1.25rem;
+      }
+
+      .clients-modal-search input {
+        padding: 0.9rem 0.9rem 0.9rem 2.8rem;
+        font-size: 1rem;
+      }
+
+      .clients-list-container {
+        max-height: calc(100vh - 280px);
+      }
+
+      .clients-actions-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+      }
+
+      .clients-actions-buttons {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+
+      .clients-actions-buttons .btn {
+        min-width: 140px;
+      }
+    }
+
+    @media (orientation: landscape) and (max-height: 520px) {
+      #clock-container {
+        display: none;
+      }
+    }
+
+    /* Small Mobile Phones */
+    @media (max-width: 480px) {
+      #clock-container {
+        position: relative;
+        top: auto;
+        right: auto;
+        margin: 12px auto 0;
+        width: fit-content;
+      }
+
+      #clock {
+        width: 100px; height: 100px;
+        border-width: 2px;
+        border-radius: 15px;
+      }
+      
+      .dot {
+        width: 6px; height: 6px;
+      }
+      
+      .dot-12 { top: 6%; left: 50%; transform: translateX(-50%); }
+      .dot-3 { top: 50%; right: 6%; transform: translateY(-50%); }
+      .dot-6 { bottom: 6%; left: 50%; transform: translateX(-50%); }
+      .dot-9 { top: 50%; left: 6%; transform: translateY(-50%); }
+      
+      .hour-hand {
+        width: 4px; height: 30px;
+      }
+      
+      .minute-hand {
+        width: 2px; height: 40px;
+      }
+      
+      .second-hand {
+        width: 1px; height: 45px;
+      }
+      
+      .center-dot {
+        width: 8px; height: 8px;
+      }
+
+      .main-content {
+        padding: 15px 10px;
+        width: 100%;
+      }
+
+      h1 { 
+        font-size: 2.2rem;
+        letter-spacing: 1px;
+      }
+      
+      .subtitle {
+        font-size: 1rem;
+      }
+      
+      .contact-info {
+        font-size: 0.85rem;
+        line-height: 1.4;
+      }
+
+      .button-grid {
+        gap: 12px;
+        margin-top: 25px;
+      }
+      
+      .report-button {
+        padding: 16px;
+        font-size: 14px;
+        border-radius: 12px;
+      }
+
+      .clients-modal .modal-body {
+        padding: 1rem;
+      }
+
+      .client-result {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.35rem;
+      }
+
+      .client-result .text-end {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+      }
+    }
+
+    /* Very Small Screens */
+    @media (max-width: 320px) {
+      h1 { 
+        font-size: 1.8rem;
+      }
+      
+      .subtitle {
+        font-size: 0.9rem;
+      }
+      
+      .contact-info {
+        font-size: 0.8rem;
+      }
+      
+      .report-button {
+        padding: 14px;
+        font-size: 13px;
+      }
+      
+      .button-grid {
+        gap: 10px;
+      }
+    }
+  </style>
+</head>
+
+<body data-allowed-pages="{{ allowed_pages | tojson if allowed_pages else 'null' }}">
+  <!-- Live Background -->
+  <div id="background"></div>
+  <div id="overlay"></div>
+
+  <!-- Modern Square Clock -->
+  <div id="clock-container">
+    <div id="clock">
+      <div class="dot dot-12"></div>
+      <div class="dot dot-3"></div>
+      <div class="dot dot-6"></div>
+      <div class="dot dot-9"></div>
+
+      <div class="hand hour-hand"></div>
+      <div class="hand minute-hand"></div>
+      <div class="hand second-hand"></div>
+      <div class="center-dot"></div>
+    </div>
+
+    <div id="date-time">
+      <div class="date-display" id="date-display"></div>
+      <div class="time-display" id="time-display"></div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <h1>A & A FINANCE </h1>
+    <p class="subtitle">Professional Financial Reports </p>
+
+    <div class="contact-info">
+      📍 SHIVAM GROVER<br>
+      📱 +91-8872810011
+    </div>
+
+    {% if user %}
+    <div class="text-center mb-3">
+      <span class="text-white small me-3">Logged in as: {{ user.username }}</span>
+      {% if user.role == 'admin' and user.username == 'shivam' %}
+      <button class="btn btn-outline-light btn-sm" onclick="window.location.href='/admin/users'">
+        <i class="bi bi-people"></i> Manage Users
+      </button>
+      <button class="btn btn-outline-danger btn-sm ms-2" onclick="window.location.href='/logout'">
+        <i class="bi bi-box-arrow-right"></i> Logout
+      </button>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="button-grid">
+      <button class="report-button" data-page="loan_form" onclick="openProtected('/loan/form')">
+        📋 Loan Management Form
+      </button>
+
+      <button class="report-button" data-page="sales_report" onclick="openProtected('/sales/report/page')">
+        📈 Sales Report
+      </button>
+
+      <button class="report-button afin-button" data-page="clients" onclick="openAfinClients()">
+        🏦 Ledgers
+      </button>
+
+      <button class="report-button" data-page="clients" onclick="openClientsModal()">
+        👥 Clients
+      </button>
+
+      <button class="report-button" data-page="daily_report" onclick="openProtected('/daily-report/page')">
+        💰 Daily Collection Report
+      </button>
+
+      <button class="report-button" data-page="reconciliation" onclick="window.location.href='/reconciliation/page'">
+        📊 Reconciliation (RECO)
+      </button>
+
+      <button class="report-button" data-page="receivable" onclick="openProtected('/advances/report')">
+        💳 Advances Report
+      </button>
+
+      <button class="report-button" data-page="all_ledgers" onclick="openProtected('/all-clients-ledgers-view')">
+        📚 All Client Ledgers
+      </button>
+
+      <button class="report-button" data-page="alerts" onclick="openAlertsModal()">
+        🚨 Alerts
+      </button>
+
+      <button class="report-button" data-page="payment_entry" onclick="openProtected('/payment-entry')">
+        📝 Payment Entry System
+      </button>
+    </div>
+  </div>
+
+  <!-- Clients Search Modal -->
+  <div class="modal fade" id="clientsSearchModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content" style="background: rgba(6,6,6,0.85); color: #fff; border: 1px solid rgba(255,255,255,0.1);">
+        <div class="modal-header border-0">
+          <div>
+            <h5 class="modal-title">Client Directory</h5>
+            <p class="mb-0 text-muted small">Search any client & open their ledger instantly</p>
+            <small id="clientsLoadedCount" class="text-light fw-semibold" style="display:block;">Loading clients...</small>
+          </div>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body clients-modal-body">
+          <div class="clients-actions-bar">
+            <div class="clients-actions-buttons">
+              <button type="button" class="btn btn-success btn-sm" id="massWhatsAppBtn" onclick="handleMassWhatsApp()" disabled>
+                <i class="bi bi-whatsapp"></i> Send Selected Ledgers
+              </button>
+              <button type="button" class="btn btn-outline-light btn-sm" data-bs-dismiss="modal">
+                Close
+              </button>
+              <button type="button" class="btn btn-outline-light btn-sm" id="clearSelectionBtn" onclick="clearClientSelection()" style="display:none;">
+                Clear Selection
+              </button>
+            </div>
+            <small class="text-muted">Data refreshes automatically every load.</small>
+          </div>
+          <div class="clients-modal-search mb-3">
+            <input type="text" id="clientSearchInput" class="form-control form-control-lg" placeholder="🔍 Type client name to search..." oninput="handleClientSearch(event)">
+            <i class="bi bi-search"></i>
+          </div>
+          <div id="clientsStatusText" class="text-muted small mb-3"></div>
+          <div id="clientsLoadingState" class="clients-loading text-center d-none">
+            <div class="spinner-border text-light mb-3"></div>
+            <p class="mb-0">Fetching latest client list...</p>
+          </div>
+          <div id="clientsErrorState" class="alert alert-danger py-3 d-none"></div>
+          <div id="clientsListContainer" class="clients-list-container"></div>
+        </div>
+        <div class="modal-footer border-0"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ledger Modal reused from Advances Report -->
+  <div class="modal fade" id="ledgerModal" tabindex="-1" aria-labelledby="ledgerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title" id="ledgerModalLabel"><i class="bi bi-journal-text"></i> Client Ledger</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" id="ledgerModalBody">
+          <div class="text-center py-4">
+            <div class="spinner-border text-primary mb-3"></div>
+            <p class="mb-0"><strong>Loading ledger...</strong></p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-outline-primary" id="refreshLedgerBtn" style="display:none;">
+            <i class="bi bi-arrow-clockwise"></i> Refresh
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Alerts Modal -->
+  <div class="modal fade" id="alertsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content" style="background: rgba(6,6,6,0.85); color: #fff; border: 1px solid rgba(255,255,255,0.1);">
+        <div class="modal-header border-0">
+          <h5 class="modal-title">EMI Due Alerts (Today)</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body clients-modal-body">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <button type="button" class="btn btn-success btn-sm" id="alertsWhatsAppBtn" onclick="handleAlertsWhatsApp()" disabled>
+              <i class="bi bi-whatsapp"></i> Send WhatsApp Reminders
+            </button>
+            <button type="button" class="btn btn-outline-light btn-sm" onclick="alertsSelectAll(true)">Select All</button>
+            <button type="button" class="btn btn-outline-light btn-sm" onclick="alertsSelectAll(false)">Unselect All</button>
+            <small class="text-muted" id="alertsStatusText"></small>
+          </div>
+          <div id="alertsLoadingState" class="clients-loading text-center d-none">
+            <div class="spinner-border text-light mb-3"></div>
+            <p class="mb-0">Fetching today’s due list...</p>
+          </div>
+          <div id="alertsErrorState" class="alert alert-danger py-3 d-none"></div>
+          <div id="alertsListContainer" class="clients-list-container"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="globalToastContainer" class="toast-stack"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
+  <script>
+    // Beautiful European & North American Landscapes - Daily Rotation
+    const beautifulLandscapes = [
+      'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1920&q=80', // Dolomites sunrise
+      'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1920&q=80', // Glacier lake
+      'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1920&q=80', // Sunrise valley
+      'https://images.unsplash.com/photo-1499346030926-9a72daac6c63?auto=format&fit=crop&w=1920&q=80', // Norwegian fjord
+      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1920&q=80', // Maldives beach
+      'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1920&q=80', // Alpine lake
+      'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=1920&q=80', // Pine valley
+      'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1920&q=80', // Grand Teton
+      'https://images.unsplash.com/photo-1500530855697-49564a33f3b7?auto=format&fit=crop&w=1920&q=80', // Mountain river
+      'https://images.unsplash.com/photo-1506765515384-028b60a970df?auto=format&fit=crop&w=1920&q=80'  // Misty forest
+    ];
+
+    const fallbackImages = [
+      "url('data:image/svg+xml,%3Csvg xmlns=\"http://www.w3.org/2000/svg\" width=\"1920\" height=\"1080\"%3E%3Cdefs%3E%3ClinearGradient id=\"sky\" x1=\"0%25\" y1=\"0%25\" x2=\"0%25\" y2=\"100%25\"%3E%3Cstop offset=\"0%25\" stop-color=\"%239ab4ff\"/%3E%3Cstop offset=\"100%25\" stop-color=\"%23f3ecff\"/%3E%3C/linearGradient%3E%3ClinearGradient id=\"m1\" x1=\"0%25\" y1=\"0%25\" x2=\"100%25\" y2=\"100%25\"%3E%3Cstop offset=\"0%25\" stop-color=\"%235c6fb0\"/%3E%3Cstop offset=\"100%25\" stop-color=\"%23354874\"/%3E%3C/linearGradient%3E%3ClinearGradient id=\"m2\" x1=\"0%25\" y1=\"0%25\" x2=\"100%25\" y2=\"100%25\"%3E%3Cstop offset=\"0%25\" stop-color=\"%238da3c8\"/%3E%3Cstop offset=\"100%25\" stop-color=\"%23516692\"/%3E%3C/linearGradient%3E%3Cdefs%3E%3Crect width=\"1920\" height=\"1080\" fill=\"url(%23sky)\"/%3E%3Cpath d=\"M-200 900 L500 500 L1100 900 Z\" fill=\"url(%23m1)\" opacity=\"0.9\"/%3E%3Cpath d=\"M300 950 L1100 420 L1900 950 Z\" fill=\"url(%23m2)\" opacity=\"0.85\"/%3E%3C/svg%3E')",
+      "url('data:image/svg+xml,%3Csvg xmlns=\"http://www.w3.org/2000/svg\" width=\"1920\" height=\"1080\"%3E%3Cdefs%3E%3ClinearGradient id=\"sky2\" x1=\"0%25\" y1=\"0%25\" x2=\"0%25\" y2=\"100%25\"%3E%3Cstop offset=\"0%25\" stop-color=\"%23ffd3a5\"/%3E%3Cstop offset=\"100%25\" stop-color=\"%23fd6585\"/%3E%3C/linearGradient%3E%3ClinearGradient id=\"sea\" x1=\"0%25\" y1=\"0%25\" x2=\"100%25\" y2=\"0%25\"%3E%3Cstop offset=\"0%25\" stop-color=\"%23007adf\"/%3E%3Cstop offset=\"100%25\" stop-color=\"%2350c9c3\"/%3E%3C/linearGradient%3E%3Cdefs%3E%3Crect width=\"1920\" height=\"1080\" fill=\"url(%23sky2)\"/%3E%3Crect y=\"620\" width=\"1920\" height=\"460\" fill=\"url(%23sea)\"/%3E%3Cpath d=\"M0 640 Q240 580 480 640 T960 640 T1440 640 T1920 640 V720 H0 Z\" fill=\"rgba(255,255,255,0.4)\"/%3E%3Ccircle cx=\"420\" cy=\"320\" r=\"110\" fill=\"%23ffe7c3\"/%3E%3C/svg%3E')",
+      "url('data:image/svg+xml,%3Csvg xmlns=\"http://www.w3.org/2000/svg\" width=\"1920\" height=\"1080\"%3E%3Cdefs%3E%3ClinearGradient id=\"sky3\" x1=\"0%25\" y1=\"0%25\" x2=\"100%25\" y2=\"100%25\"%3E%3Cstop offset=\"0%25\" stop-color=\"%230c94d7\"/%3E%3Cstop offset=\"100%25\" stop-color=\"%2306beb6\"/%3E%3C/linearGradient%3E%3ClinearGradient id=\"forest1\" x1=\"0%25\" y1=\"0%25\" x2=\"100%25\" y2=\"100%25\"%3E%3Cstop offset=\"0%25\" stop-color=\"%23046a38\"/%3E%3Cstop offset=\"100%25\" stop-color=\"%2302a46f\"/%3E%3C/linearGradient%3E%3Cdefs%3E%3Crect width=\"1920\" height=\"1080\" fill=\"url(%23sky3)\"/%3E%3Cpath d=\"M0 840 L220 620 L360 900 L520 640 L660 940 L820 660 L960 960 L1120 640 L1260 940 L1420 640 L1560 940 L1760 640 L1920 900 L1920 1080 L0 1080 Z\" fill=\"url(%23forest1)\" opacity=\"0.9\"/%3E%3C/svg%3E')"
+    ];
+
+
+    // User's allowed pages (passed from Flask via data attribute)
+    const allowedPages = JSON.parse(document.body.getAttribute('data-allowed-pages') || 'null');
+
+    // Filter buttons based on user permissions
+    function filterButtonsByPermissions() {
+      if (allowedPages === null) {
+        // Admin sees all buttons
+        return;
+      }
+      
+      // Hide buttons that user doesn't have permission for
+      const buttons = document.querySelectorAll('.report-button[data-page]');
+      buttons.forEach(button => {
+        const page = button.getAttribute('data-page');
+        if (!allowedPages.includes(page)) {
+          button.style.display = 'none';
+        }
+      });
+    }
+
+    // Run on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      filterButtonsByPermissions();
+      setDailyBackground();
+      updateClock();
+      setInterval(updateClock, 1000);
+    });
+
+    // Set permanent background image
+    function setDailyBackground() {
+      const backgroundEl = document.getElementById('background');
+      if (!backgroundEl) return;
+
+      // Use permanent background image
+      const imageUrl = '/static/image3d.jpg';
+      backgroundEl.style.backgroundImage = `url(${imageUrl})`;
+      backgroundEl.style.backgroundSize = 'cover';
+      backgroundEl.style.backgroundPosition = 'center';
+      backgroundEl.style.backgroundRepeat = 'no-repeat';
+
+      console.log('Permanent background image set:', imageUrl);
+    }
+
+    // Update clock
+    function updateClock() {
+      const now = new Date();
+      const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+      const istOffset = 5.5 * 60 * 60 * 1000;
+      const ist = new Date(utc + istOffset);
+      
+      const hours = ist.getHours();
+      const minutes = ist.getMinutes();
+      const seconds = ist.getSeconds();
+      
+      const hourDeg = ((hours % 12) * 30) + (minutes * 0.5);
+      const minuteDeg = (minutes * 6) + (seconds * 0.1);
+      const secondDeg = seconds * 6;
+      
+      document.querySelector('.hour-hand').style.transform = `translate(-50%, -100%) rotate(${hourDeg}deg)`;
+      document.querySelector('.minute-hand').style.transform = `translate(-50%, -100%) rotate(${minuteDeg}deg)`;
+      document.querySelector('.second-hand').style.transform = `translate(-50%, -100%) rotate(${secondDeg}deg)`;
+      
+      const displayHour = hours % 12 || 12;
+      const ampm = hours < 12 ? 'AM' : 'PM';
+      const formattedTime = `${displayHour}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')} ${ampm} IST`;
+      
+      const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      
+      const dayName = days[ist.getDay()];
+      const formattedDate = `${dayName}, ${ist.getDate()} ${months[ist.getMonth()]} ${ist.getFullYear()}`;
+      
+      document.getElementById('date-display').textContent = formattedDate;
+      document.getElementById('time-display').textContent = formattedTime;
+    }
+
+    // Password protection function - now just redirects (authentication handled by Flask)
+    function openProtected(path) {
+      window.location.href = path;
+    }
+
+    // CORRECTED FUNCTION: Open AFIN Clients Ledger in new tab
+    function openAfinClients() {
+      const isStandalonePWA = (window.matchMedia && (
+        window.matchMedia('(display-mode: standalone)').matches ||
+        window.matchMedia('(display-mode: fullscreen)').matches ||
+        window.matchMedia('(display-mode: minimal-ui)').matches
+      )) || window.navigator.standalone === true;
+      if (isStandalonePWA) {
+        window.location.href = '/afin-ledger/page';
+        return;
+      }
+      window.open('/afin-ledger/page', '_blank');
+    }
+
+    // ---------- Clients Search & Ledger Logic ----------
+    const LEDGER_CACHE_DURATION = 5 * 60 * 1000;
+    let clientsData = [];
+    let clientsLoaded = false;
+    let clientsLoading = false;
+    let clientsModalInstance = null;
+    let ledgerCache = new Map();
+    let currentLedgerCustomer = null;
+    let currentLedgerData = null;
+    let multiSelectedClients = new Map();
+    let reopenClientsAfterLedgerClose = false;
+    let pendingMassWhatsAppShare = null;
+
+    function openClientsModal() {
+      if (!clientsModalInstance) {
+        clientsModalInstance = new bootstrap.Modal(document.getElementById('clientsSearchModal'));
+      }
+      clientsModalInstance.show();
+      if (!clientsLoaded && !clientsLoading) {
+        loadClientsData();
+      } else {
+        renderClientsList(clientsData);
+      }
+      setTimeout(() => document.getElementById('clientSearchInput')?.focus(), 350);
+    }
+
+    function getFormattedDate() {
+      const now = new Date();
+      const day = String(now.getDate()).padStart(2, '0');
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const year = now.getFullYear();
+      return `${day}-${month}-${year}`;
+    }
+
+    function escapeHtml(unsafe = '') {
+      return String(unsafe)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function showToast(message, type = 'info', timeout = 3500) {
+      const container = document.getElementById('globalToastContainer');
+      if (!container) return;
+      const toast = document.createElement('div');
+      toast.className = `toast-message ${type}`;
+      toast.textContent = message;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+      }, timeout);
+    }
+
+    async function loadClientsData() {
+      clientsLoading = true;
+      toggleClientsLoading(true);
+      toggleClientsError(false);
+      try {
+        const response = await fetch(`/clients?_=${Date.now()}`, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache'
+          }
+        });
+        if (!response.ok) {
+          throw new Error(`Server error ${response.status}`);
+        }
+        const data = await response.json();
+        const list = Array.isArray(data) ? data : (data.rows || []);
+        clientsData = list.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        clientsLoaded = true;
+        renderClientsList(clientsData);
+        showClientsStatus(`${clientsData.length} clients loaded`);
+      } catch (error) {
+        console.error('Client fetch error:', error);
+        toggleClientsError(true, error.message || 'Failed to load clients.');
+      } finally {
+        clientsLoading = false;
+        toggleClientsLoading(false);
+      }
+    }
+
+    function toggleClientsLoading(show) {
+      const el = document.getElementById('clientsLoadingState');
+      if (el) {
+        el.classList.toggle('d-none', !show);
+      }
+    }
+
+    function toggleClientsError(show, message = '') {
+      const el = document.getElementById('clientsErrorState');
+      if (!el) return;
+      el.classList.toggle('d-none', !show);
+      if (show) {
+        el.innerHTML = `<strong>Error:</strong> ${escapeHtml(message)}<br><small class="d-block mt-2">Please try again.</small>`;
+      }
+    }
+
+    function showClientsStatus(text) {
+      const status = document.getElementById('clientsStatusText');
+      if (status) status.textContent = text;
+      const countEl = document.getElementById('clientsLoadedCount');
+      if (countEl) {
+        countEl.textContent = clientsLoaded ? text : '';
+      }
+    }
+
+    function handleClientSearch(event) {
+      const term = (event.target.value || '').trim().toUpperCase();
+      if (!term) {
+        renderClientsList(clientsData);
+        showClientsStatus('');
+        return;
+      }
+      const filtered = clientsData.filter(client => {
+        const name = (client.name || '').toUpperCase();
+        const phone = client.phone || '';
+        return name.includes(term) || phone.includes(term);
+      });
+      renderClientsList(filtered);
+      showClientsStatus(`${filtered.length} matches for "${event.target.value}"`);
+    }
+
+    function getClientKey(client) {
+      return client.id || client.phone || client.name || '';
+    }
+
+    function renderClientsList(list) {
+      const container = document.getElementById('clientsListContainer');
+      if (!container) return;
+      container.innerHTML = '';
+      if (!list.length) {
+        container.innerHTML = '<div class="text-center text-muted py-4">No clients to display.</div>';
+        return;
+      }
+      list.forEach(client => {
+        const row = document.createElement('div');
+        row.className = 'client-result';
+        row.onclick = () => handleClientSelect(client, row);
+        const clientKey = getClientKey(client);
+        const isSelected = multiSelectedClients.has(clientKey);
+        const rawBalance = client.balance_amount ?? client.balance;
+        const balanceValue = Number(rawBalance);
+        const balanceDisplay = Number.isFinite(balanceValue) && Math.abs(balanceValue) > 0
+          ? `₹${balanceValue.toLocaleString()}`
+          : '';
+        row.innerHTML = `
+          <div class="d-flex align-items-center w-100">
+            <div class="form-check me-3">
+              <input class="form-check-input client-select-checkbox" type="checkbox" ${isSelected ? 'checked' : ''}>
+            </div>
+            <div class="flex-grow-1">
+              <div class="fw-semibold">${escapeHtml(client.name || 'Unnamed')}</div>
+              <div class="client-meta">${client.phone ? `📞 ${escapeHtml(client.phone)}` : 'Phone unavailable'}</div>
+            </div>
+            <div class="text-end">
+              <div class="fw-bold">${balanceDisplay}</div>
+              <small class="text-muted">Select</small>
+            </div>
+          </div>`;
+        if (isSelected) {
+          row.classList.add('multi-selected');
+        }
+        container.appendChild(row);
+        const checkbox = row.querySelector('.client-select-checkbox');
+        if (checkbox) {
+          checkbox.addEventListener('click', (event) => {
+            event.stopPropagation();
+            handleClientMultiToggle(client, checkbox, row);
+          });
+        }
+      });
+      updateMassActionsState();
+    }
+
+    function handleClientMultiToggle(client, checkbox, row) {
+      const key = getClientKey(client);
+      if (!key) return;
+      if (checkbox.checked) {
+        multiSelectedClients.set(key, client);
+        row.classList.add('multi-selected');
+      } else {
+        multiSelectedClients.delete(key);
+        row.classList.remove('multi-selected');
+      }
+      updateMassActionsState();
+    }
+
+    function clearClientSelection() {
+      multiSelectedClients.clear();
+      document.querySelectorAll('.client-result').forEach(row => row.classList.remove('multi-selected'));
+      document.querySelectorAll('.client-select-checkbox').forEach(cb => { cb.checked = false; });
+      pendingMassWhatsAppShare = null;
+      updateMassActionsState();
+    }
+
+    function updateMassActionsState() {
+      const count = multiSelectedClients.size;
+      const massBtn = document.getElementById('massWhatsAppBtn');
+      const clearBtn = document.getElementById('clearSelectionBtn');
+      if (massBtn) {
+        const isPending = !!(pendingMassWhatsAppShare && pendingMassWhatsAppShare.files && pendingMassWhatsAppShare.nextIndex < pendingMassWhatsAppShare.files.length);
+        massBtn.disabled = count === 0 && !isPending;
+        if (isPending) {
+          const remaining = pendingMassWhatsAppShare.files.length - pendingMassWhatsAppShare.nextIndex;
+          massBtn.innerHTML = `<i class="bi bi-whatsapp"></i> Send Next (${remaining} left)`;
+        } else {
+          massBtn.innerHTML = count > 0
+            ? `<i class="bi bi-whatsapp"></i> Send ${count} Ledgers`
+            : `<i class="bi bi-whatsapp"></i> Send Selected Ledgers`;
+        }
+      }
+      if (clearBtn) {
+        clearBtn.style.display = (count > 0 || (pendingMassWhatsAppShare && pendingMassWhatsAppShare.files && pendingMassWhatsAppShare.files.length)) ? 'inline-flex' : 'none';
+      }
+    }
+
+    async function shareNextMassWhatsAppBatch() {
+      if (!pendingMassWhatsAppShare || !pendingMassWhatsAppShare.files || !pendingMassWhatsAppShare.files.length) return false;
+      const { files, asOn } = pendingMassWhatsAppShare;
+      let { batchSize, nextIndex } = pendingMassWhatsAppShare;
+      if (nextIndex >= files.length) return true;
+
+      // Make sure batch size is still accepted (some targets reject even after canShare).
+      while (batchSize > 1) {
+        const batchFiles = files.slice(nextIndex, nextIndex + batchSize);
+        if (!navigator.canShare || navigator.canShare({ files: batchFiles })) break;
+        batchSize -= 1;
+      }
+      pendingMassWhatsAppShare.batchSize = batchSize;
+
+      const batchFiles = files.slice(nextIndex, nextIndex + batchSize);
+      const batchIndex = Math.floor(nextIndex / batchSize) + 1;
+      const totalBatches = Math.ceil(files.length / batchSize);
+
+      try {
+        await navigator.share({
+          files: batchFiles,
+          title: `Client ledgers batch ${batchIndex}/${totalBatches} as on ${asOn}`,
+          text: `Client ledgers batch ${batchIndex}/${totalBatches} as on ${asOn}`
+        });
+        pendingMassWhatsAppShare.nextIndex = nextIndex + batchFiles.length;
+
+        if (pendingMassWhatsAppShare.nextIndex >= files.length) {
+          showToast(`Shared ${files.length} ledger images via WhatsApp.`, 'success');
+          clearClientSelection();
+          return true;
+        }
+
+        const remaining = files.length - pendingMassWhatsAppShare.nextIndex;
+        showToast(`Shared ${batchFiles.length} images. Tap Send Next to share remaining ${remaining}.`, 'info', 7000);
+        updateMassActionsState();
+        return false;
+      } catch (err) {
+        console.warn('Share batch failed:', err);
+        showToast('WhatsApp share cancelled/failed. Tap Send Next to try again.', 'warning', 7000);
+        updateMassActionsState();
+        return false;
+      }
+    }
+
+    async function handleMassWhatsApp() {
+      if (pendingMassWhatsAppShare && pendingMassWhatsAppShare.files && pendingMassWhatsAppShare.nextIndex < pendingMassWhatsAppShare.files.length) {
+        await shareNextMassWhatsAppBatch();
+        return;
+      }
+
+      if (!multiSelectedClients.size) {
+        showToast('Select one or more clients first.', 'warning');
+        return;
+      }
+      const asOn = getFormattedDate();
+      const origin = window.location.origin;
+
+      const selectedClients = Array.from(multiSelectedClients.values()).filter(c => c && c.phone);
+      if (!selectedClients.length) {
+        showToast('Selected clients have no phone numbers.', 'warning');
+        return;
+      }
+
+      let sharedAsFiles = false;
+      if (typeof navigator !== 'undefined' && navigator.share && typeof File !== 'undefined' && typeof html2canvas !== 'undefined') {
+        try {
+          showToast('Preparing ledger images for WhatsApp...', 'info', 8000);
+          const files = [];
+          for (const client of selectedClients) {
+            const imageFile = await generateLedgerScreenshotFileForClient(client, asOn);
+            if (imageFile) {
+              files.push(imageFile);
+            }
+          }
+
+          if (files.length) {
+            let maxFilesPerShare = 5;
+            if (navigator.canShare) {
+              while (maxFilesPerShare > 1 && !navigator.canShare({ files: files.slice(0, maxFilesPerShare) })) {
+                maxFilesPerShare -= 1;
+              }
+              if (!navigator.canShare({ files: files.slice(0, maxFilesPerShare) })) {
+                throw new Error('Sharing files not supported on this device.');
+              }
+            }
+
+            // Many devices now hard-limit WhatsApp attachments (often 3) and require each share to be user-initiated.
+            // We therefore prepare all files once, then share one batch per user tap (button changes to "Send Next").
+            pendingMassWhatsAppShare = {
+              files,
+              asOn,
+              batchSize: maxFilesPerShare,
+              nextIndex: 0
+            };
+            updateMassActionsState();
+            await shareNextMassWhatsAppBatch();
+            sharedAsFiles = true;
+          }
+        } catch (error) {
+          console.error('Mass WhatsApp image share failed:', error);
+          showToast('Sharing images not supported on this device, falling back to links.', 'warning');
+        }
+      }
+
+      if (!sharedAsFiles) {
+        const lines = [];
+        selectedClients.forEach(client => {
+          const url = `${origin}/export/pdf?phone=${encodeURIComponent(client.phone)}&as_on_date=${encodeURIComponent(asOn)}`;
+          lines.push(`${client.name || 'Client'} (${client.phone}): ${url}`);
+        });
+        const header = selectedClients.length === 1
+          ? `${selectedClients[0].name || 'Client'} ledger as on ${asOn}`
+          : `Ledgers for ${selectedClients.map(c => c.name || 'Client').join(', ')} as on ${asOn}`;
+        const message = `${header}:\n\n` + lines.join('\n');
+        openWhatsAppWithMessage(message);
+        showToast(`Opened WhatsApp with ${lines.length} ledger links.`, 'info');
+      }
+
+      if (!sharedAsFiles) {
+        clearClientSelection();
+      }
+    }
+
+    function handleClientSelect(client, element) {
+      document.querySelectorAll('.client-result').forEach(row => row.classList.remove('selected'));
+      element?.classList.add('selected');
+      reopenClientsAfterLedgerClose = true;
+      showToast(`Opening ledger for ${client.name}`, 'info');
+      if (clientsModalInstance) {
+        clientsModalInstance.hide();
+      }
+      setTimeout(() => openLedgerModal(client), 350);
+    }
+
+    async function openLedgerModal(customer) {
+      if (!customer || !customer.phone) {
+        showToast('Client phone missing for ledger lookup.', 'warning');
+        return;
+      }
+
+      const modalElement = document.getElementById('ledgerModal');
+      const modalBody = document.getElementById('ledgerModalBody');
+      const modalTitle = document.getElementById('ledgerModalLabel');
+      const refreshBtn = document.getElementById('refreshLedgerBtn');
+      currentLedgerCustomer = customer;
+
+      modalTitle.innerHTML = `<i class="bi bi-journal-text"></i> Ledger - ${escapeHtml(customer.name)}`;
+      modalBody.innerHTML = `
+        <div class="text-center py-4">
+          <div class="spinner-border text-primary mb-3"></div>
+          <p class="mb-0"><strong>Loading ${escapeHtml(customer.name)}'s ledger...</strong></p>
+        </div>`;
+      refreshBtn.style.display = 'none';
+
+      const modal = new bootstrap.Modal(modalElement);
+      modal.show();
+
+      const cacheKey = `${customer.phone}|${getFormattedDate()}`;
+      const cached = ledgerCache.get(cacheKey);
+      const now = Date.now();
+
+      if (cached && (now - cached.timestamp) < LEDGER_CACHE_DURATION) {
+        renderLedgerModal(customer, cached.data);
+        refreshBtn.style.display = 'inline-flex';
+        refreshBtn.onclick = () => {
+          ledgerCache.delete(cacheKey);
+          openLedgerModal(customer);
+        };
+        return;
+      }
+
+      try {
+        const response = await fetch(`/ledger?phone=${encodeURIComponent(customer.phone)}&as_on_date=${encodeURIComponent(getFormattedDate())}&_=${Date.now()}`);
+        if (!response.ok) {
+          throw new Error(`Server error ${response.status}`);
+        }
+        const data = await response.json();
+        ledgerCache.set(cacheKey, { data, timestamp: now });
+        renderLedgerModal(customer, data);
+        refreshBtn.style.display = 'inline-flex';
+        refreshBtn.onclick = () => {
+          ledgerCache.delete(cacheKey);
+          openLedgerModal(customer);
+        };
+      } catch (error) {
+        console.error('Ledger modal error:', error);
+        modalBody.innerHTML = `
+          <div class="alert alert-danger">
+            <strong>Unable to load ledger.</strong><br>
+            ${escapeHtml(error.message || 'Please try again later.')}
+          </div>`;
+      }
+    }
+
+    function buildLedgerContent(customer, ledgerResponse) {
+      if (!ledgerResponse || !ledgerResponse.rows) {
+        return {
+          innerHtml: '<div class="alert alert-warning">No ledger data found for this client.</div>',
+          rows: [],
+          totals: {},
+          summaryBalance: 0,
+          totalLoans: 0,
+          openLoans: 0
+        };
+      }
+
+      const safeNumber = (value, fallback = 0) => {
+        const num = Number(value);
+        return Number.isFinite(num) ? num : fallback;
+      };
+
+      const rows = ledgerResponse.rows || [];
+      const totals = ledgerResponse.totals || {};
+      const computedTotals = rows.reduce((acc, loan) => {
+        const isClosed = (loan.status || '').toUpperCase() === 'CLOSED';
+        acc.loan_amount += safeNumber(loan.amount || loan.loan_amount);
+        acc.installment_amount += safeNumber(loan.installment_amount);
+        acc.advance_amount += safeNumber(loan.advance_amount);
+        acc.processing_fees += safeNumber(loan.processing_fees);
+        acc.pending_installments += isClosed ? 0 : safeNumber(loan.pending_installments);
+        acc.balance_amount += isClosed ? 0 : safeNumber(loan.balance_amount);
+        return acc;
+      }, {
+        loan_amount: 0,
+        installment_amount: 0,
+        advance_amount: 0,
+        processing_fees: 0,
+        pending_installments: 0,
+        balance_amount: 0
+      });
+
+      const computedInstallmentSplit = rows.reduce((acc, loan) => {
+        const rawType = (loan.repayment_type || loan.type || '');
+        const normalizedType = rawType.toUpperCase().replace(/[^A-Z0-9]+/g, '_');
+        const inst = safeNumber(loan.installment_amount);
+        if (normalizedType === 'DAILY') {
+          acc.daily_installment_amount += inst;
+        } else {
+          acc.week_installment_amount += inst;
+        }
+        return acc;
+      }, {
+        daily_installment_amount: 0,
+        week_installment_amount: 0
+      });
+
+      const mergedTotals = {
+        loan_amount: safeNumber(totals.loan_amount, computedTotals.loan_amount),
+        installment_amount: safeNumber(totals.installment_amount, computedTotals.installment_amount),
+        advance_amount: safeNumber(totals.advance_amount, computedTotals.advance_amount),
+        processing_fees: safeNumber(totals.processing_fees, computedTotals.processing_fees),
+        pending_installments: safeNumber(totals.pending_installments, computedTotals.pending_installments),
+        balance_amount: safeNumber(totals.balance_amount, computedTotals.balance_amount)
+      };
+
+      const summaryBalance = mergedTotals.balance_amount;
+      const totalLoans = rows.length;
+      const openLoans = rows.filter(loan => (loan.status || '').toUpperCase() !== 'CLOSED').length;
+      const asOfDisplay = ledgerResponse.meta?.as_of
+        ? new Date(ledgerResponse.meta.as_of).toLocaleDateString('en-GB')
+        : getFormattedDate();
+
+      const dailyInstallmentTotal = computedInstallmentSplit.daily_installment_amount;
+      const weekInstallmentTotal = computedInstallmentSplit.week_installment_amount;
+
+      const dayLookup = {
+        'MON': 'Monday', 'MONDAY': 'Monday',
+        'TUE': 'Tuesday', 'TUESDAY': 'Tuesday',
+        'WED': 'Wednesday', 'WEDNESDAY': 'Wednesday',
+        'THU': 'Thursday', 'THUR': 'Thursday', 'THURSDAY': 'Thursday',
+        'FRI': 'Friday', 'FRIDAY': 'Friday',
+        'SAT': 'Saturday', 'SATURDAY': 'Saturday',
+        'SUN': 'Sunday', 'SUNDAY': 'Sunday'
+      };
+
+      const tableRows = rows.map((row, index) => {
+        const status = (row.status || 'OPEN').toUpperCase();
+        const isClosed = status === 'CLOSED';
+        const balance = isClosed ? 0 : safeNumber(row.balance_amount);
+        const pending = isClosed ? 0 : safeNumber(row.pending_installments);
+        const statusClass = isClosed ? 'badge bg-success' : 'badge bg-warning text-dark';
+        const serial = index + 1;
+        const rawType = (row.repayment_type || row.type || '');
+        const normalizedType = rawType.toUpperCase().replace(/[^A-Z0-9]+/g, '_');
+        let typeLabel = '';
+        if (normalizedType === 'WEEKLY') {
+          const dayName = (row.day_name || row.week_day || '').toUpperCase();
+          typeLabel = dayLookup[dayName] || 'Weekly';
+        } else if (normalizedType === 'DAILY') {
+          typeLabel = 'Daily';
+        } else if (['TEN_DAYS', 'TEN_DAY', '10_DAYS', '10_DAY', '10'].includes(normalizedType)) {
+          typeLabel = '10 Days Case';
+        } else if (rawType) {
+          typeLabel = rawType;
+        }
+        const typeBadgeHtml = typeLabel
+          ? `<span class="badge bg-secondary">${escapeHtml(typeLabel)}</span>`
+          : '';
+        const closedClass = isClosed ? 'ledger-row-closed' : '';
+
+        const installmentValue = safeNumber(row.installment_amount);
+        const dailyInstallment = normalizedType === 'DAILY' ? `₹${installmentValue.toLocaleString()}` : '';
+        const weekInstallment = normalizedType === 'DAILY' ? '' : `₹${installmentValue.toLocaleString()}`;
+        return `
+          <tr class="${closedClass}">
+            <td>${serial}</td>
+            <td>${escapeHtml(row.loan_date || '')}</td>
+            <td>${escapeHtml(row.loan_end_date || '')}</td>
+            <td>₹${safeNumber(row.amount || row.loan_amount).toLocaleString()}</td>
+            <td>${dailyInstallment}</td>
+            <td>${weekInstallment}</td>
+            <td data-loan-type="${escapeHtml(normalizedType)}" data-day-name="${escapeHtml(row.day_name || row.week_day || '')}">${typeBadgeHtml}</td>
+            <td>${pending}</td>
+            <td class="${balance > 0 ? 'text-danger fw-bold' : ''}">₹${balance.toLocaleString()}</td>
+            <td><span class="${statusClass}">${escapeHtml(row.status || 'OPEN')}</span></td>
+          </tr>`;
+      }).join('') || '<tr><td colspan="10" class="text-center">No loan activity found.</td></tr>';
+
+      const ledgerStyles = `
+        <style>
+          .ledger-surface {
+            background: linear-gradient(145deg, #f6f8fb, #ebeff6);
+            border-radius: 24px;
+            padding: 1.5rem;
+            box-shadow: 0 24px 45px rgba(44, 62, 80, 0.15);
+            border: 1px solid rgba(44, 62, 80, 0.04);
+            margin-bottom: 1.5rem;
+          }
+          .ledger-table-card {
+            background: #ffffff;
+            border-radius: 18px;
+            box-shadow: 0 18px 35px rgba(44, 62, 80, 0.12);
+            border: 1px solid rgba(44, 62, 80, 0.05);
+            overflow: hidden;
+          }
+
+          .ledger-table-card table {
+            border-collapse: collapse;
+            border: 2px solid #000;
+          }
+
+          .ledger-table-card th,
+          .ledger-table-card td {
+            border: 1px solid #000;
+          }
+          .ledger-table-card thead {
+            background: #111827;
+            color: #ffffff;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+          }
+          .ledger-table-card thead th {
+            padding: 0.55rem 0.35rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+          }
+          .summary-cards {
+            margin-top: 1.25rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+          }
+          .summary-cards .card {
+            border: 1px solid rgba(44, 62, 80, 0.05);
+            box-shadow: 0 14px 30px rgba(44, 62, 80, 0.08);
+            border-radius: 16px;
+          }
+          @media (max-width: 640px) {
+            #ledgerModal .modal-dialog {
+              max-width: 95vw;
+              margin: 1rem auto;
+            }
+            .summary-cards {
+              display: flex;
+              flex-wrap: nowrap;
+              overflow-x: auto;
+              padding-bottom: 0.5rem;
+            }
+            .summary-cards .card {
+              min-width: 180px;
+              flex: 0 0 auto;
+            }
+            .ledger-action-buttons {
+              justify-content: flex-start;
+            }
+          }
+          .ledger-action-buttons {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 0.75rem;
+            margin-top: 1.25rem;
+            overflow-x: auto;
+            padding-bottom: 0.35rem;
+          }
+          .ledger-action-buttons .btn {
+            border-radius: 999px;
+            padding: 0.55rem 1.1rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            box-shadow: 0 6px 15px rgba(44, 62, 80, 0.15);
+            flex: 0 0 auto;
+          }
+          .ledger-row-closed td { background: #d9f5e6 !important; }
+        </style>`;
+
+      const innerHtml = `
+        ${ledgerStyles}
+        <div class="ledger-surface">
+          <div class="mb-3">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+              <div>
+                <h4 class="text-primary mb-1">${escapeHtml(customer.name)}</h4>
+                <div class="text-muted">${customer.phone ? `📞 ${customer.phone}` : ''}</div>
+                <div class="text-muted">As on: <strong>${asOfDisplay}</strong></div>
+              </div>
+              <div class="text-end">
+                <div class="text-muted">Outstanding Balance</div>
+                <h5 class="mb-0 text-danger">₹${summaryBalance.toLocaleString()}</h5>
+              </div>
+            </div>
+          </div>
+          <div class="summary-cards">
+            <div class="card card-body text-center">
+              <div class="text-muted small">Total Loans</div>
+              <div class="fw-bold">${totalLoans}</div>
+            </div>
+            <div class="card card-body text-center">
+              <div class="text-muted small">Open Loans</div>
+              <div class="fw-bold text-warning">${openLoans}</div>
+            </div>
+            <div class="card card-body text-center">
+              <div class="text-muted small">Total Sanctioned</div>
+              <div class="fw-bold">₹${mergedTotals.loan_amount.toLocaleString()}</div>
+            </div>
+            <div class="card card-body text-center">
+              <div class="text-muted small">Pending Installments</div>
+              <div class="fw-bold">${mergedTotals.pending_installments}</div>
+            </div>
+          </div>
+          <div class="ledger-action-buttons">
+            <button class="btn btn-outline-success btn-sm" onclick="shareLedgerScreenshot()"><i class="bi bi-whatsapp"></i> WhatsApp Image</button>
+            <button class="btn btn-outline-primary btn-sm" onclick="printLedgerModalContent()"><i class="bi bi-printer"></i> Print</button>
+            <button class="btn btn-outline-danger btn-sm" onclick="downloadLedgerPdf()"><i class="bi bi-filetype-pdf"></i> PDF</button>
+            <button class="btn btn-outline-info btn-sm" onclick="shareLedgerPdfViaWhatsApp()"><i class="bi bi-share"></i> WhatsApp PDF</button>
+            <button class="btn btn-outline-secondary btn-sm" onclick="openScheduleFromModal()"><i class="bi bi-calendar3"></i> Schedule</button>
+            <button class="btn btn-outline-success btn-sm" onclick="shareLedgerScreenshot()"><i class="bi bi-share"></i> Share (Image)</button>
+          </div>
+          <div class="ledger-table-card mt-3">
+            <div class="table-responsive">
+              <table class="table table-sm table-striped mb-0">
+                <thead>
+                  <tr>
+                    <th>Sr No</th>
+                    <th>Loan Date</th>
+                    <th>End Date</th>
+                    <th>Amount</th>
+                    <th>Daily</th>
+                    <th>Week/10-D</th>
+                    <th>Type</th>
+                    <th>Pending</th>
+                    <th>Balance</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>${tableRows}</tbody>
+                <tfoot>
+                  <tr class="table-info">
+                    <th></th>
+                    <th>Totals</th>
+                    <th></th>
+                    <th>₹${mergedTotals.loan_amount.toLocaleString()}</th>
+                    <th>₹${dailyInstallmentTotal.toLocaleString()}</th>
+                    <th>₹${weekInstallmentTotal.toLocaleString()}</th>
+                    <th></th>
+                    <th>${mergedTotals.pending_installments}</th>
+                    <th>₹${summaryBalance.toLocaleString()}</th>
+                    <th>Open: ${openLoans} / ${totalLoans}</th>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        </div>`;
+
+      return { innerHtml, rows, totals: mergedTotals, summaryBalance, totalLoans, openLoans };
+    }
+
+    function renderLedgerModal(customer, ledgerResponse) {
+      const modalBody = document.getElementById('ledgerModalBody');
+      if (!modalBody) return;
+
+      const content = buildLedgerContent(customer, ledgerResponse);
+      modalBody.innerHTML = content.innerHtml;
+      if (!content.rows.length) {
+        currentLedgerData = null;
+        return;
+      }
+      currentLedgerData = { customer, rows: content.rows, meta: ledgerResponse.meta, totals: content.totals };
+    }
+
+    function ensureLedgerContext() {
+      if (!currentLedgerCustomer || !currentLedgerCustomer.phone || !currentLedgerData) {
+        showToast('Open a client ledger first.', 'warning');
+        return false;
+      }
+      return true;
+    }
+
+    function setupLedgerModalAutoReturn() {
+      const ledgerEl = document.getElementById('ledgerModal');
+      if (!ledgerEl) return;
+      ledgerEl.addEventListener('hidden.bs.modal', function() {
+        if (reopenClientsAfterLedgerClose && clientsModalInstance) {
+          setTimeout(() => {
+            clientsModalInstance.show();
+            setTimeout(() => document.getElementById('clientSearchInput')?.focus(), 250);
+          }, 200);
+          // Only auto-return once per ledger open
+          reopenClientsAfterLedgerClose = false;
+        }
+      });
+    }
+
+    function openScheduleFromModal() {
+      if (!ensureLedgerContext()) return;
+      showSchedule(currentLedgerCustomer);
+    }
+
+    function printLedgerModalContent() {
+      if (!ensureLedgerContext()) return;
+      const content = document.getElementById('ledgerModalBody')?.innerHTML;
+      if (!content) {
+        showToast('Nothing to print.', 'warning');
+        return;
+      }
+      const printWindow = window.open('', '_blank');
+      printWindow.document.write(`<!DOCTYPE html><html><head><title>Ledger - ${escapeHtml(currentLedgerCustomer.name)}</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"></head><body>${content}</body></html>`);
+      printWindow.document.close();
+      printWindow.onload = () => {
+        printWindow.print();
+        printWindow.close();
+      };
+    }
+
+    function buildLedgerPdfUrl() {
+      const phone = currentLedgerCustomer?.phone;
+      if (!phone) return null;
+      return `/export/pdf?phone=${encodeURIComponent(phone)}&as_on_date=${encodeURIComponent(getFormattedDate())}&_=${Date.now()}`;
+    }
+
+    function downloadLedgerPdf() {
+      if (!ensureLedgerContext()) return;
+      const pdfUrl = buildLedgerPdfUrl();
+      if (!pdfUrl) {
+        showToast('Unable to create PDF link.', 'error');
+        return;
+      }
+      window.open(pdfUrl, '_blank');
+    }
+
+    function openWhatsAppWithMessage(message) {
+      const waUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+      window.open(waUrl, '_blank');
+    }
+
+    // -------- Alerts (EMI Due Today) --------
+    let alertsModalInstance = null;
+    let alertsData = [];
+    let alertsSelected = new Map();
+    let pendingAlerts = null; // { entries, nextIndex, batchSize }
+
+    function openAlertsModal() {
+      if (!alertsModalInstance) {
+        alertsModalInstance = new bootstrap.Modal(document.getElementById('alertsModal'));
+      }
+      alertsModalInstance.show();
+      loadAlertsData();
+    }
+
+    function alertsSetStatus(text) {
+      const s = document.getElementById('alertsStatusText');
+      if (s) s.textContent = text || '';
+    }
+    function normalizePhoneForWa(raw) {
+      const digits = String(raw || '').replace(/\D+/g,'');
+      if (!digits) return '';
+      if (digits.length === 10) return `91${digits}`; // assume India
+      return digits;
+    }
+
+    async function loadAlertsData() {
+      const loading = document.getElementById('alertsLoadingState');
+      const err = document.getElementById('alertsErrorState');
+      loading?.classList.remove('d-none');
+      err?.classList.add('d-none');
+      try {
+        const today = new Date();
+        const y = today.getFullYear();
+        const m = String(today.getMonth()+1).padStart(2,'0');
+        const d = String(today.getDate()).padStart(2,'0');
+        const iso = `${y}-${m}-${d}`;
+        const resp = await fetch(`/api/payment-entry/due-data?date=${encodeURIComponent(iso)}&_=${Date.now()}`);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const data = await resp.json();
+        const list = [];
+        const pushFrom = (arr, type) => (arr||[]).forEach(r=> list.push({type, name: r.name||'', phone: r.phone||'', amount: Number(r.total_amount||r.amount||0)}));
+        pushFrom(data.daily,'DAILY'); pushFrom(data.weekly,'WEEKLY'); pushFrom(data.ten_days,'TEN_DAYS'); pushFrom(data.monthly,'MONTHLY');
+        alertsData = list.sort((a,b)=> (a.name||'').localeCompare(b.name||''));
+        alertsSelected.clear();
+        renderAlertsList(alertsData);
+        alertsSetStatus(`${alertsData.length} due clients`);
+      } catch (e) {
+        console.error(e);
+        if (err) { err.classList.remove('d-none'); err.textContent = e.message || 'Failed to load'; }
+      } finally {
+        loading?.classList.add('d-none');
+        updateAlertsActionsState();
+      }
+    }
+
+    function renderAlertsList(list) {
+      const c = document.getElementById('alertsListContainer');
+      if (!c) return;
+      c.innerHTML = '';
+      if (!list.length) { c.innerHTML = '<div class="text-center text-muted py-4">No due clients today.</div>'; return; }
+      list.forEach(item=>{
+        const key = `${item.name}|${item.phone}|${item.type}`;
+        const row = document.createElement('div');
+        row.className = 'client-result';
+        const disabled = !normalizePhoneForWa(item.phone);
+        const checked = alertsSelected.has(key);
+        row.innerHTML = `
+          <div class="d-flex align-items-center w-100">
+            <div class="form-check me-3">
+              <input class="form-check-input alerts-select-checkbox" type="checkbox" ${checked?'checked':''} ${disabled?'disabled':''}>
+            </div>
+            <div class="flex-grow-1">
+              <div class="fw-semibold">${escapeHtml(item.name||'Unnamed')} <span class="badge bg-secondary ms-2">${escapeHtml(item.type||'')}</span></div>
+              <div class="client-meta">${item.phone?`📞 ${escapeHtml(item.phone)}`:'Phone unavailable'}</div>
+            </div>
+            <div class="text-end"><div class="fw-bold">₹${(item.amount||0).toLocaleString()}</div><small class="text-muted">Select</small></div>
+          </div>`;
+        c.appendChild(row);
+        const cb = row.querySelector('.alerts-select-checkbox');
+        cb?.addEventListener('click', (ev)=>{
+          ev.stopPropagation();
+          if (cb.checked) alertsSelected.set(key, item); else alertsSelected.delete(key);
+          updateAlertsActionsState();
+        });
+      });
+    }
+
+    function alertsSelectAll(flag) {
+      alertsSelected.clear();
+      if (flag) {
+        alertsData.forEach(it=>{ if (normalizePhoneForWa(it.phone)) alertsSelected.set(`${it.name}|${it.phone}|${it.type}`, it); });
+      }
+      document.querySelectorAll('#alertsListContainer .alerts-select-checkbox').forEach(cb=>{ if (!cb.disabled) cb.checked = !!flag; });
+      updateAlertsActionsState();
+    }
+
+    function updateAlertsActionsState() {
+      const btn = document.getElementById('alertsWhatsAppBtn');
+      const selCount = alertsSelected.size;
+      const pending = pendingAlerts && pendingAlerts.entries && pendingAlerts.nextIndex < pendingAlerts.entries.length;
+      if (btn) {
+        btn.disabled = selCount === 0 && !pending;
+        if (pending) {
+          const remaining = pendingAlerts.entries.length - pendingAlerts.nextIndex;
+          btn.innerHTML = `<i class="bi bi-whatsapp"></i> Send Next (${remaining} left)`;
+        } else {
+          btn.innerHTML = `<i class="bi bi-whatsapp"></i> Send ${selCount||''} Reminders`;
+        }
+      }
+    }
+
+    function clearAlertsSelection() {
+      alertsSelected.clear();
+      document.querySelectorAll('#alertsListContainer .alerts-select-checkbox').forEach(cb=>{ cb.checked = false; });
+      pendingAlerts = null;
+      updateAlertsActionsState();
+    }
+
+    function buildAlertMessage(item) {
+      const now = new Date();
+      const dateStr = `${String(now.getDate()).padStart(2,'0')}-${String(now.getMonth()+1).padStart(2,'0')}-${now.getFullYear()}`;
+      const timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+      const day = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][now.getDay()];
+      return `Dear ${item.name}, your today installment is due with amount ₹${(item.amount||0).toLocaleString()} on ${dateStr} ${timeStr} ${day}.`;
+    }
+
+    async function shareNextAlertsBatch() {
+      if (!pendingAlerts) return true;
+      const { entries } = pendingAlerts;
+      let { batchSize, nextIndex } = pendingAlerts;
+      if (nextIndex >= entries.length) return true;
+
+      // Try to open up to batchSize chats. Some browsers will block multiple popups; user can tap again.
+      let opened = 0;
+      for (let i = 0; i < batchSize && (nextIndex + i) < entries.length; i++) {
+        const it = entries[nextIndex + i];
+        const msg = buildAlertMessage(it);
+        const url = `https://wa.me/${encodeURIComponent(it.waPhone)}?text=${encodeURIComponent(msg)}`;
+        try { window.open(url, '_blank'); opened++; } catch (e) { break; }
+      }
+      pendingAlerts.nextIndex = nextIndex + opened;
+      updateAlertsActionsState();
+      return pendingAlerts.nextIndex >= entries.length;
+    }
+
+    async function handleAlertsWhatsApp() {
+      if (pendingAlerts && pendingAlerts.entries && pendingAlerts.nextIndex < pendingAlerts.entries.length) {
+        await shareNextAlertsBatch();
+        return;
+      }
+      const sel = Array.from(alertsSelected.values());
+      if (!sel.length) { showToast('Select one or more clients first.', 'warning'); return; }
+      const entries = sel.map(it=> ({...it, waPhone: normalizePhoneForWa(it.phone)})).filter(it=> it.waPhone);
+      if (!entries.length) { showToast('Selected clients have no valid phone numbers.', 'warning'); return; }
+      pendingAlerts = { entries, nextIndex: 0, batchSize: 5 };
+      updateAlertsActionsState();
+      await shareNextAlertsBatch();
+    }
+
+    async function generateLedgerScreenshotFileForClient(client, asOnDate) {
+      if (!client || !client.phone) return null;
+
+      const response = await fetch(`/ledger?phone=${encodeURIComponent(client.phone)}&as_on_date=${encodeURIComponent(asOnDate)}&_=${Date.now()}`);
+      if (!response.ok) {
+        throw new Error(`Failed to load ledger for ${client.name || client.phone}`);
+      }
+      const ledgerData = await response.json();
+      const content = buildLedgerContent(client, ledgerData);
+      if (!content.rows.length) {
+        throw new Error(`No ledger data for ${client.name || client.phone}`);
+      }
+
+      const cloneWrapper = document.createElement('div');
+      cloneWrapper.style.position = 'absolute';
+      cloneWrapper.style.left = '-9999px';
+      cloneWrapper.style.top = '0';
+      cloneWrapper.style.background = '#ffffff';
+      cloneWrapper.style.padding = '20px';
+      // Keep captures lightweight so mobile browsers/WhatsApp accept more attachments.
+      cloneWrapper.style.width = '1200px';
+      cloneWrapper.innerHTML = content.innerHtml;
+      document.body.appendChild(cloneWrapper);
+
+      try {
+        const canvas = await html2canvas(cloneWrapper, {
+          backgroundColor: '#ffffff',
+          scale: 2,
+          useCORS: true,
+          allowTaint: true
+        });
+
+        const targetWidth = 1200;
+        const ratio = targetWidth / canvas.width;
+        const outputCanvas = document.createElement('canvas');
+        outputCanvas.width = targetWidth;
+        outputCanvas.height = Math.max(1, Math.round(canvas.height * ratio));
+        const outCtx = outputCanvas.getContext('2d');
+        if (!outCtx) throw new Error('Unable to capture image.');
+        outCtx.drawImage(canvas, 0, 0, outputCanvas.width, outputCanvas.height);
+
+        const toBlobPromise = (c, type, quality) => new Promise((resolve, reject) => {
+          c.toBlob((b) => {
+            if (b) resolve(b);
+            else reject(new Error('Unable to capture image.'));
+          }, type, quality);
+        });
+
+        const maxBytes = 1500000;
+        const qualities = [0.92, 0.88, 0.84, 0.80, 0.76, 0.72, 0.68];
+        let workingCanvas = outputCanvas;
+        let blob = null;
+
+        for (let resizeAttempt = 0; resizeAttempt < 3; resizeAttempt++) {
+          for (let i = 0; i < qualities.length; i++) {
+            blob = await toBlobPromise(workingCanvas, 'image/jpeg', qualities[i]);
+            if (blob.size <= maxBytes) break;
+          }
+          if (blob && blob.size <= maxBytes) break;
+          const smaller = document.createElement('canvas');
+          smaller.width = Math.max(1, Math.round(workingCanvas.width * 0.85));
+          smaller.height = Math.max(1, Math.round(workingCanvas.height * 0.85));
+          const sctx = smaller.getContext('2d');
+          if (!sctx) break;
+          sctx.drawImage(workingCanvas, 0, 0, smaller.width, smaller.height);
+          workingCanvas = smaller;
+        }
+
+        if (!blob) throw new Error('Unable to capture image.');
+
+        const safeName = (client.name || 'Client').toString().replace(/[^a-z0-9]+/gi, '_').toUpperCase();
+        const fileName = `LEDGER_${safeName}_${client.phone}.jpg`;
+        return new File([blob], fileName, { type: 'image/jpeg' });
+      } finally {
+        if (cloneWrapper && cloneWrapper.parentNode) {
+          cloneWrapper.parentNode.removeChild(cloneWrapper);
+        }
+      }
+    }
+
+    async function shareLedgerScreenshot() {
+      if (!ensureLedgerContext()) return;
+      const modalBody = document.getElementById('ledgerModalBody');
+      if (!modalBody) {
+        showToast('Ledger content not found.', 'error');
+        return;
+      }
+
+      showToast('Preparing ledger image...', 'info');
+      const cloneWrapper = document.createElement('div');
+      cloneWrapper.style.position = 'absolute';
+      cloneWrapper.style.left = '-9999px';
+      cloneWrapper.style.top = '0';
+      cloneWrapper.style.background = '#ffffff';
+      cloneWrapper.style.padding = '20px';
+      cloneWrapper.style.width = '1200px';
+
+      const clone = modalBody.cloneNode(true);
+      clone.style.background = '#ffffff';
+      cloneWrapper.appendChild(clone);
+      document.body.appendChild(cloneWrapper);
+
+      try {
+        const canvas = await html2canvas(cloneWrapper, {
+          backgroundColor: '#ffffff',
+          scale: 2,
+          useCORS: true,
+          allowTaint: true
+        });
+        canvas.toBlob(async (blob) => {
+          if (!blob) {
+            showToast('Unable to capture image.', 'error');
+            return;
+          }
+          const fileName = `ledger_${currentLedgerCustomer.phone}.png`;
+          const shareLabel = currentLedgerCustomer.name || currentLedgerCustomer.phone || 'Client Ledger';
+
+          // Try native share first (mobile browser support)
+          if (navigator.canShare && navigator.canShare({ files: [new File([blob], fileName, { type: 'image/png' })] })) {
+            try {
+              const file = new File([blob], fileName, { type: 'image/png' });
+              await navigator.share({
+                title: shareLabel,
+                text: shareLabel,
+                files: [file]
+              });
+              showToast('Shared via WhatsApp.', 'success');
+              return;
+            } catch (shareErr) {
+              console.warn('Native share failed, falling back:', shareErr);
+            }
+          }
+
+          // Try copying to clipboard (desktop convenience)
+          if (navigator.clipboard && window.ClipboardItem) {
+            try {
+              await navigator.clipboard.write([
+                new ClipboardItem({ 'image/png': blob })
+              ]);
+              showToast('Image copied to clipboard!', 'success');
+            } catch (clipboardError) {
+              console.warn('Clipboard copy failed:', clipboardError);
+            }
+          }
+
+          // Download image as fallback
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = fileName;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+
+          // Open WhatsApp with simple message (user attaches downloaded image)
+          openWhatsAppWithMessage(`Ledger for ${shareLabel}`);
+          showToast('Image downloaded. WhatsApp opened.', 'success');
+        }, 'image/png', 0.95);
+      } catch (error) {
+        console.error('Screenshot capture failed:', error);
+        showToast('Failed to capture screenshot.', 'error');
+      } finally {
+        if (cloneWrapper && cloneWrapper.parentNode) {
+          cloneWrapper.parentNode.removeChild(cloneWrapper);
+        }
+      }
+    }
+
+    async function shareLedgerPdfViaWhatsApp() {
+      if (!ensureLedgerContext()) return;
+      const pdfUrl = buildLedgerPdfUrl();
+      try {
+        if (navigator.canShare) {
+          const response = await fetch(pdfUrl);
+          const blob = await response.blob();
+          const fileName = `ledger_${currentLedgerCustomer.phone}.pdf`;
+          const file = new File([blob], fileName, { type: 'application/pdf' });
+          if (navigator.canShare({ files: [file] })) {
+            await navigator.share({
+              files: [file],
+              title: `Ledger - ${currentLedgerCustomer.name}`,
+              text: `Ledger for ${currentLedgerCustomer.name}`
+            });
+            return;
+          }
+        }
+        throw new Error('File sharing not supported');
+      } catch (error) {
+        console.error('WhatsApp share failed:', error);
+        showToast('Sharing failed, opening WhatsApp link.', 'warning');
+        const pdfFullUrl = `${window.location.origin}${pdfUrl}`;
+        openWhatsAppWithMessage(`Ledger PDF for ${currentLedgerCustomer.name}: ${pdfFullUrl}`);
+      }
+    }
+
+    function showSchedule(clientOverride) {
+      const client = clientOverride || currentLedgerCustomer;
+      if (!client) {
+        showToast('No client selected', 'warning');
+        return;
+      }
+
+      const loans = [];
+
+      const tableBody = document.querySelector('#ledgerModalBody tbody');
+      if (tableBody) {
+        tableBody.querySelectorAll('tr').forEach((row, index) => {
+          const cells = row.querySelectorAll('td');
+          if (cells.length >= 10) {
+            loans.push({
+              loanId: parseInt(cells[0].textContent.trim()) || index + 1,
+              loanDate: cells[1].textContent.trim(),
+              loanAmount: parseCurrencyValue(cells[3].textContent),
+              installmentAmount: parseCurrencyValue(cells[4].textContent),
+              advanceAmount: parseCurrencyValue(cells[5].textContent),
+              type: cells[6].dataset?.loanType || cells[6].textContent.trim() || 'DAILY',
+              day_name: cells[6].dataset?.dayName || '',
+              status: cells[9].textContent.trim()
+            });
+          }
+        });
+      }
+
+      if (loans.length === 0 && currentLedgerData?.rows?.length) {
+        currentLedgerData.rows.forEach((row, index) => {
+          loans.push({
+            loanId: row.id || index + 1,
+            loanDate: row.loan_date || row.loanDate || 'N/A',
+            loanAmount: row.amount || row.loan_amount || 0,
+            installmentAmount: row.installment_amount || row.installmentAmount || 0,
+            advanceAmount: row.advance_amount || row.advanceAmount || 0,
+            type: (row.repayment_type || row.type || 'DAILY').toUpperCase(),
+            day_name: row.day_name || row.week_day || '',
+            status: row.status || 'OPEN'
+          });
+        });
+      }
+
+      if (loans.length === 0) {
+        showToast('No loans found for this client', 'warning');
+        return;
+      }
+
+      if (loans.length === 1) {
+        const scheduleHtml = generateScheduleHtml(client, [loans[0]]);
+        openScheduleWindow(scheduleHtml);
+      } else {
+        showLoanSelectionPopup(client, loans);
+      }
+    }
+
+    function parseCurrencyValue(text) {
+      if (!text) return 0;
+      return parseInt(text.replace(/[^0-9-]/g, ''), 10) || 0;
+    }
+
+    function parseDate(dateStr) {
+      if (!dateStr) return null;
+      const parts = dateStr.split('-').map(Number);
+      if (parts.length !== 3) return null;
+      const [day, month, year] = parts;
+      if (!day || !month || !year) return null;
+      const dt = new Date(year, month - 1, day);
+      dt.setHours(0, 0, 0, 0);
+      return dt;
+    }
+
+    function formatDate(date) {
+      if (!(date instanceof Date)) return '';
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+      return `${day}-${month}-${year}`;
+    }
+
+    function generateInstallments(loanDateStr, loanAmount, installmentAmount, type, status, advanceAmount) {
+      const installments = [];
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const loanDate = parseDate(loanDateStr);
+      if (!loanDate) return installments;
+
+      let totalInstallments = 0;
+      let intervalDays = 1;
+      let advanceBlocks = 0;
+
+      if ((type === 'WEEKLY' || type === 'TEN_DAYS') && advanceAmount && installmentAmount) {
+        advanceBlocks = Math.floor(advanceAmount / installmentAmount);
+      }
+
+      if (type === 'DAILY') {
+        totalInstallments = 100;
+        intervalDays = 1;
+      } else if (type === 'WEEKLY') {
+        totalInstallments = 15;
+        intervalDays = 7;
+      } else if (type === 'TEN_DAYS') {
+        totalInstallments = 10;
+        intervalDays = 10;
+      } else {
+        totalInstallments = 1;
+        intervalDays = 1;
+      }
+
+      for (let i = 1; i <= totalInstallments; i++) {
+        const installmentDate = new Date(loanDate);
+        let currentAmount = installmentAmount;
+
+        if (type === 'WEEKLY' && i === 15) {
+          const first14Total = installmentAmount * 14;
+          currentAmount = loanAmount - first14Total;
+          installmentDate.setDate(loanDate.getDate() + (14 * intervalDays) + 2);
+        } else {
+          installmentDate.setDate(loanDate.getDate() + (i * intervalDays));
+        }
+
+        installmentDate.setHours(0, 0, 0, 0);
+
+        let isReceived = installmentDate <= today;
+        if (!isReceived && advanceBlocks > 0 && i <= advanceBlocks) {
+          isReceived = true;
+        }
+
+        installments.push({
+          number: i,
+          date: formatDate(installmentDate),
+          amount: currentAmount,
+          status: isReceived ? 'Received' : 'Pending'
+        });
+      }
+
+      return installments;
+    }
+
+    function showLoanSelectionPopup(client, loans) {
+      setTimeout(() => {
+        const existingModal = document.getElementById('loanSelectionModal');
+        if (existingModal) existingModal.remove();
+
+        const modalHtml = `
+          <div class="modal fade" id="loanSelectionModal" tabindex="-1" aria-labelledby="loanSelectionModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="loanSelectionModalLabel"><i class="bi bi-calendar3 me-2"></i>Select Loan Case</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                  <p class="text-muted mb-3">Choose which loan case to view the installment schedule for:</p>
+                  <div class="list-group">
+                    ${loans.map(loan => `
+                      <button type="button" class="list-group-item list-group-item-action loan-select-btn"
+                        data-loan-id="${loan.loanId}"
+                        data-loan-date="${loan.loanDate}"
+                        data-loan-amount="${loan.loanAmount}"
+                        data-installment-amount="${loan.installmentAmount}"
+                        data-loan-type="${loan.type}"
+                        data-loan-status="${loan.status}"
+                        data-advance-amount="${loan.advanceAmount || 0}">
+                        <div class="d-flex w-100 justify-content-between">
+                          <h6 class="mb-1">Loan Case #${loan.loanId}</h6>
+                          <span class="badge ${loan.status === 'CLOSED' ? 'bg-success' : 'bg-secondary'}">${loan.status}</span>
+                        </div>
+                        <div class="d-flex w-100 justify-content-between">
+                          <small class="text-muted">Date: ${loan.loanDate}</small>
+                          <small class="text-muted">Type: ${loan.type}</small>
+                        </div>
+                        <div class="mt-2">
+                          <strong>Amount: ₹${loan.loanAmount.toLocaleString()}</strong> |
+                          <strong>Installment: ₹${loan.installmentAmount.toLocaleString()}</strong>
+                        </div>
+                      </button>
+                    `).join('')}
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" onclick="closeLoanSelectionModal()">Cancel</button>
+                </div>
+              </div>
+            </div>
+          </div>`;
+
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+        try {
+          if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            const modal = new bootstrap.Modal(document.getElementById('loanSelectionModal'));
+            modal.show();
+          } else {
+            showCustomModal();
+          }
+        } catch (err) {
+          console.warn('Bootstrap modal failed, using fallback', err);
+          showCustomModal();
+        }
+
+        document.querySelectorAll('.loan-select-btn').forEach(btn => {
+          btn.addEventListener('click', function() {
+            const loan = {
+              loanId: parseInt(this.getAttribute('data-loan-id'), 10),
+              loanDate: this.getAttribute('data-loan-date'),
+              loanAmount: parseInt(this.getAttribute('data-loan-amount'), 10),
+              installmentAmount: parseInt(this.getAttribute('data-installment-amount'), 10),
+              type: this.getAttribute('data-loan-type'),
+              status: this.getAttribute('data-loan-status'),
+              advanceAmount: parseInt(this.getAttribute('data-advance-amount'), 10) || 0
+            };
+            closeLoanSelectionModal();
+            const scheduleHtml = generateScheduleHtml(client, [loan]);
+            openScheduleWindow(scheduleHtml);
+          });
+        });
+
+        window.closeLoanSelectionModal = function() {
+          const modal = document.getElementById('loanSelectionModal');
+          if (modal) {
+            modal.remove();
+            const backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) backdrop.remove();
+            document.body.style.overflow = '';
+            document.body.classList.remove('modal-open');
+          }
+        };
+
+        const closeBtn = document.querySelector('#loanSelectionModal .btn-close');
+        if (closeBtn) closeBtn.addEventListener('click', closeLoanSelectionModal);
+
+        function showCustomModal() {
+          const modal = document.getElementById('loanSelectionModal');
+          modal.style.display = 'block';
+          modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+          modal.classList.add('show');
+        }
+
+        document.getElementById('loanSelectionModal').addEventListener('click', function(e) {
+          if (e.target === this) {
+            closeLoanSelectionModal();
+          }
+        });
+      }, 100);
+    }
+
+    function openScheduleWindow(scheduleHtml) {
+      const newWindow = window.open('', '_blank', 'width=1200,height=800');
+      newWindow.document.write(scheduleHtml);
+      newWindow.document.close();
+      showToast('Schedule opened in new tab', 'success');
+    }
+
+    function generateScheduleHtml(client, selectedLoans) {
+      let scheduleHtml = `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Installment Schedule - ${client.name}</title>
+          <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+          <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.css" rel="stylesheet">
+          <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"><\/script>
+          <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"><\/script>
+          <style>
+            body {
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              min-height: 100vh;
+              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+              margin: 0;
+              padding: 20px;
+            }
+            .container { max-width: 1400px; margin: 0 auto; }
+            .header {
+              background: #fff;
+              border-radius: 12px;
+              padding: 2rem;
+              box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+              margin-bottom: 2rem;
+              text-align: center;
+            }
+            .action-buttons { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-top: 1.5rem; }
+            .action-buttons button, .action-buttons a {
+              border: none;
+              padding: 0.75rem 1.5rem;
+              border-radius: 25px;
+              font-weight: 600;
+              cursor: pointer;
+              transition: all 0.3s ease;
+              box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+              text-decoration: none;
+              display: inline-flex;
+              align-items: center;
+              gap: 0.5rem;
+            }
+            .loan-card {
+              background: #fff;
+              border-radius: 12px;
+              box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+              margin-bottom: 2rem;
+              overflow: hidden;
+            }
+            .loan-header {
+              background: linear-gradient(135deg, #2c3e50, #3498db);
+              color: #fff;
+              padding: 1.5rem;
+              display: flex;
+              justify-content: space-between;
+              flex-wrap: wrap;
+              gap: 1rem;
+            }
+            .summary-cards {
+              display: grid;
+              grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+              gap: 1rem;
+              margin: 1rem;
+            }
+            .summary-card {
+              background: #ecf0f1;
+              padding: 1rem;
+              border-radius: 8px;
+              text-align: center;
+            }
+            .installment-table {
+              width: 100%;
+              border-collapse: collapse;
+              font-size: 0.85rem;
+            }
+            .installment-table th {
+              background: #ecf0f1;
+              padding: 0.75rem;
+              text-align: center;
+              border: 1px solid #bdc3c7;
+            }
+            .installment-table td {
+              padding: 0.5rem;
+              text-align: center;
+              border: 1px solid #bdc3c7;
+            }
+            .status-received { background: #d4edda; color: #155724; font-weight: 600; }
+            .status-pending { background: #fff3cd; color: #856404; }
+            .installment-container { max-height: none; overflow-y: visible; padding: 0 1rem 1.5rem; }
+            @media print {
+              body { background: #fff; }
+              .action-buttons { display: none; }
+              .loan-card { break-inside: avoid; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1><i class="bi bi-calendar3"></i> Installment Schedule</h1>
+              <p><strong>${client.name}</strong> | Phone: ${client.phone || 'N/A'}</p>
+              <div class="action-buttons">
+                <a href="javascript:window.close();" class="btn btn-primary"><i class="bi bi-arrow-left"></i> Back to Ledger</a>
+                <button class="btn btn-success" onclick="schedulePrint()"><i class="bi bi-printer"></i> Print Schedule</button>
+                <button class="btn btn-danger" onclick="downloadSchedulePdf()"><i class="bi bi-file-earmark-pdf"></i> Download PDF</button>
+                <button class="btn btn-success" style="background: linear-gradient(135deg, #1abc9c, #16a085);" onclick="shareScheduleImage()"><i class="bi bi-whatsapp"></i> WhatsApp Image</button>
+                <button class="btn btn-success" style="background: linear-gradient(135deg, #2ecc71, #27ae60);" onclick="shareSchedulePdfViaWhatsApp()"><i class="bi bi-share"></i> WhatsApp PDF</button>
+              </div>
+            </div>`;
+
+      selectedLoans.forEach(loan => {
+        const installments = generateInstallments(
+          loan.loanDate,
+          loan.loanAmount,
+          loan.installmentAmount,
+          loan.type,
+          loan.status,
+          loan.advanceAmount || 0
+        );
+
+        let scheduleRows = installments.map(inst => ({ ...inst }));
+
+        if (loan.type === 'WEEKLY' && loan.installmentAmount > 0) {
+          const startDateObj = parseDate(loan.loanDate);
+          if (startDateObj) {
+            const todayLocal = new Date();
+            todayLocal.setHours(0, 0, 0, 0);
+            const weeklyTotal = 14;
+            const finalAmount = loan.loanAmount > 0 ? Math.round(loan.loanAmount * 0.02) : (scheduleRows[scheduleRows.length - 1]?.amount || 0);
+            const advanceBlocks = Math.min(weeklyTotal, Math.floor((loan.advanceAmount || 0) / loan.installmentAmount));
+            const timeline = [];
+
+            const addDays = (base, days) => {
+              const d = new Date(base.getTime());
+              d.setDate(d.getDate() + days);
+              return d;
+            };
+
+            for (let i = 0; i < weeklyTotal; i++) {
+              const dueDateObj = addDays(startDateObj, i * 7);
+              const statusLabel = i < advanceBlocks ? 'Advance Received' : (dueDateObj <= todayLocal ? 'Received' : 'Pending');
+              timeline.push({
+                number: i + 1,
+                date: formatDate(dueDateObj),
+                amount: loan.installmentAmount,
+                status: statusLabel
+              });
+            }
+
+            const finalDateObj = addDays(startDateObj, weeklyTotal * 7);
+            timeline.push({
+              number: weeklyTotal + 1,
+              date: formatDate(finalDateObj),
+              amount: finalAmount,
+              status: finalDateObj <= todayLocal ? 'Received' : 'Pending'
+            });
+
+            scheduleRows = timeline;
+          }
+        }
+
+        const totalInstallments = scheduleRows.length;
+        const totalAmount = scheduleRows.reduce((sum, row) => sum + row.amount, 0);
+        const receivedRows = scheduleRows.filter(row => !row.status || !row.status.toLowerCase().includes('pending'));
+        const receivedCount = receivedRows.length;
+        const pendingCount = totalInstallments - receivedCount;
+        const receivedAmount = receivedRows.reduce((sum, row) => sum + row.amount, 0);
+        const pendingAmount = totalAmount - receivedAmount;
+
+        let runningRemaining = loan.loanAmount || 0;
+        const displayRows = scheduleRows.map(row => {
+          const remainingAfter = Math.max(0, runningRemaining - row.amount);
+          const mapped = { ...row, remaining: remainingAfter };
+          runningRemaining = remainingAfter;
+          return mapped;
+        });
+
+        const baseStartDateObj = parseDate(loan.loanDate);
+        const addDays = (base, days) => {
+          const d = new Date(base.getTime());
+          d.setDate(d.getDate() + days);
+          return d;
+        };
+        const loanEndDateStr = baseStartDateObj ? formatDate(addDays(baseStartDateObj, 100)) : '';
+
+        scheduleHtml += `
+          <div class="loan-card">
+            <div class="loan-header">
+              <div>
+                <h3>Loan Case #${loan.loanId}</h3>
+                <p>Start Date: ${loan.loanDate || 'N/A'} ${loanEndDateStr ? '| End Date: ' + loanEndDateStr : ''}</p>
+                <p>Type: ${loan.type} | Amount: ₹${(loan.loanAmount || 0).toLocaleString()}${loan.advanceAmount ? ' | Advance: ₹' + loan.advanceAmount.toLocaleString() : ''}</p>
+              </div>
+              <div class="text-end">
+                <div><strong>Total Installments:</strong> ${totalInstallments}</div>
+                <div><strong>Received:</strong> ${receivedCount}</div>
+                <div><strong>Pending:</strong> ${pendingCount}</div>
+              </div>
+            </div>
+            <div class="summary-cards">
+              <div class="summary-card"><div class="value">₹${totalAmount.toLocaleString()}</div><div class="label">Total Amount</div></div>
+              <div class="summary-card"><div class="value">₹${receivedAmount.toLocaleString()}</div><div class="label">Received Amount</div></div>
+              <div class="summary-card"><div class="value">₹${pendingAmount.toLocaleString()}</div><div class="label">Pending Amount</div></div>
+            </div>
+            <div class="installment-container">
+              <div class="table-responsive">
+                <table class="installment-table">
+                  <thead>
+                    <tr>
+                      <th>Installment No.</th>
+                      <th>Date</th>
+                      <th>Amount</th>
+                      <th>Status</th>
+                      <th>Remaining</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${displayRows.map(installment => {
+                      const statusClass = (installment.status || '').toLowerCase().includes('received') ? 'status-received' : 'status-pending';
+                      return `
+                        <tr>
+                          <td>${installment.number}</td>
+                          <td>${installment.date}</td>
+                          <td>₹${installment.amount.toLocaleString()}</td>
+                          <td class="${statusClass}">${installment.status}</td>
+                          <td>₹${installment.remaining.toLocaleString()}</td>
+                        </tr>`;
+                    }).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>`;
+      });
+
+      scheduleHtml += `
+          </div>
+          <script>
+            const scheduleClient = ${JSON.stringify({ name: currentLedgerCustomer?.name || '', phone: currentLedgerCustomer?.phone || '' })};
+            function schedulePrint() { window.print(); }
+            function getScheduleCaptureTarget() { return document.querySelector('.container'); }
+            function openScheduleWhatsAppMessage(extra) {
+              const baseName = scheduleClient.name || 'client';
+              const phonePart = scheduleClient.phone ? ' (' + scheduleClient.phone + ')' : '';
+              const msg = 'Installment schedule for ' + baseName + phonePart + '.' + (extra ? ' ' + extra : '');
+              window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+            }
+            function triggerScheduleDownload(blob, fileName) {
+              const url = URL.createObjectURL(blob);
+              const link = document.createElement('a');
+              link.href = url;
+              link.download = fileName;
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              URL.revokeObjectURL(url);
+            }
+            async function captureScheduleCanvas() {
+              const target = getScheduleCaptureTarget();
+              if (!target) throw new Error('Schedule content not found');
+              return html2canvas(target, { backgroundColor: '#ffffff', scale: 2, useCORS: true, allowTaint: true });
+            }
+            async function generateSchedulePdfBlob() {
+              if (!window.jspdf || !window.jspdf.jsPDF) throw new Error('PDF library not available');
+              const canvas = await captureScheduleCanvas();
+              const imgData = canvas.toDataURL('image/png');
+              const { jsPDF } = window.jspdf;
+              const pdf = new jsPDF('p', 'pt', 'a4');
+              const pageWidth = pdf.internal.pageSize.getWidth();
+              const pageHeight = pdf.internal.pageSize.getHeight();
+              const imgWidth = pageWidth;
+              const imgHeight = (canvas.height * imgWidth) / canvas.width;
+              let position = 0;
+              let heightLeft = imgHeight;
+              pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+              heightLeft -= pageHeight;
+              while (heightLeft > 0) {
+                position = heightLeft - imgHeight;
+                pdf.addPage();
+                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+              }
+              return pdf.output('blob');
+            }
+            async function downloadSchedulePdf() {
+              try {
+                const blob = await generateSchedulePdfBlob();
+                triggerScheduleDownload(blob, 'schedule_' + (scheduleClient.phone || 'client') + '.pdf');
+              } catch (err) {
+                alert('Unable to generate PDF. Please try again.');
+                console.error('Schedule PDF download failed', err);
+              }
+            }
+            async function shareSchedulePdfViaWhatsApp() {
+              try {
+                const blob = await generateSchedulePdfBlob();
+                const fileName = 'schedule_' + (scheduleClient.phone || 'client') + '.pdf';
+                const file = new File([blob], fileName, { type: 'application/pdf' });
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                  await navigator.share({ files: [file], title: 'Installment Schedule - ' + (scheduleClient.name || ''), text: 'Installment schedule for ' + (scheduleClient.name || 'client') });
+                } else {
+                  triggerScheduleDownload(blob, fileName);
+                  openScheduleWhatsAppMessage('PDF downloaded. Please attach it in WhatsApp.');
+                }
+              } catch (err) {
+                alert('Unable to prepare WhatsApp PDF. Please try again.');
+                console.error('Schedule WhatsApp PDF share failed', err);
+              }
+            }
+            async function shareScheduleImage() {
+              try {
+                const canvas = await captureScheduleCanvas();
+                const blob = await new Promise((resolve, reject) => {
+                  canvas.toBlob(b => b ? resolve(b) : reject(new Error('Failed to capture image')), 'image/png', 0.95);
+                });
+                const fileName = 'schedule_' + (scheduleClient.phone || 'client') + '.png';
+                const file = new File([blob], fileName, { type: 'image/png' });
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                  await navigator.share({ files: [file], title: 'Installment Schedule - ' + (scheduleClient.name || ''), text: 'Installment schedule for ' + (scheduleClient.name || 'client') });
+                } else {
+                  triggerScheduleDownload(blob, fileName);
+                  openScheduleWhatsAppMessage('Image downloaded. Please attach it in WhatsApp.');
+                }
+              } catch (err) {
+                alert('Unable to prepare WhatsApp image. Please try again.');
+                console.error('Schedule WhatsApp image share failed', err);
+              }
+            }
+          <\/script>
+        </body>
+        </html>`;
+
+      return scheduleHtml;
+    }
+
+    // Initialize
+    window.onload = function() {
+      setDailyBackground();
+      setupLedgerModalAutoReturn();
+    };
+</script>
+  {% include "_pwa_scripts.html" %}
+
+</body>
+</html>
+

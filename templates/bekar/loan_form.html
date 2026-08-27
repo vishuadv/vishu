@@ -1,0 +1,1635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loan Management System - SHIVI PROJECT</title>
+    
+    <!-- ✅ CACHE-BUSTED RESOURCES -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css?v=20250829" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css?v=20250829" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-light: #3b82f6;
+            --secondary: #64748b;
+            --success: #059669;
+            --danger: #dc2626;
+            --warning: #d97706;
+            --info: #0891b2;
+            --white: #ffffff;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-500: #6b7280;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+            --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --radius: 0.5rem;
+            --transition: all 0.2s ease;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, var(--gray-50) 0%, #e0e7ff 100%);
+            color: var(--gray-900);
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        /* ✅ HEADER */
+        .app-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: var(--white);
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .app-title { font-size: 2rem; font-weight: 700; margin: 0; }
+        .time-badge {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius);
+            font-family: 'SF Mono', Consolas, monospace;
+            font-weight: 600;
+        }
+
+        /* ✅ CARDS */
+        .card-clean {
+            background: var(--white);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--gray-200);
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--gray-800);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid var(--gray-100);
+        }
+        .section-title i { color: var(--primary); }
+
+        /* ✅ FORMS */
+        .form-label { font-weight: 600; color: var(--gray-700); margin-bottom: 0.5rem; font-size: 0.875rem; }
+        .form-control, .form-select {
+            border: 1.5px solid var(--gray-300);
+            border-radius: var(--radius);
+            padding: 0.75rem 1rem;
+            transition: var(--transition);
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+            outline: none;
+        }
+        #advance_amount {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            font-weight: 600;
+        }
+
+        /* ✅ PERFECTLY ALIGNED BUTTONS - NO LARGE SPACES */
+        .btn {
+            font-weight: 600;
+            font-size: 0.875rem;
+            border-radius: var(--radius);
+            transition: var(--transition);
+            box-shadow: var(--shadow);
+            padding: 0.5rem 1rem; /* Reduced padding for tighter buttons */
+        }
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        /* ✅ SEARCH */
+        #suggestions {
+            position: absolute; top: 100%; left: 0; right: 0;
+            background: var(--white); border: 1px solid var(--gray-200);
+            border-radius: 0 0 var(--radius) var(--radius);
+            box-shadow: var(--shadow-lg); max-height: 300px; overflow-y: auto; z-index: 1000;
+        }
+        #suggestions .list-group-item {
+            border: none; padding: 0.75rem 1rem; transition: var(--transition);
+        }
+        #suggestions .list-group-item:hover { background: var(--gray-50); color: var(--primary); }
+
+        /* ✅ TABLE */
+        .table-container {
+            background: var(--white); border-radius: var(--radius); overflow: hidden;
+            box-shadow: var(--shadow); border: 1px solid var(--gray-200);
+        }
+        .ledger-header {
+            background: linear-gradient(135deg, var(--gray-800), var(--gray-700));
+            color: var(--white); padding: 1.5rem 2rem;
+        }
+        .ledger-status {
+            background: var(--gray-50); padding: 1rem 2rem; border-bottom: 1px solid var(--gray-200);
+            font-weight: 600; display: flex; align-items: center; gap: 0.5rem;
+        }
+        .status-success { color: var(--success); }
+        .status-warning { color: var(--warning); }
+        .status-info { color: var(--info); }
+
+        .table-professional {
+            width: 100%; margin: 0; border-collapse: collapse; font-size: 0.85rem;
+        }
+        .table-professional thead th {
+            background: linear-gradient(135deg, var(--gray-800), var(--gray-700));
+            color: var(--white); font-weight: 700; padding: 1rem 0.75rem;
+            text-align: center; border: none; font-size: 0.8rem; text-transform: uppercase;
+        }
+        .table-professional tbody td {
+            padding: 0.875rem 0.75rem; border-bottom: 1px solid var(--gray-200);
+            text-align: center; transition: var(--transition);
+        }
+        .table-professional tbody tr:nth-child(even) { background: var(--gray-50); }
+        .table-professional tbody tr:hover { background: rgba(37, 99, 235, 0.05); }
+        .table-professional tbody tr.table-primary {
+            background: rgba(37, 99, 235, 0.1) !important;
+            border-left: 3px solid var(--primary);
+        }
+        .table-professional tfoot th {
+            background: var(--gray-100); color: var(--gray-800); font-weight: 700;
+            padding: 1rem 0.75rem; border-top: 2px solid var(--gray-300); text-align: center;
+        }
+
+        .currency { font-family: 'SF Mono', Consolas, monospace; font-weight: 600; }
+        .currency-negative { color: var(--danger); }
+
+        /* ✅ EDIT MODE */
+        .edit-mode-indicator {
+            background: linear-gradient(135deg, var(--info), #0891b2);
+            color: var(--white); padding: 1rem 2rem; border-radius: var(--radius);
+            margin-bottom: 1.5rem; text-align: center; font-weight: 700;
+        }
+        .edit-mode {
+            background: linear-gradient(135deg, #fef3c7, #fde68a) !important;
+            border: 2px solid var(--warning) !important;
+        }
+
+        /* ✅ MODAL */
+        .modal-content { border-radius: var(--radius); border: none; box-shadow: var(--shadow-lg); }
+        .modal-header {
+            background: var(--primary); color: var(--white);
+            border-radius: var(--radius) var(--radius) 0 0;
+        }
+
+        .client-row {
+            padding: 1rem 1.5rem; border-bottom: 1px solid var(--gray-200);
+            cursor: pointer; transition: var(--transition); display: flex;
+            align-items: center; gap: 1rem;
+        }
+        .client-row:hover { background: var(--gray-50); transform: translateX(4px); }
+        .client-row.selected {
+            background: rgba(37, 99, 235, 0.1);
+            border-left: 3px solid var(--primary);
+        }
+
+        /* ✅ RESPONSIVE */
+        @media (max-width: 768px) {
+            .app-title { font-size: 1.5rem; }
+            .card-clean { padding: 1.5rem; }
+            .table-professional { font-size: 0.75rem; }
+        }
+
+        /* ✅ PRINT */
+        @media print {
+            @page { size: landscape; margin: 0.5in; }
+            .no-print { display: none !important; }
+            body { background: white !important; font-size: 10px !important; }
+            .table-container { border: 2px solid #333 !important; }
+            .table-professional thead th { 
+                background: #374151 !important; color: white !important;
+                -webkit-print-color-adjust: exact !important; 
+            }
+        }
+
+        /* ✅ TIGHT BUTTON SPACING */
+        .btn-group-tight .btn { margin-right: 0.25rem; padding: 0.375rem 0.5rem; }
+        .btn-group-tight .btn:last-child { margin-right: 0; }
+    </style>
+
+    <script>
+        'use strict';
+
+        // ✅ ALL ORIGINAL VARIABLES
+        let allLoans = [], currentIndex = -1, editMode = false, clientsList = [];
+        let ledgerTotals = {};
+        let isEditProfileMode = false;
+        let currentEditClientIndex = -1;
+        let editModeClients = [];
+        let selectedClientData = null;
+
+        function updateTimeIST(){
+            let now=new Date();
+            let opts={timeZone:"Asia/Kolkata",hour12:true,
+                year:"numeric",month:"short",day:"2-digit",
+                hour:"2-digit",minute:"2-digit",second:"2-digit",weekday:"long"};
+            const timeEl = document.getElementById("live-time");
+            if (timeEl) {
+                timeEl.innerText = new Intl.DateTimeFormat("en-IN",opts).format(now)+" IST";
+            }
+        }
+        setInterval(updateTimeIST,1000);
+
+        function calcAdvance(){
+            if(isEditProfileMode) return;
+            let amt=parseFloat(document.getElementById("loan_amount").value)||0;
+            let type=document.getElementById("repayment_type").value;
+            let adv="";
+            if(type==="WEEKLY") adv=Math.round(amt*0.07);
+            else if(type==="TEN_DAYS") adv=Math.round(amt/10);
+            
+            const advanceField = document.getElementById("advance_amount");
+            const currentValue = parseFloat(advanceField.value) || 0;
+            const expectedAutoValue = type === "WEEKLY" ? Math.round(amt*0.07) : 
+                                     type === "TEN_DAYS" ? Math.round(amt/10) : 0;
+            
+            if (!advanceField.value || currentValue === expectedAutoValue || currentValue === 0) {
+                advanceField.value = adv;
+            }
+        }
+
+        function loadClients(){
+            fetch('/clients?t=' + Date.now()).then(r=>r.json()).then(data=>{
+                clientsList=data || [];
+                editModeClients=data ? data.slice() : [];
+            }).catch(err => console.error('Load clients error:', err));
+        }
+
+        function showSuggestions(){
+            let val=document.getElementById("search_name").value.toUpperCase();
+            let sug=document.getElementById("suggestions");
+            sug.innerHTML="";
+            if(!val || val.length < 2) return;
+            
+            let matches=clientsList.filter(c=>c.name.toUpperCase().includes(val));
+            matches.forEach(c=>{
+                let b=document.createElement("button");
+                b.type="button";
+                b.className="list-group-item list-group-item-action";
+                b.innerHTML = `<div class="d-flex justify-content-between"><strong>${escapeHtml(c.name)}</strong><span class="text-muted">${escapeHtml(c.phone)}</span></div>`;
+                b.onclick=()=>{
+                    setClientAndLoadLedger(c.name, c.phone);
+                    sug.innerHTML="";
+                };
+                sug.appendChild(b);
+            });
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function setClientAndLoadLedger(name, phone) {
+            document.getElementById("name").value = name;
+            document.getElementById("phone").value = phone;
+            document.getElementById("search_name").value = "";
+            
+            if (!isEditProfileMode) {
+                loadLedgerPersonalOnly(phone);
+            } else {
+                loadLedgerForEditMode(phone);
+            }
+        }
+
+        function loadLedgerPersonalOnly(phone) {
+            const custName = document.getElementById("name").value.trim();
+            
+            if (!phone) {
+                clearLedger();
+                return;
+            }
+            
+            fetch(`/ledger?phone=${encodeURIComponent(phone)}&t=${Date.now()}`)
+                .then(r => r.json())
+                .then(response => {
+                    let data, totals;
+                    if (Array.isArray(response)) {
+                        data = response;
+                        totals = {};
+                    } else {
+                        data = response.rows || [];
+                        totals = response.totals || {};
+                    }
+                    
+                    allLoans = data || [];
+                    ledgerTotals = totals;
+                    renderLedgerTable(allLoans);
+
+                    if (allLoans.length > 0) {
+                        currentIndex = -1;
+                        const first = allLoans[0] || {};
+                        
+                        document.getElementById("address").value = first.address || "";
+                        document.getElementById("city").value = first.city || "";
+                        clearFinancialFields();
+                        
+                        document.getElementById("ledger-customer-name").textContent = first.name || custName || "";
+                        document.getElementById("ledger-customer-contact").textContent = 
+                            [first.address, first.phone ? "📞 " + first.phone : "", first.city ? "🏙️ " + first.city : ""]
+                            .filter(Boolean).join(" • ");
+
+                        document.getElementById("ledger-status").innerHTML = `
+                            <i class="bi bi-check-circle"></i>
+                            Client found - Click any loan row to edit
+                        `;
+                        document.getElementById("ledger-status").className = "ledger-status status-success";
+
+                        document.getElementById("print-ledger-btn").style.display = "inline-block";
+                    } else {
+                        document.getElementById("address").value = "";
+                        document.getElementById("city").value = "";
+                        clearFinancialFields();
+                        
+                        document.getElementById("ledger-customer-name").textContent = custName || "";
+                        document.getElementById("ledger-customer-contact").textContent = phone ? "📞 " + phone : "";
+
+                        document.getElementById("ledger-status").innerHTML = `
+                            <i class="bi bi-info-circle"></i>
+                            New client - Ready to add first loan
+                        `;
+                        document.getElementById("ledger-status").className = "ledger-status status-warning";
+
+                        document.getElementById("print-ledger-btn").style.display = "none";
+                    }
+                })
+                .catch(err => {
+                    console.error('Ledger load error:', err);
+                    clearLedger();
+                });
+        }
+
+        function loadLedger() {
+            const phone = document.getElementById("phone").value.trim();
+            if (phone) {
+                loadLedgerPersonalOnly(phone);
+            } else {
+                clearLedger();
+            }
+        }
+
+        function loadLedgerForEditMode(phone) {
+            fetch(`/ledger?phone=${encodeURIComponent(phone)}&t=${Date.now()}`)
+                .then(r => r.json())
+                .then(response => {
+                    let data = Array.isArray(response) ? response : (response.rows || []);
+                    renderLedgerTableReadOnly(data);
+                    
+                    if (data.length > 0) {
+                        const first = data[0];
+                        document.getElementById("ledger-customer-name").textContent = first.name || "";
+                        document.getElementById("ledger-customer-contact").textContent = 
+                            [first.address, first.phone ? "📞 " + first.phone : "", first.city ? "🏙️ " + first.city : ""]
+                            .filter(Boolean).join(" • ");
+                        
+                        document.getElementById("ledger-status").innerHTML = `
+                            <i class="bi bi-pencil-square"></i>
+                            Edit Profile Mode - Personal information only
+                        `;
+                        document.getElementById("ledger-status").className = "ledger-status status-info";
+                    } else {
+                        document.getElementById("ledger-customer-name").textContent = "";
+                        document.getElementById("ledger-customer-contact").textContent = phone;
+                        document.getElementById("ledger-status").innerHTML = `
+                            <i class="bi bi-exclamation-triangle"></i>
+                            No loans found
+                        `;
+                        document.getElementById("ledger-status").className = "ledger-status status-warning";
+                    }
+                })
+                .catch(err => console.error('Edit mode ledger error:', err));
+        }
+
+        function renderLedgerTableReadOnly(data) {
+            let tbody=document.getElementById("ledgerBody");
+            tbody.innerHTML="";
+            
+            if (!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="15" class="text-center py-4 text-muted">No loan records found</td></tr>';
+                return;
+            }
+            
+            data.forEach((r,i)=>{
+                let balDisp=r.status==="CLOSED"?0:(r.balance_amount||0);
+                tbody.innerHTML+=`<tr>
+                    <td>${r.id||''}</td>
+                    <td>${escapeHtml(r.loan_date||'')}</td>
+                    <td>${escapeHtml(r.day_name||'')}</td>
+                    <td>${escapeHtml(r.loan_end_date||'')}</td>
+                    <td>${escapeHtml(r.loan_closed_date||'')}</td>
+                    <td class="currency">₹${(r.processing_fees||0).toLocaleString()}</td>
+                    <td class="currency">₹${(r.amount||0).toLocaleString()}</td>
+                    <td class="currency">₹${(r.installment_amount||0).toLocaleString()}</td>
+                    <td><span class="badge bg-secondary">${escapeHtml(r.repayment_type||'N/A')}</span></td>
+                    <td class="currency">₹${(r.advance_amount||0).toLocaleString()}</td>
+                    <td class="currency">₹${(r.case_closing_amt||0).toLocaleString()}</td>
+                    <td class="currency ${balDisp>0?'currency-negative':''}">₹${balDisp.toLocaleString()}</td>
+                    <td>${r.pending_installments||0}</td>
+                    <td><span class="badge ${r.status === 'CLOSED' ? 'bg-success' : 'bg-warning'}">${escapeHtml(r.status||'OPEN')}</span></td>
+                    <td><span class="text-muted">View Only</span></td>
+                </tr>`;
+            });
+            
+            clearTotals();
+        }
+
+        function clearLedger() {
+            const tbody = document.getElementById("ledgerBody");
+            if (tbody) {
+                tbody.innerHTML = '<tr><td colspan="15" class="text-center py-4 text-muted">Search for a client to view loan history</td></tr>';
+            }
+            
+            clearTotals();
+            
+            document.getElementById("ledger-customer-name").textContent = "";
+            document.getElementById("ledger-customer-contact").textContent = "";
+            document.getElementById("ledger-status").innerHTML = "";
+            document.getElementById("print-ledger-btn").style.display = "none";
+        }
+
+        function renderLedgerTable(data){
+            if (isEditProfileMode) {
+                renderLedgerTableReadOnly(data);
+                return;
+            }
+            
+            let tbody=document.getElementById("ledgerBody");
+            tbody.innerHTML="";
+            
+            if (!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="15" class="text-center py-4 text-muted">No loan records to display</td></tr>';
+                clearTotals();
+                return;
+            }
+            
+            let tLoan=0,tInst=0,tAdv=0,tClose=0,tBal=0,tProc=0;
+            
+            if (Object.keys(ledgerTotals).length > 0) {
+                tProc = ledgerTotals.processing_fees || 0;
+                tLoan = ledgerTotals.loan_amount || 0;
+                tInst = ledgerTotals.installment_amount || 0;
+                tAdv = ledgerTotals.advance_amount || 0;
+                tClose = ledgerTotals.case_closing_amount || 0;
+                tBal = ledgerTotals.balance_amount || 0;
+            }
+            
+            data.sort((a,b)=>new Date(a.loan_date_raw||a.loan_date)-new Date(b.loan_date_raw||b.loan_date));
+            data.forEach((r,i)=>{
+                let balDisp=r.status==="CLOSED"?0:(r.balance_amount||0);
+                let pendDisp=r.status==="CLOSED"?0:(r.pending_installments||0);
+                
+                tbody.innerHTML+=`<tr style="cursor:pointer" onclick="selectRow(${i})" ${i===currentIndex?'class="table-primary"':''}>
+                    <td>${r.id||''}</td>
+                    <td>${escapeHtml(r.loan_date||'')}</td>
+                    <td>${escapeHtml(r.day_name||'')}</td>
+                    <td>${escapeHtml(r.loan_end_date||'')}</td>
+                    <td>${escapeHtml(r.loan_closed_date||'')}</td>
+                    <td class="currency">₹${(r.processing_fees||0).toLocaleString()}</td>
+                    <td class="currency">₹${(r.amount||0).toLocaleString()}</td>
+                    <td class="currency">₹${(r.installment_amount||0).toLocaleString()}</td>
+                    <td><span class="badge bg-secondary">${escapeHtml(r.repayment_type||'DAILY')}</span></td>
+                    <td class="currency">₹${(r.advance_amount||0).toLocaleString()}</td>
+                    <td class="currency">₹${(r.case_closing_amt||0).toLocaleString()}</td>
+                    <td class="currency ${balDisp>0?'currency-negative':''}">₹${balDisp.toLocaleString()}</td>
+                    <td>${pendDisp}</td>
+                    <td><span class="badge ${r.status === 'CLOSED' ? 'bg-success' : 'bg-warning'}">${escapeHtml(r.status||'OPEN')}</span></td>
+                    <td class="no-print">
+                        <div class="btn-group-tight">
+                            <button class='btn btn-warning btn-sm' onclick='editRow(${i});event.stopPropagation();' title="Edit">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class='btn btn-danger btn-sm' onclick='deleteLoan(${r.id});event.stopPropagation();' title="Delete">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                            <button class='btn btn-success btn-sm' onclick='openCloseModal(${r.id});event.stopPropagation();' title="Close">
+                                <i class="bi bi-x-circle"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>`;
+                
+                if (Object.keys(ledgerTotals).length === 0) {
+                    tProc+=parseFloat(r.processing_fees)||0;
+                    tLoan+=(r.amount||0);
+                    tInst+=(r.installment_amount||0);
+                    tAdv+=parseFloat(r.advance_amount)||0;
+                    tClose+=parseFloat(r.case_closing_amt)||0;
+                    tBal+=balDisp;
+                }
+            });
+            
+            document.getElementById("total_processing_fees").textContent="₹"+Math.round(tProc).toLocaleString();
+            document.getElementById("total_loan_amount").textContent="₹"+Math.round(tLoan).toLocaleString();
+            document.getElementById("total_installment_amount").textContent="₹"+Math.round(tInst).toLocaleString();
+            document.getElementById("total_advance_amount").textContent="₹"+Math.round(tAdv).toLocaleString();
+            document.getElementById("total_closing_amount").textContent="₹"+Math.round(tClose).toLocaleString();
+            document.getElementById("total_balance").textContent="₹"+Math.round(tBal).toLocaleString();
+        }
+
+        function clearTotals() {
+            ["total_processing_fees", "total_loan_amount", "total_installment_amount", "total_advance_amount", "total_closing_amount", "total_balance"].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = "₹0";
+            });
+        }
+
+        function fillForm(l){
+            if (!l) return; // ✅ BUG FIX: Added null check
+            
+            document.getElementById("name").value = l.name || "";
+            document.getElementById("phone").value = l.phone || "";
+            document.getElementById("address").value = l.address || "";
+            document.getElementById("city").value = l.city || "";
+            
+            if (!isEditProfileMode) {
+                document.getElementById("loan_amount").value = (l.amount ?? "");
+                document.getElementById("processing_fees").value = (l.processing_fees ?? "");
+                document.getElementById("advance_amount").value = (l.advance_amount ?? "");
+                document.getElementById("repayment_type").value = l.repayment_type || "DAILY";
+                document.getElementById("loan_date").value = l.loan_date_raw || "";
+                document.getElementById("loan_closed_date").value = l.loan_closed_date_raw || "";
+                document.getElementById("case_closing_amount").value = (l.case_closing_amt ?? "");
+            }
+        }
+
+        function clearFinancialFields() {
+            ['loan_amount','processing_fees','advance_amount','loan_date','loan_closed_date','case_closing_amount']
+                .forEach(id=>{
+                    const el = document.getElementById(id);
+                    if (el) el.value = "";
+                });
+            const typeEl = document.getElementById("repayment_type");
+            if (typeEl) typeEl.selectedIndex = 0;
+        }
+
+        function editRow(i){
+            if (isEditProfileMode) return;
+            if (i < 0 || i >= allLoans.length) return; // ✅ BUG FIX: Added bounds check
+            currentIndex=i;fillForm(allLoans[i]);editMode=true;
+        }
+        
+        function selectRow(i){
+            if (isEditProfileMode) return;
+            if (i < 0 || i >= allLoans.length) return; // ✅ BUG FIX: Added bounds check
+            currentIndex=i;fillForm(allLoans[i]);highlightRow(i);
+        }
+        
+        function highlightRow(index){
+            document.querySelectorAll("#ledgerBody tr").forEach((row,i)=>row.classList.toggle("table-primary",i===index));
+        }
+
+        function clearForm(keepNP=false){
+            if(!keepNP){
+                document.getElementById("name").value="";
+                document.getElementById("phone").value="";
+            }
+            clearFinancialFields();
+            ['address','city'].forEach(id=>{
+                const el = document.getElementById(id);
+                if (el) el.value = "";
+            });
+            editMode=false;
+            currentIndex = -1;
+            highlightRow(-1);
+        }
+
+        function cancelForm() {
+            if (confirm("Cancel and clear all form data?")) {
+                exitEditProfileMode();
+                clearForm();
+                clearLedger();
+                location.reload();
+            }
+        }
+
+        function deleteLoan(id){
+            if (isEditProfileMode) return;
+            if(confirm("Delete this loan? This cannot be undone.")){
+                fetch(`/loan/${id}`, { method: 'DELETE' })
+                    .then(async r => {
+                        const res = await r.json().catch(() => ({}));
+                        alert(res.message || "Loan deleted successfully");
+                        loadLedger();
+                        loadClients();
+                    })
+                    .catch(err => {
+                        console.error('Delete error:', err);
+                        alert("Error deleting loan");
+                    });
+            }
+        }
+
+        let closeLoanId = null;
+        function openCloseModal(id){
+            if (isEditProfileMode) return;
+            closeLoanId = id;
+            let d = new Date(); d.setDate(d.getDate()-1);
+            document.getElementById("close_date").value = d.toISOString().substr(0,10);
+            new bootstrap.Modal(document.getElementById("closeLoanModal")).show();
+        }
+        
+        function confirmClose(){
+            let closeDate = document.getElementById("close_date").value;
+            if (!closeDate) {
+                alert("Please select a close date");
+                return;
+            }
+            
+            fetch(`/loan/${closeLoanId}/close`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({loan_closed_date: closeDate})
+            }).then(r => r.json()).then(res => {
+                alert(res.message || "Loan closed successfully");
+                loadLedger();
+                bootstrap.Modal.getInstance(document.getElementById("closeLoanModal")).hide();
+            }).catch(err => {
+                console.error('Close error:', err);
+                alert("Error closing loan");
+            });
+        }
+
+        // ✅ ALL EDIT PROFILE FUNCTIONS
+        function openEditProfile() {
+            isEditProfileMode = true;
+            showEditModeIndicator();
+            clearFinancialFields();
+            showEditProfileModal();
+            loadClientsForEdit();
+            toggleEditModeButtons();
+        }
+
+        function exitEditProfileMode() {
+            isEditProfileMode = false;
+            hideEditModeIndicator();
+            toggleEditModeButtons();
+            currentEditClientIndex = -1;
+        }
+
+        function showEditModeIndicator() {
+            let indicator = document.getElementById("edit-mode-indicator");
+            if (!indicator) {
+                indicator = document.createElement("div");
+                indicator.id = "edit-mode-indicator";
+                indicator.className = "edit-mode-indicator";
+                indicator.innerHTML = '<i class="bi bi-pencil-square me-2"></i>EDIT PROFILE MODE - Personal Information Only';
+                const container = document.querySelector(".container");
+                if (container && container.firstChild) {
+                    container.insertBefore(indicator, container.firstChild);
+                }
+            }
+            indicator.style.display = "block";
+            
+            ["name", "phone", "address", "city"].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.add("edit-mode");
+            });
+        }
+
+        function hideEditModeIndicator() {
+            const indicator = document.getElementById("edit-mode-indicator");
+            if (indicator) indicator.style.display = "none";
+            
+            ["name", "phone", "address", "city"].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.remove("edit-mode");
+            });
+        }
+
+        function toggleEditModeButtons() {
+            const editBtn = document.getElementById("edit-profile-btn");
+            const nextBtn = document.getElementById("next-client-btn");
+            const prevBtn = document.getElementById("prev-client-btn");
+            const submitBtn = document.querySelector('#submit-btn');
+            const editModeNav = document.getElementById("edit-mode-nav"); // ✅ BUG FIX: Added edit mode nav visibility
+            
+            if (isEditProfileMode) {
+                if (editBtn) {
+                    editBtn.innerHTML = '<i class="bi bi-x-lg"></i>Exit Edit Mode';
+                    editBtn.className = "btn btn-warning";
+                }
+                if (nextBtn) nextBtn.style.display = "inline-block";
+                if (prevBtn) prevBtn.style.display = "inline-block";
+                if (submitBtn) submitBtn.innerHTML = '<i class="bi bi-save"></i>Save Personal Info';
+                if (editModeNav) editModeNav.style.display = "block"; // ✅ BUG FIX: Show edit mode navigation
+            } else {
+                if (editBtn) {
+                    editBtn.innerHTML = '<i class="bi bi-pencil-square"></i>Edit Profile';
+                    editBtn.className = "btn btn-info";
+                }
+                if (nextBtn) nextBtn.style.display = "none";
+                if (prevBtn) prevBtn.style.display = "none";
+                if (submitBtn) submitBtn.innerHTML = '<i class="bi bi-check-lg"></i>Submit Loan';
+                if (editModeNav) editModeNav.style.display = "none"; // ✅ BUG FIX: Hide edit mode navigation
+            }
+        }
+
+        function showEditProfileModal() {
+            new bootstrap.Modal(document.getElementById("editProfileModal")).show();
+        }
+
+        function loadClientsForEdit() {
+            const modalBody = document.getElementById("editClientsModalBody");
+            if (!modalBody) return;
+            
+            modalBody.innerHTML = "";
+            
+            clientsList.forEach((c, index) => {
+                let btn = document.createElement("button");
+                btn.type = "button";
+                btn.className = "list-group-item list-group-item-action";
+                btn.textContent = `${c.name} (${c.phone})`;
+                btn.onclick = () => {
+                    selectClientForEdit(c, index);
+                    bootstrap.Modal.getInstance(document.getElementById("editProfileModal")).hide();
+                };
+                modalBody.appendChild(btn);
+            });
+        }
+
+        function selectClientForEdit(client, index) {
+            currentEditClientIndex = index;
+            fillPersonalInfoOnly(client);
+            clearFinancialFields();
+        }
+
+        function fillPersonalInfoOnly(client) {
+            if (!client) return; // ✅ BUG FIX: Added null check
+            
+            document.getElementById("name").value = client.name || "";
+            document.getElementById("phone").value = client.phone || "";
+            
+            fetch(`/ledger?phone=${encodeURIComponent(client.phone)}&t=${Date.now()}`)
+                .then(r => r.json())
+                .then(response => {
+                    let data = Array.isArray(response) ? response : (response.rows || []);
+                    if (data.length > 0) {
+                        const first = data[0];
+                        document.getElementById("address").value = first.address || "";
+                        document.getElementById("city").value = first.city || "";
+                        
+                        document.getElementById("ledger-customer-name").textContent = first.name || client.name || "";
+                        document.getElementById("ledger-customer-contact").textContent = 
+                            [first.address, first.phone ? "📞 " + first.phone : "", first.city ? "🏙️ " + first.city : ""]
+                            .filter(Boolean).join(" • ");
+                    }
+                    
+                    loadLedgerForEditMode(client.phone);
+                })
+                .catch(err => console.error('Personal info error:', err));
+        }
+
+        function searchClientsInEditModal() {
+            const searchTerm = document.getElementById("editClientSearch").value.toUpperCase();
+            const modalBody = document.getElementById("editClientsModalBody");
+            if (!modalBody) return;
+            
+            modalBody.innerHTML = "";
+            
+            const filtered = clientsList.filter(c => c.name.toUpperCase().includes(searchTerm));
+            
+            filtered.forEach((c, index) => {
+                let btn = document.createElement("button");
+                btn.type = "button";
+                btn.className = "list-group-item list-group-item-action";
+                btn.textContent = `${c.name} (${c.phone})`;
+                btn.onclick = () => {
+                    const originalIndex = clientsList.findIndex(client => client.phone === c.phone);
+                    selectClientForEdit(c, originalIndex);
+                    bootstrap.Modal.getInstance(document.getElementById("editProfileModal")).hide();
+                };
+                modalBody.appendChild(btn);
+            });
+        }
+
+        function nextClient() {
+            if (!isEditProfileMode || editModeClients.length === 0) return;
+            
+            // ✅ BUG FIX: Added proper bounds checking and initialization
+            if (currentEditClientIndex < 0) {
+                currentEditClientIndex = 0;
+            } else {
+                currentEditClientIndex = (currentEditClientIndex + 1) % editModeClients.length;
+            }
+            
+            const client = editModeClients[currentEditClientIndex];
+            fillPersonalInfoOnly(client);
+            clearFinancialFields();
+        }
+
+        function prevClient() {
+            if (!isEditProfileMode || editModeClients.length === 0) return;
+            
+            // ✅ BUG FIX: Added proper bounds checking and initialization
+            if (currentEditClientIndex < 0) {
+                currentEditClientIndex = editModeClients.length - 1;
+            } else {
+                currentEditClientIndex = currentEditClientIndex <= 0 ? editModeClients.length - 1 : currentEditClientIndex - 1;
+            }
+            
+            const client = editModeClients[currentEditClientIndex];
+            fillPersonalInfoOnly(client);
+            clearFinancialFields();
+        }
+
+        function submitLoan(){
+            const name = document.getElementById("name").value.trim();
+            const phone = document.getElementById("phone").value.trim();
+            const address = document.getElementById("address").value.trim();
+            const city = document.getElementById("city").value.trim();
+
+            if (!name) { alert("Name is required."); return; }
+            if (!phone) { alert("Phone is required."); return; }
+ 
+            if (isEditProfileMode) {
+                const data = { name, phone, address, city };
+                
+                fetch(`/client/${encodeURIComponent(phone)}/personal`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                }).then(r => r.json().catch(()=>({})))
+                    .then(res => {
+                        if (res.errors) {
+                            alert("Error: " + Object.values(res.errors).join(", "));
+                        } else {
+                            alert(res.message || "Personal info saved successfully!");
+                            loadClients();
+                            loadLedgerForEditMode(phone);
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Submit error:', err);
+                        alert("Error saving personal info");
+                    });
+                return;
+            }
+
+            const loan_amount = document.getElementById("loan_amount").value.trim();
+            const loan_date = document.getElementById("loan_date").value.trim();
+            const processing_fees = document.getElementById("processing_fees").value.trim();
+            const case_closing_amount = document.getElementById("case_closing_amount").value.trim();
+            const advance_amount = document.getElementById("advance_amount").value.trim();
+            const repayment_type = document.getElementById("repayment_type").value;
+            const loan_closed_date = document.getElementById("loan_closed_date").value;
+
+            if (!loan_amount || !loan_date) {
+                alert("Loan Amount and Loan Start Date are required."); return;
+            }
+
+            if (parseFloat(loan_amount) <= 0) {
+                alert("Loan amount must be greater than 0."); return;
+            }
+
+            const data = {name, phone, loan_amount, loan_date, processing_fees, case_closing_amount, advance_amount, repayment_type, city, address, loan_closed_date};
+            let url = '/loan', method = 'POST';
+            if (editMode && allLoans[currentIndex]) {
+                url = `/loan/${allLoans[currentIndex].id}`;
+                method = 'PUT';
+            }
+            
+            const submitBtn = document.getElementById('submit-btn');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i>Saving...';
+            submitBtn.disabled = true;
+            
+            fetch(url, {
+                method,
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            }).then(r => r.json().catch(()=>({})))
+                .then(res => {
+                    alert(res.message || res.error || "Saved successfully!");
+                    clearForm(true);
+                    loadLedger();
+                    loadClients();
+                })
+                .catch(err => {
+                    console.error('Submit error:', err);
+                    alert("Error saving loan");
+                })
+                .finally(() => {
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                });
+        }
+
+        function printLedger() {
+            const customerName = document.getElementById("ledger-customer-name").textContent;
+            const customerContact = document.getElementById("ledger-customer-contact").textContent;
+            const ledgerTable = document.getElementById("ledger-print-area").outerHTML;
+            
+            const printContent = `
+                <div class="table-container">
+                    <div class="ledger-header">
+                        <h1>Loan Management System - SHIVI PROJECT</h1>
+                        <h5>${customerName}</h5>
+                        <p>${customerContact}</p>
+                    </div>
+                    ${ledgerTable}
+                </div>
+            `;
+            
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Ledger - ${customerName}</title>
+                    <style>${document.querySelector('style').textContent}</style>
+                </head>
+                <body class="container my-3">${printContent}</body>
+                </html>
+            `);
+            printWindow.document.close();
+            printWindow.onload = () => {
+                printWindow.print();
+                printWindow.close();
+            };
+        }
+
+        // ✅ ALL MODAL FUNCTIONS
+        function showClientsModal() {
+            const modal = document.getElementById("clientsModal");
+            const modalBody = document.getElementById("fullScreenClientsBody");
+            const searchInput = document.getElementById("fullScreenClientSearch");
+            const ledgerDisplay = document.getElementById("selectedClientLedger");
+            
+            if (modalBody) modalBody.innerHTML = "";
+            if (searchInput) searchInput.value = "";
+            if (ledgerDisplay) ledgerDisplay.innerHTML = "";
+            selectedClientData = null;
+            
+            renderClientsList(clientsList);
+            
+            new bootstrap.Modal(modal).show();
+            
+            setTimeout(() => { if (searchInput) searchInput.focus(); }, 300);
+        }
+
+        function renderClientsList(clients) {
+            const modalBody = document.getElementById("fullScreenClientsBody");
+            if (!modalBody) return;
+            
+            modalBody.innerHTML = "";
+            
+            if (!clients || clients.length === 0) {
+                modalBody.innerHTML = '<div class="text-center p-4 text-muted">No clients found</div>';
+                return;
+            }
+            
+            clients.forEach((client, index) => {
+                const clientRow = document.createElement("div");
+                clientRow.className = "client-row";
+                clientRow.onclick = () => selectClientInModal(client, clientRow);
+                
+                clientRow.innerHTML = `
+                    <div style="width: 50px; text-align: center; font-weight: bold; color: var(--gray-500);">${index + 1}</div>
+                    <div style="flex: 1; font-weight: 600;">${escapeHtml(client.name)}</div>
+                    <div style="color: var(--gray-500); font-size: 0.85rem;">${escapeHtml(client.phone)}</div>
+                `;
+                
+                modalBody.appendChild(clientRow);
+            });
+        }
+
+        function searchFullScreenClients() {
+            const searchTerm = document.getElementById("fullScreenClientSearch").value.toUpperCase();
+            const filtered = clientsList.filter(c => c.name.toUpperCase().includes(searchTerm) || c.phone.includes(searchTerm));
+            renderClientsList(filtered);
+        }
+
+        function selectClientInModal(client, clientRow) {
+            document.querySelectorAll('.client-row').forEach(row => row.classList.remove('selected'));
+            clientRow.classList.add('selected');
+            selectedClientData = client;
+            loadClientLedgerInModal(client);
+        }
+
+        function loadClientLedgerInModal(client) {
+            const ledgerDisplay = document.getElementById("selectedClientLedger");
+            if (!ledgerDisplay) return;
+            
+            ledgerDisplay.innerHTML = '<div class="text-center p-4"><div class="spinner-border text-primary"></div><br><strong>Loading ledger...</strong></div>';
+            
+            fetch(`/ledger?phone=${encodeURIComponent(client.phone)}&t=${Date.now()}`)
+                .then(r => r.json())
+                .then(response => {
+                    let data = Array.isArray(response) ? response : (response.rows || []);
+                    renderFullScreenLedger(client, data);
+                })
+                .catch(err => {
+                    console.error('Modal ledger error:', err);
+                    ledgerDisplay.innerHTML = '<div class="alert alert-danger">Error loading ledger</div>';
+                });
+        }
+
+        function renderFullScreenLedger(client, loans) {
+            const ledgerDisplay = document.getElementById("selectedClientLedger");
+            if (!ledgerDisplay) return;
+            
+            if (!loans || loans.length === 0) {
+                ledgerDisplay.innerHTML = `
+                    <div class="card-clean text-center">
+                        <h4>${escapeHtml(client.name)}</h4>
+                        <p class="text-muted">📞 ${escapeHtml(client.phone)}</p>
+                        <div class="alert alert-warning">No loan records found</div>
+                    </div>
+                `;
+                return;
+            }
+
+            const first = loans[0];
+            let totalBalance = 0;
+            
+            loans.forEach(loan => {
+                if (loan.status !== "CLOSED") {
+                    totalBalance += (loan.balance_amount || 0);
+                }
+            });
+
+            let ledgerHtml = `
+                <div class="card-clean">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h4 class="text-primary">${escapeHtml(first.name || client.name)}</h4>
+                            <p class="text-muted mb-0">
+                                ${[first.address, first.phone ? "📞 " + first.phone : "", first.city ? "🏙️ " + first.city : ""].filter(Boolean).join(" • ")}
+                            </p>
+                        </div>
+                        <div class="text-end">
+                            <div class="text-muted">Total Balance</div>
+                            <h5 class="currency-negative mb-0">₹${totalBalance.toLocaleString()}</h5>
+                        </div>
+                    </div>
+                    
+                    <div class="row g-2 mb-4">
+                        <div class="col-3">
+                            <button class="btn btn-primary w-100" onclick="printModalLedger()">
+                                <i class="bi bi-printer"></i> Print
+                            </button>
+                        </div>
+                        <div class="col-3">
+                            <button class="btn btn-danger w-100" onclick="exportModalLedgerPDF()">
+                                <i class="bi bi-file-pdf"></i> PDF
+                            </button>
+                        </div>
+                        <div class="col-3">
+                            <button class="btn btn-success w-100" onclick="exportModalLedgerExcel()">
+                                <i class="bi bi-file-excel"></i> Excel
+                            </button>
+                        </div>
+                        <div class="col-3">
+                            <button class="btn btn-info w-100" onclick="sendModalLedgerWhatsApp()">
+                                <i class="bi bi-whatsapp"></i> WhatsApp
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="table-container">
+                        <table class="table-professional">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Date</th>
+                                    <th>Amount</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                    <th>Balance</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+            `;
+
+            loans.forEach(loan => {
+                let balDisp = loan.status === "CLOSED" ? 0 : (loan.balance_amount || 0);
+                
+                ledgerHtml += `
+                    <tr>
+                        <td><strong>${loan.id||''}</strong></td>
+                        <td>${escapeHtml(loan.loan_date||'')}</td>
+                        <td class="currency">₹${(loan.amount || 0).toLocaleString()}</td>
+                        <td><span class="badge bg-secondary">${escapeHtml(loan.repayment_type || 'N/A')}</span></td>
+                        <td><span class="badge ${loan.status === 'CLOSED' ? 'bg-success' : 'bg-warning'}">${escapeHtml(loan.status || 'OPEN')}</span></td>
+                        <td class="currency ${balDisp > 0 ? 'currency-negative' : ''}">₹${balDisp.toLocaleString()}</td>
+                    </tr>
+                `;
+            });
+
+            ledgerHtml += `
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <th colspan="5" class="text-end">TOTAL BALANCE:</th>
+                                    <th class="currency currency-negative">₹${totalBalance.toLocaleString()}</th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            `;
+
+            ledgerDisplay.innerHTML = ledgerHtml;
+        }
+
+        // ✅ ALL EXPORT FUNCTIONS
+        function printModalLedger() {
+            if (!selectedClientData) return;
+            
+            const printContent = document.getElementById("selectedClientLedger").innerHTML;
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Ledger - ${selectedClientData.name}</title>
+                    <style>${document.querySelector('style').textContent}</style>
+                </head>
+                <body class="container my-3">${printContent}</body>
+                </html>
+            `);
+            printWindow.document.close();
+            printWindow.onload = () => {
+                printWindow.print();
+                printWindow.close();
+            };
+        }
+
+        function exportModalLedgerPDF() {
+            if (!selectedClientData) return;
+            window.open(`/export/pdf?phone=${encodeURIComponent(selectedClientData.phone)}&t=${Date.now()}`, '_blank');
+        }
+
+        function exportModalLedgerExcel() {
+            if (!selectedClientData) return;
+            window.open(`/export/excel?phone=${encodeURIComponent(selectedClientData.phone)}&t=${Date.now()}`, '_blank');
+        }
+
+        function sendModalLedgerWhatsApp() {
+            if (!selectedClientData) return;
+            const phone = selectedClientData.phone;
+            const pdfUrl = `/export/pdf?phone=${encodeURIComponent(phone)}`;
+            const message = `Ledger for ${selectedClientData.name} (${phone}): ${window.location.origin}${pdfUrl}`;
+            const waUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+            window.open(waUrl, "_blank");
+        }
+
+        function sendWhatsAppLink() {
+            let phone = document.getElementById("phone").value.trim();
+            if (!phone) { alert("Enter phone number first."); return; }
+            let pdfUrl = `/export/pdf?phone=${encodeURIComponent(phone)}`;
+            let message = `Ledger for ${phone}: ${window.location.origin}${pdfUrl}`;
+            let waUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+            window.open(waUrl, "_blank");
+        }
+
+        function openAllClientsData() {
+            window.open('/all-clients-ledgers-view', '_blank');
+        }
+
+        function openPaymentEntry() {
+            window.open('/payment-entry', '_blank');
+        }
+
+        // Delete customer
+        async function deleteCustomer() {
+            const phoneField = document.getElementById("phone");
+            const phone = (phoneField?.value || "").trim();
+
+            if (!phone) {
+                alert("Please enter a client phone number first.");
+                return;
+            }
+
+            if (!confirm("⚠️ This will permanently delete ALL data for this client. Continue?")) return;
+
+            try {
+                const res = await fetch(`/client/${encodeURIComponent(phone)}`, {method: "DELETE"});
+                const data = await res.json();
+
+                if (res.ok) {
+                    alert(data.message || "Client data deleted successfully.");
+                    clearForm();
+                    clearLedger();
+                    loadClients();
+                } else {
+                    alert(data.error || "Delete failed.");
+                }
+            } catch (err) {
+                console.error('Delete error:', err);
+                alert("Network error while deleting.");
+            }
+        }
+
+        // Navigation functions
+        function goToLedgerPage() { location.href = "/ledger/page"; }
+        function goToAdvancesReport() { window.open("/advances/report", "_blank"); }
+        function goToSalesReport() { window.open("/sales/report/page", "_blank"); }
+        function goToDailyReport() { window.open("/daily-report/page", "_blank"); }
+
+        // ✅ INITIALIZATION
+        window.addEventListener('load', () => {
+            loadClients();
+            updateTimeIST();
+            
+            const today = new Date().toISOString().split('T')[0];
+            const loanDateEl = document.getElementById('loan_date');
+            if (loanDateEl) loanDateEl.value = today;
+
+            // Auto-load on phone input (ORIGINAL PHONE LOGIC PRESERVED)
+            document.getElementById("phone").addEventListener("input", function() {
+                const phone = this.value.trim();
+                if (phone.length === 1 && !isEditProfileMode) {
+                    setTimeout(() => loadLedger(), 500);
+                }
+            });
+        });
+    </script>
+</head>
+<body class="container-fluid py-3">
+
+    <!-- ✅ HEADER -->
+    <div class="app-header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="app-title">
+                        <i class="bi bi-bank2 me-3"></i>
+                        Loan Management System
+                    </h1>
+                    <p class="mb-0 opacity-90">Professional Financial Management • SHIVI PROJECT</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="time-badge" id="live-time">Loading...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- ✅ CLIENT INFORMATION -->
+        <div class="card-clean">
+            <div class="section-title">
+                <i class="bi bi-person-fill"></i>
+                Client Information
+            </div>
+            
+            <div class="row g-3 mb-4">
+                <div class="col-md-3">
+                    <label for="name" class="form-label">Full Name *</label>
+                    <input id="name" class="form-control" placeholder="Enter client name">
+                </div>
+                <div class="col-md-3">
+                    <label for="phone" class="form-label">Phone Number *</label>
+                    <input id="phone" class="form-control" placeholder="10-digit number" maxlength="10">
+                </div>
+                <div class="col-md-3">
+                    <label for="address" class="form-label">Address</label>
+                    <input id="address" class="form-control" placeholder="Enter address">
+                </div>
+                <div class="col-md-3">
+                    <label for="city" class="form-label">City</label>
+                    <input id="city" class="form-control" placeholder="Enter city">
+                </div>
+            </div>
+            
+            <div class="row g-3">
+                <div class="col-md-8">
+                    <label for="search_name" class="form-label">
+                        <i class="bi bi-search"></i> Quick Client Search
+                    </label>
+                    <div class="position-relative">
+                        <input id="search_name" class="form-control" placeholder="Type client name to search..." oninput="showSuggestions()">
+                        <div id="suggestions" class="list-group"></div>
+                    </div>
+                </div>
+                <div class="col-md-4 d-flex align-items-end gap-2">
+                    <button class="btn btn-primary" onclick="showClientsModal()">
+                        <i class="bi bi-people"></i> All Clients
+                    </button>
+                    <button class="btn btn-outline-secondary" onclick="loadLedger()">
+                        <i class="bi bi-arrow-clockwise"></i> Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ✅ LOAN DETAILS -->
+        <div class="card-clean">
+            <div class="section-title">
+                <i class="bi bi-cash-coin"></i>
+                Loan Details
+            </div>
+            
+            <div class="row g-3 mb-4">
+                <div class="col-md-3">
+                    <label for="loan_date" class="form-label">Loan Start Date *</label>
+                    <input type="date" id="loan_date" class="form-control">
+                </div>
+                <div class="col-md-3">
+                    <label for="loan_amount" class="form-label">Loan Amount *</label>
+                    <input type="number" id="loan_amount" class="form-control" placeholder="Enter amount" oninput="calcAdvance()">
+                </div>
+                <div class="col-md-3">
+                    <label for="repayment_type" class="form-label">Repayment Type</label>
+                    <select id="repayment_type" class="form-select" onchange="calcAdvance()">
+                        <option value="DAILY">Daily</option>
+                        <option value="WEEKLY">Weekly</option>
+                        <option value="TEN_DAYS">10 Days</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="processing_fees" class="form-label">Processing Fees</label>
+                    <input type="number" id="processing_fees" class="form-control" placeholder="Enter fees">
+                </div>
+            </div>
+            
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label for="advance_amount" class="form-label">
+                        <i class="bi bi-cash-stack"></i> Advance Amount <small>(Auto-calculated)</small>
+                    </label>
+                    <input type="number" id="advance_amount" class="form-control" placeholder="Auto-calculated">
+                </div>
+                <div class="col-md-4">
+                    <label for="loan_closed_date" class="form-label">Loan Close Date</label>
+                    <input type="date" id="loan_closed_date" class="form-control">
+                </div>
+                <div class="col-md-4">
+                    <label for="case_closing_amount" class="form-label">Final Closing Amount</label>
+                    <input type="number" id="case_closing_amount" class="form-control" placeholder="Final amount">
+                </div>
+            </div>
+        </div>
+
+        <!-- ✅ PERFECTLY ALIGNED BUTTONS - NO LARGE SPACES -->
+        <div class="card-clean">
+            <h6 class="text-muted mb-3">Actions</h6>
+            
+            <!-- Primary Actions Row -->
+            <div class="row g-2 mb-3">
+                <div class="col-6 col-md-3">
+                    <button id="submit-btn" class="btn btn-primary w-100" onclick="submitLoan()">
+                        <i class="bi bi-check-lg"></i> Submit Loan
+                    </button>
+                </div>
+                <div class="col-6 col-md-3">
+                    <button class="btn btn-success w-100" onclick="clearForm()">
+                        <i class="bi bi-plus-lg"></i> New Loan
+                    </button>
+                </div>
+                <div class="col-6 col-md-3">
+                    <button class="btn btn-danger w-100" onclick="cancelForm()">
+                        <i class="bi bi-x-lg"></i> Cancel
+                    </button>
+                </div>
+                <div class="col-6 col-md-3">
+                    <button id="edit-profile-btn" class="btn btn-info w-100" onclick="isEditProfileMode ? exitEditProfileMode() : openEditProfile()">
+                        <i class="bi bi-pencil-square"></i> Edit Profile
+                    </button>
+                </div>
+            </div>
+
+            <!-- Navigation Row -->
+            <div class="row g-2 mb-3">
+                <div class="col-6 col-md-3">
+                    <button class="btn btn-outline-primary w-100" onclick="goToLedgerPage()">
+                        <i class="bi bi-journal-text"></i> Ledger Page
+                    </button>
+                </div>
+                <div class="col-6 col-md-3">
+                    <button class="btn btn-outline-success w-100" onclick="goToAdvancesReport()">
+                        <i class="bi bi-cash-stack"></i> Advances
+                    </button>
+                </div>
+                <div class="col-6 col-md-3">
+                    <button class="btn btn-outline-info w-100" onclick="goToSalesReport()">
+                        <i class="bi bi-graph-up"></i> Sales Report
+                    </button>
+                </div>
+                <div class="col-6 col-md-3">
+                    <button class="btn btn-outline-warning w-100" onclick="goToDailyReport()">
+                        <i class="bi bi-calendar-day"></i> Daily Report
+                    </button>
+                </div>
+            </div>
+
+            <!-- Data & Utility Row -->
+            <div class="row g-2 mb-3">
+                <div class="col-6 col-md-2">
+                    <button class="btn btn-primary w-100" onclick="openAllClientsData()">
+                        <i class="bi bi-database"></i> Data
+                    </button>
+                </div>
+                <div class="col-6 col-md-2">
+                    <button class="btn btn-success w-100" onclick="openPaymentEntry()">
+                        <i class="bi bi-pencil-square"></i> Entry
+                    </button>
+                </div>
+                <div class="col-6 col-md-2">
+                    <button class="btn btn-outline-secondary w-100" onclick="loadLedger()">
+                        <i class="bi bi-arrow-clockwise"></i> Refresh
+                    </button>
+                </div>
+                <div class="col-6 col-md-2">
+                    <button id="print-ledger-btn" class="btn btn-outline-primary w-100" style="display:none;" onclick="printLedger()">
+                        <i class="bi bi-printer"></i> Print
+                    </button>
+                </div>
+                <div class="col-6 col-md-2">
+                    <button class="btn btn-outline-success w-100" onclick="window.open(`/export/excel?phone=${encodeURIComponent(document.getElementById('phone').value)}&t=${Date.now()}`, '_blank')">
+                        <i class="bi bi-file-excel"></i> Excel
+                    </button>
+                </div>
+                <div class="col-6 col-md-2">
+                    <button class="btn btn-danger w-100" onclick="deleteCustomer()">
+                        <i class="bi bi-trash"></i> Delete
+                    </button>
+                </div>
+            </div>
+
+            <!-- ✅ BUG FIX: Edit Mode Navigation (Fixed visibility control) -->
+            <div class="row g-2" style="display:none;" id="edit-mode-nav">
+                <div class="col-6">
+                    <button id="prev-client-btn" class="btn btn-outline-secondary w-100" onclick="prevClient()">
+                        <i class="bi bi-arrow-left"></i> Previous Client
+                    </button>
+                </div>
+                <div class="col-6">
+                    <button id="next-client-btn" class="btn btn-outline-secondary w-100" onclick="nextClient()">
+                        <i class="bi bi-arrow-right"></i> Next Client
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ✅ LEDGER TABLE -->
+        <div class="table-container">
+            <div class="ledger-header no-print">
+                <h5 id="ledger-customer-name" class="mb-1">Select a client to view ledger</h5>
+                <p id="ledger-customer-contact" class="mb-0"></p>
+            </div>
+            
+            <div id="ledger-status" class="ledger-status no-print"></div>
+
+            <div id="ledger-print-area">
+                <div class="table-responsive">
+                    <table class="table-professional">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Loan Start Date</th>
+                                <th>Day</th>
+                                <th>Loan End Date</th>
+                                <th>Close Date</th>
+                                <th>Processing Fees</th>
+                                <th>Loan Amount</th>
+                                <th>Installment</th>
+                                <th>Type</th>
+                                <th>Advance</th>
+                                <th>Closing Amount</th>
+                                <th>Balance</th>
+                                <th>Pending</th>
+                                <th>Status</th>
+                                <th class="no-print">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ledgerBody">
+                            <tr>
+                                <td colspan="15" class="text-center py-5 text-muted">
+                                    <i class="bi bi-search display-6 d-block mb-3"></i>
+                                    Search for a client to view their loan history
+                                </td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <th colspan="5" class="text-end">TOTALS:</th>
+                                <th id="total_processing_fees" class="currency">₹0</th>
+                                <th id="total_loan_amount" class="currency">₹0</th>
+                                <th id="total_installment_amount" class="currency">₹0</th>
+                                <th></th>
+                                <th id="total_advance_amount" class="currency">₹0</th>
+                                <th id="total_closing_amount" class="currency">₹0</th>
+                                <th id="total_balance" class="currency currency-negative">₹0</th>
+                                <th></th>
+                                <th colspan="2"></th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ✅ ALL ORIGINAL MODALS -->
+    
+    <!-- Edit Profile Modal -->
+    <div class="modal fade" id="editProfileModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-pencil-square me-2"></i>Edit Profile - Select Client
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <input type="text" id="editClientSearch" class="form-control" placeholder="Search client name..." oninput="searchClientsInEditModal()">
+                    </div>
+                    <div class="list-group" id="editClientsModalBody" style="max-height:300px;overflow-y:auto;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Full-Screen Clients Modal -->
+    <div class="modal fade" id="clientsModal" tabindex="-1">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">
+                        <i class="bi bi-people me-2"></i>Complete Client Directory
+                    </h4>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div class="row g-0" style="height: calc(100vh - 120px);">
+                        <div class="col-md-4 border-end bg-light">
+                            <div class="p-3 border-bottom">
+                                <input type="text" id="fullScreenClientSearch" class="form-control" 
+                                       placeholder="🔍 Search clients..." oninput="searchFullScreenClients()">
+                            </div>
+                            <div style="height: calc(100vh - 200px); overflow-y: auto;" id="fullScreenClientsBody"></div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="p-3 h-100" style="overflow-y: auto;">
+                                <div id="selectedClientLedger">
+                                    <div class="text-center p-5 text-muted">
+                                        <i class="bi bi-arrow-left display-4 d-block mb-3 text-primary"></i>
+                                        <h5>Select a client from the list</h5>
+                                        <p>Choose a client to view their complete loan history</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Close Loan Modal -->
+    <div class="modal fade" id="closeLoanModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-x-circle me-2"></i>Close Loan
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <label for="close_date" class="form-label">Select Close Date</label>
+                    <input type="date" id="close_date" class="form-control">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="confirmClose()">Confirm Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ✅ BOOTSTRAP JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js?v=20250829"></script>
+</body>
+</html>

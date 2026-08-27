@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Penalty Report</title>
+    {% include "_pwa_head.html" %}
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .page-header {
+            background: linear-gradient(135deg, #ff6f00 0%, #e65100 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 14px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+            margin-bottom: 16px;
+        }
+
+        .page-header h2 {
+            margin: 0;
+            font-weight: 800;
+            letter-spacing: 0.3px;
+        }
+
+        .card-soft {
+            background: rgba(255,255,255,0.95);
+            border-radius: 14px;
+            border: 1px solid rgba(0,0,0,0.05);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        }
+
+        .metric {
+            border-radius: 12px;
+            padding: 14px;
+            background: linear-gradient(135deg, #ffffff 0%, #fff3e0 100%);
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .metric .label {
+            font-size: 12px;
+            font-weight: 700;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        .metric .value {
+            font-size: 22px;
+            font-weight: 900;
+            color: #e65100;
+        }
+
+        .table thead th {
+            position: sticky;
+            top: 0;
+            background: #fff;
+            z-index: 1;
+        }
+
+        .no-print {
+            display: block;
+        }
+
+        body.exporting {
+            padding: 0 !important;
+            background: #ffffff !important;
+        }
+
+        body.exporting .no-print {
+            display: none !important;
+        }
+
+        body.exporting .table-responsive {
+            max-height: none !important;
+            overflow: visible !important;
+        }
+
+        body.exporting .table thead th {
+            position: static !important;
+        }
+
+        body.exporting table {
+            width: 100% !important;
+            table-layout: fixed;
+        }
+
+        .penalty-input {
+            width: 110px;
+            text-align: right;
+            font-weight: 800;
+        }
+
+        .modal-backdrop-custom {
+            position: fixed;
+            left: 0;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.25);
+            z-index: 1000000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+
+        .modal-card-custom {
+            width: 100%;
+            max-width: 1100px;
+            background: #fff;
+            border-radius: 14px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+            overflow: hidden;
+        }
+
+        .modal-card-custom .modal-header-custom {
+            padding: 12px 16px;
+            background: linear-gradient(135deg, #ff6f00 0%, #e65100 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .modal-card-custom .modal-body-custom {
+            padding: 14px 16px;
+            max-height: 75vh;
+            overflow: auto;
+        }
+
+        @media print {
+            @page { size: A4 landscape; margin: 6mm; }
+            body { padding: 0 !important; background: #ffffff !important; }
+            .no-print { display: none !important; }
+            .modal-backdrop-custom { display: none !important; }
+            .table-responsive { max-height: none !important; overflow: visible !important; }
+            .table thead th { position: static !important; }
+            table { width: 100% !important; table-layout: fixed; }
+            th, td { font-size: 11px !important; word-wrap: break-word; }
+        }
+
+        .money {
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+
+        .text-small {
+            font-size: 12px;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid" id="penaltyExportRoot" style="max-width: 1400px;">
+        <div class="page-header">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <div>
+                    <h2><i class="bi bi-exclamation-triangle"></i> Penalty Report</h2>
+                    <div class="text-small" style="color: rgba(255,255,255,0.85);">Client-wise penalties from pending short payments</div>
+                </div>
+                <div class="d-flex gap-2 no-print">
+                    <select class="form-select" id="printOrientation" style="width: 160px;">
+                        <option value="landscape" selected>Landscape</option>
+                        <option value="portrait">Portrait</option>
+                    </select>
+                    <button class="btn btn-light" onclick="downloadPenaltyPDF()"><i class="bi bi-download"></i> Download Report</button>
+                    <button class="btn btn-outline-light" onclick="sharePenaltyPDFToWhatsApp()"><i class="bi bi-whatsapp"></i> WhatsApp</button>
+                    <button class="btn btn-light" onclick="printPenaltyReport()"><i class="bi bi-printer"></i> Print</button>
+                    <button class="btn btn-dark" onclick="window.close()"><i class="bi bi-x-lg"></i> Close</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card card-soft p-3 mb-3 no-print">
+            <div class="row g-3 align-items-end">
+                <div class="col-12 col-sm-6 col-md-3">
+                    <label class="form-label fw-bold">From</label>
+                    <input type="date" class="form-control" id="startDate" value="{{ default_start }}">
+                </div>
+                <div class="col-12 col-sm-6 col-md-3">
+                    <label class="form-label fw-bold">To</label>
+                    <input type="date" class="form-control" id="endDate" value="{{ default_end }}">
+                </div>
+                <div class="col-12 col-sm-6 col-md-3">
+                    <label class="form-label fw-bold">Penalty per day (₹)</label>
+                    <input type="number" class="form-control" id="perDayPenalty" value="500" min="0" step="1" oninput="applyGlobalPenaltyPerDay()">
+                </div>
+                <div class="col-12 col-sm-6 col-md-3 d-grid">
+                    <button class="btn btn-warning fw-bold" onclick="loadPenaltyReport()"><i class="bi bi-arrow-clockwise"></i> Load</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+            <div class="col-12 col-md-4">
+                <div class="metric">
+                    <div class="label">Total Clients</div>
+                    <div class="value" id="metricClients">0</div>
+                </div>
+            </div>
+            <div class="col-12 col-md-4">
+                <div class="metric">
+                    <div class="label">Total Pending Amount</div>
+                    <div class="value money" id="metricPending">₹0</div>
+                </div>
+            </div>
+            <div class="col-12 col-md-4">
+                <div class="metric">
+                    <div class="label">Total Penalty</div>
+                    <div class="value money" id="metricPenalty">₹0</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card card-soft p-3 mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h5 class="m-0 fw-bold">Client-wise Summary</h5>
+                <div class="text-small" id="generatedAt"></div>
+            </div>
+            <div class="table-responsive" style="max-height: 55vh;">
+                <table class="table table-hover align-middle" id="summaryTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 70px;">Sr</th>
+                            <th>Name</th>
+                            <th style="width: 120px;" class="text-end">Items</th>
+                            <th style="width: 170px;" class="text-end">Pending Amount</th>
+                            <th style="width: 150px;" class="text-end">Penalty/Day</th>
+                            <th style="width: 140px;" class="text-end">Penalty Due</th>
+                            <th style="width: 140px;" class="text-end">Collected</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td colspan="7" class="text-center text-muted p-4">Click Load to view penalties</td></tr>
+                    </tbody>
+                    <tfoot>
+                        <tr class="table-warning fw-bold">
+                            <td colspan="3" class="text-end">Totals</td>
+                            <td class="text-end money" id="summaryTotalPending">₹0</td>
+                            <td class="text-end">—</td>
+                            <td class="text-end money" id="summaryTotalPenalty">₹0</td>
+                            <td class="text-end money" id="summaryTotalPenaltyCollected">₹0</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <div class="card card-soft p-3">
+            <h5 class="m-0 fw-bold mb-2">Details (Pending Shorts)</h5>
+            <div class="table-responsive" style="max-height: 45vh;">
+                <table class="table table-sm table-striped align-middle" id="detailsTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 70px;">Sr</th>
+                            <th>Name</th>
+                            <th style="width: 120px;">Type</th>
+                            <th style="width: 120px;">Due Date</th>
+                            <th style="width: 150px;" class="text-end">Pending</th>
+                            <th style="width: 120px;" class="text-end">Days</th>
+                            <th style="width: 150px;" class="text-end">Penalty/Day</th>
+                            <th style="width: 140px;" class="text-end">Penalty</th>
+                            <th style="width: 110px;" class="text-center">Collected</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td colspan="9" class="text-center text-muted p-4">No data</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop-custom" id="clientModal">
+        <div class="modal-card-custom">
+            <div class="modal-header-custom">
+                <div style="font-weight: 900;" id="clientModalTitle">Client Details</div>
+                <button class="btn btn-sm btn-light" onclick="closeClientModal()"><i class="bi bi-x-lg"></i></button>
+            </div>
+            <div class="modal-body-custom">
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped align-middle" id="clientModalTable">
+                        <thead>
+                            <tr>
+                                <th style="width: 70px;">Sr</th>
+                                <th style="width: 120px;">Type</th>
+                                <th style="width: 120px;">Due Date</th>
+                                <th class="text-end" style="width: 150px;">Pending</th>
+                                <th class="text-end" style="width: 120px;">Days</th>
+                                <th class="text-end" style="width: 150px;">Penalty/Day</th>
+                                <th class="text-end" style="width: 140px;">Penalty</th>
+                                <th class="text-center" style="width: 110px;">Collected</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="8" class="text-center text-muted p-4">No data</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function fmtMoney(n) {
+            const v = Number(n || 0);
+            return '₹' + v.toLocaleString(undefined, { maximumFractionDigits: 2 });
+        }
+
+        function escapeHtml(s) {
+            return String(s || '')
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;');
+        }
+
+        function escapeAttr(s) {
+            return escapeHtml(s)
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#39;');
+        }
+
+        function normalizeKey(r) {
+            const clientId = (r.client_id !== undefined && r.client_id !== null) ? String(r.client_id).trim() : '';
+            const phone = (r.phone || '').trim();
+            const name = (r.name || '').trim();
+            return clientId || phone || name || String(r.loan_id || '');
+        }
+
+        function getOrientation() {
+            const v = document.getElementById('printOrientation')?.value || 'landscape';
+            return (v === 'portrait') ? 'portrait' : 'landscape';
+        }
+
+        function downloadBlob(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            setTimeout(() => URL.revokeObjectURL(url), 30_000);
+        }
+
+        function getCollectedMap() {
+            try {
+                return JSON.parse(localStorage.getItem('penalty_collected_map') || '{}') || {};
+            } catch (_) {
+                return {};
+            }
+        }
+
+        function setCollectedMap(map) {
+            try {
+                localStorage.setItem('penalty_collected_map', JSON.stringify(map || {}));
+            } catch (_) {
+                // ignore
+            }
+        }
+
+        function penaltyRowKey(r) {
+            const loanId = String(r.loan_id || '');
+            const due = String(r.due_date || '');
+            const typ = String(r.repayment_type || '');
+            return `${loanId}__${due}__${typ}`;
+        }
+
+        function getGlobalPenaltyPerDay() {
+            const v = Number(document.getElementById('perDayPenalty')?.value || 0);
+            return Number.isFinite(v) ? v : 0;
+        }
+
+        function applyGlobalPenaltyPerDay() {
+            const v = getGlobalPenaltyPerDay();
+
+            document.querySelectorAll('input[data-role="client-penalty-per-day"]').forEach(inp => {
+                if (inp.dataset.locked === '1') return;
+                inp.value = String(v);
+            });
+
+            document.querySelectorAll('input[data-role="penalty-per-day"]').forEach(inp => {
+                if (inp.dataset.locked === '1') return;
+                inp.value = String(v);
+            });
+
+            recalcPenalty();
+        }
+
+        function onClientPenaltyPerDayInput(inputEl) {
+            const clientKey = inputEl.dataset.clientKey || '';
+            const v = Number(inputEl.value || 0);
+            document.querySelectorAll(`input[data-role="penalty-per-day"][data-client-key="${CSS.escape(clientKey)}"]`).forEach(inp => {
+                if (inp.dataset.locked === '1') return;
+                inp.value = String(v);
+            });
+            recalcPenalty();
+        }
+
+        function onRowPenaltyPerDayInput() {
+            recalcPenalty();
+        }
+
+        function onRowCollectedToggle(cb) {
+            const rowKey = cb.dataset.rowKey || '';
+            if (!rowKey) return;
+            const map = getCollectedMap();
+            map[rowKey] = cb.checked ? 1 : 0;
+            setCollectedMap(map);
+
+            const loanId = (cb.dataset.loanId || '').trim();
+            const dueDate = (cb.dataset.dueDate || '').trim();
+            const repaymentType = (cb.dataset.repaymentType || '').trim();
+            if (loanId && dueDate && repaymentType) {
+                fetch('/api/payment-entry/penalty-collected', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        loan_id: loanId,
+                        due_date: dueDate,
+                        repayment_type: repaymentType,
+                        collected: !!cb.checked
+                    })
+                }).then(async (resp) => {
+                    if (!resp.ok) {
+                        const payload = await resp.json().catch(() => ({}));
+                        throw new Error(payload?.error || `HTTP ${resp.status}`);
+                    }
+                }).catch((err) => {
+                    console.error('Persist collected failed:', err);
+                });
+            }
+
+            const tr = cb.closest('tr');
+            if (tr) {
+                if (cb.checked) tr.style.background = 'linear-gradient(135deg, #e8f5e8, #c8e6c9)';
+                else tr.style.background = '';
+            }
+            recalcPenalty();
+        }
+
+        function recalcPenalty() {
+            const detailsBody = document.querySelector('#detailsTable tbody');
+            const detailTrs = Array.from(detailsBody.querySelectorAll('tr[data-row-key]'));
+
+            const grouped = new Map();
+            let totalPending = 0;
+            let totalPenaltyDue = 0;
+            let totalPenaltyCollected = 0;
+
+            detailTrs.forEach(tr => {
+                const clientKey = tr.dataset.clientKey || '';
+                const name = tr.dataset.name || '';
+                const pending = Number(tr.dataset.pending || 0);
+                const days = Number(tr.dataset.days || 0);
+
+                const perDayInput = tr.querySelector('input[data-role="penalty-per-day"]');
+                const perDay = Number(perDayInput?.value || 0);
+                const penaltyAmt = Math.round((days * perDay) * 100) / 100;
+
+                const collectedCb = tr.querySelector('input[data-role="penalty-collected"]');
+                const isCollected = !!collectedCb?.checked;
+
+                const penaltyCell = tr.querySelector('[data-role="penalty-amount"]');
+                if (penaltyCell) penaltyCell.textContent = fmtMoney(penaltyAmt);
+
+                totalPending += pending;
+                if (isCollected) {
+                    totalPenaltyCollected += penaltyAmt;
+                } else {
+                    totalPenaltyDue += penaltyAmt;
+                }
+
+                const g = grouped.get(clientKey) || { name, items: 0, pending: 0, due: 0, collected: 0 };
+                g.items += 1;
+                g.pending += pending;
+                if (isCollected) g.collected += penaltyAmt;
+                else g.due += penaltyAmt;
+                if (!g.name && name) g.name = name;
+                grouped.set(clientKey, g);
+            });
+
+            const summaryBody = document.querySelector('#summaryTable tbody');
+            const summaryRows = Array.from(summaryBody.querySelectorAll('tr[data-client-key]'));
+            summaryRows.forEach(tr => {
+                const key = tr.dataset.clientKey || '';
+                const g = grouped.get(key) || { items: 0, pending: 0, due: 0, collected: 0 };
+                const itemsEl = tr.querySelector('[data-role="items"]');
+                const pendingEl = tr.querySelector('[data-role="pending"]');
+                const dueEl = tr.querySelector('[data-role="due"]');
+                const collectedEl = tr.querySelector('[data-role="collected"]');
+                if (itemsEl) itemsEl.textContent = String(g.items || 0);
+                if (pendingEl) pendingEl.textContent = fmtMoney(g.pending || 0);
+                if (dueEl) dueEl.textContent = fmtMoney(g.due || 0);
+                if (collectedEl) collectedEl.textContent = fmtMoney(g.collected || 0);
+            });
+
+            document.getElementById('metricClients').textContent = String(grouped.size);
+            document.getElementById('metricPending').textContent = fmtMoney(totalPending);
+            document.getElementById('metricPenalty').textContent = fmtMoney(totalPenaltyDue);
+
+            document.getElementById('summaryTotalPending').textContent = fmtMoney(totalPending);
+            document.getElementById('summaryTotalPenalty').textContent = fmtMoney(totalPenaltyDue);
+            document.getElementById('summaryTotalPenaltyCollected').textContent = fmtMoney(totalPenaltyCollected);
+        }
+
+        function openClientModal(clientKey) {
+            const modal = document.getElementById('clientModal');
+            const tbody = document.querySelector('#clientModalTable tbody');
+
+            const rows = window.__penaltyDetailRows || [];
+            const filtered = rows.filter(r => String(r.clientKey || '') === String(clientKey || ''));
+
+            document.getElementById('clientModalTitle').textContent = filtered.length ? (filtered[0].name || 'Client Details') : 'Client Details';
+
+            if (!filtered.length) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted p-4">No data</td></tr>';
+                modal.style.display = 'flex';
+                return;
+            }
+
+            tbody.innerHTML = filtered.map((r, idx) => {
+                const mainRow = document.querySelector(`#detailsTable tr[data-row-key="${CSS.escape(r.rowKey)}"]`);
+                const perDayVal = Number(mainRow?.querySelector('input[data-role="penalty-per-day"]')?.value || 0);
+                const collected = !!mainRow?.querySelector('input[data-role="penalty-collected"]')?.checked;
+                const penaltyAmt = Math.round((Number(r.days_overdue || 0) * perDayVal) * 100) / 100;
+                return `
+                    <tr>
+                        <td>${idx + 1}</td>
+                        <td>${escapeHtml(r.repayment_type)}</td>
+                        <td>${escapeHtml(r.due_date)}</td>
+                        <td class="text-end money">${fmtMoney(r.pending_amount)}</td>
+                        <td class="text-end">${Number(r.days_overdue || 0)}</td>
+                        <td class="text-end">
+                            <input class="form-control form-control-sm penalty-input" type="number" min="0" step="1" value="${perDayVal}" oninput="setRowPenaltyPerDay('${escapeHtml(r.rowKey)}', this.value, false)" onchange="setRowPenaltyPerDay('${escapeHtml(r.rowKey)}', this.value, true)">
+                        </td>
+                        <td class="text-end money fw-bold">${fmtMoney(penaltyAmt)}</td>
+                        <td class="text-center">
+                            <input type="checkbox" ${collected ? 'checked' : ''} onchange="setRowCollected('${escapeHtml(r.rowKey)}', this.checked)">
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            modal.style.display = 'flex';
+        }
+
+        function closeClientModal() {
+            const modal = document.getElementById('clientModal');
+            modal.style.display = 'none';
+        }
+
+        function setRowPenaltyPerDay(rowKey, value, lock) {
+            const main = document.querySelector(`#detailsTable input[data-role="penalty-per-day"][data-row-key="${CSS.escape(rowKey)}"]`);
+            if (main) {
+                main.value = String(value);
+                if (lock) main.dataset.locked = '1';
+            }
+            recalcPenalty();
+        }
+
+        function setRowCollected(rowKey, checked) {
+            const main = document.querySelector(`#detailsTable input[data-role="penalty-collected"][data-row-key="${CSS.escape(rowKey)}"]`);
+            if (main) {
+                main.checked = !!checked;
+                onRowCollectedToggle(main);
+            }
+        }
+
+        function getPdfFileName() {
+            const start = document.getElementById('startDate')?.value || '';
+            const end = document.getElementById('endDate')?.value || '';
+            return `Penalty_Report_${start}_to_${end}.pdf`;
+        }
+
+        async function withExportLayout(fn) {
+            document.body.classList.add('exporting');
+            try {
+                return await fn();
+            } finally {
+                document.body.classList.remove('exporting');
+            }
+        }
+
+        async function withScrollToTop(fn) {
+            const x = window.scrollX;
+            const y = window.scrollY;
+            window.scrollTo(0, 0);
+            await new Promise(r => setTimeout(r, 60));
+            try {
+                return await fn();
+            } finally {
+                window.scrollTo(x, y);
+            }
+        }
+
+        async function withTempOverlay(message, run) {
+            const overlay = document.createElement('div');
+            overlay.style.position = 'fixed';
+            overlay.style.left = '0';
+            overlay.style.top = '0';
+            overlay.style.right = '0';
+            overlay.style.bottom = '0';
+            overlay.style.zIndex = '999999';
+            overlay.style.background = 'rgba(0,0,0,0.18)';
+            overlay.style.display = 'flex';
+            overlay.style.alignItems = 'center';
+            overlay.style.justifyContent = 'center';
+            overlay.innerHTML = `<div style="background:#fff; padding:14px 18px; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.18); font-weight:800;">${escapeHtml(message || 'Preparing...')}</div>`;
+            document.body.appendChild(overlay);
+            try {
+                return await run();
+            } finally {
+                if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
+            }
+        }
+
+        async function buildPenaltyPdfTarget() {
+            const exportRoot = document.getElementById('penaltyExportRoot');
+            if (!exportRoot) return null;
+            const target = exportRoot.cloneNode(true);
+            target.style.position = 'fixed';
+            target.style.left = '0';
+            target.style.top = '0';
+            target.style.width = '1400px';
+            target.style.maxWidth = '1400px';
+            target.style.zIndex = '9999999';
+            target.style.pointerEvents = 'none';
+            target.style.background = '#ffffff';
+            target.style.overflow = 'visible';
+            document.body.appendChild(target);
+            await new Promise(requestAnimationFrame);
+            return target;
+        }
+
+        async function buildPenaltyPdfBlobMobileSliced({ orientation, element }) {
+            const jsPDFCtor = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+            if (!jsPDFCtor) throw new Error('PDF library not available');
+
+            if (typeof window.html2canvas !== 'function') {
+                throw new Error('Canvas library not available');
+            }
+
+            const pdf = new jsPDFCtor({ unit: 'mm', format: 'a4', orientation });
+
+            const marginTop = 6;
+            const marginLeft = 6;
+            const marginBottom = 6;
+            const marginRight = 6;
+
+            const pageW = (orientation === 'landscape') ? 297 : 210;
+            const pageH = (orientation === 'landscape') ? 210 : 297;
+
+            const pageWidthMm = pageW - marginLeft - marginRight;
+            const pageHeightMm = pageH - marginTop - marginBottom;
+
+            const el = element;
+            const contentWidthPx = Math.max(el.scrollWidth, 1);
+            const contentHeightPx = Math.max(el.scrollHeight, 1);
+
+            const maxSliceHeightPx = Math.floor((pageHeightMm * contentWidthPx) / pageWidthMm);
+            const sliceHeightPx = Math.max(600, Math.min(maxSliceHeightPx, 2200));
+
+            let pageIndex = 0;
+            for (let y = 0; y < contentHeightPx; y += sliceHeightPx) {
+                const height = Math.min(sliceHeightPx, contentHeightPx - y);
+                const canvas = await html2canvas(el, {
+                    backgroundColor: '#ffffff',
+                    scale: 1,
+                    useCORS: true,
+                    allowTaint: true,
+                    scrollX: 0,
+                    scrollY: 0,
+                    x: 0,
+                    y,
+                    width: contentWidthPx,
+                    height,
+                    windowWidth: contentWidthPx,
+                    windowHeight: height
+                });
+
+                const imgData = canvas.toDataURL('image/jpeg', 0.92);
+                const imgHeightMm = (canvas.height * pageWidthMm) / canvas.width;
+
+                if (pageIndex > 0) pdf.addPage();
+                pdf.addImage(imgData, 'JPEG', marginLeft, marginTop, pageWidthMm, imgHeightMm);
+                pageIndex += 1;
+            }
+
+            const ab = pdf.output('arraybuffer');
+            return new Blob([ab], { type: 'application/pdf' });
+        }
+
+        async function buildPenaltyPdfBlob() {
+            if (typeof window.html2pdf !== 'function') {
+                throw new Error('PDF library not available');
+            }
+
+            const orientation = getOrientation();
+            const opt = {
+                margin: [6, 6, 6, 6],
+                filename: getPdfFileName(),
+                image: { type: 'jpeg', quality: 0.92 },
+                html2canvas: {
+                    scale: 1.6,
+                    useCORS: true,
+                    allowTaint: true,
+                    backgroundColor: '#ffffff',
+                    logging: false,
+                    scrollX: 0,
+                    scrollY: 0,
+                    windowWidth: 1400
+                },
+                jsPDF: { unit: 'mm', format: 'a4', orientation },
+                pagebreak: { mode: ['css', 'legacy'] }
+            };
+
+            return await withExportLayout(() =>
+                withTempOverlay('Preparing PDF...', async () => {
+                    const target = await buildPenaltyPdfTarget();
+                    try {
+                        try {
+                            return await withScrollToTop(() => buildPenaltyPdfBlobMobileSliced({ orientation, element: target }));
+                        } catch (e) {
+                            console.warn('Sliced PDF failed; falling back to html2pdf:', e);
+                        }
+                        const ab = await withScrollToTop(() => html2pdf().set(opt).from(target).toPdf().output('arraybuffer'));
+                        return new Blob([ab], { type: 'application/pdf' });
+                    } finally {
+                        if (target && target.parentNode) target.parentNode.removeChild(target);
+                    }
+                })
+            );
+        }
+
+        async function downloadPenaltyPDF() {
+            try {
+                const blob = await buildPenaltyPdfBlob();
+                downloadBlob(blob, getPdfFileName());
+            } catch (e) {
+                alert(String(e?.message || e));
+            }
+        }
+
+        async function sharePenaltyPDFToWhatsApp() {
+            try {
+                const blob = await buildPenaltyPdfBlob();
+                const fileName = getPdfFileName();
+                const file = new File([blob], fileName, { type: 'application/pdf' });
+
+                if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                    await navigator.share({ files: [file], title: 'Penalty Report', text: 'Penalty Report' });
+                    return;
+                }
+
+                downloadBlob(blob, fileName);
+                const message = `Penalty Report.\nPDF downloaded—please attach it in WhatsApp.`;
+                window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+            } catch (e) {
+                alert(String(e?.message || e));
+            }
+        }
+
+        async function printPenaltyReport() {
+            try {
+                const blob = await buildPenaltyPdfBlob();
+                const url = URL.createObjectURL(blob);
+                const w = window.open(url, '_blank');
+                if (!w) {
+                    alert('Pop-up blocked. Allow pop-ups to print.');
+                    return;
+                }
+                w.addEventListener('load', () => {
+                    try {
+                        w.focus();
+                        w.print();
+                    } catch (_) {
+                        // ignore
+                    }
+                });
+                setTimeout(() => URL.revokeObjectURL(url), 60_000);
+            } catch (e) {
+                alert(String(e?.message || e));
+            }
+        }
+
+        async function loadPenaltyReport() {
+            const start = document.getElementById('startDate').value;
+            const end = document.getElementById('endDate').value;
+            const perDay = getGlobalPenaltyPerDay();
+
+            const url = `/api/payment-entry/penalty-report?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}&_=${Date.now()}`;
+
+            const summaryBody = document.querySelector('#summaryTable tbody');
+            const detailsBody = document.querySelector('#detailsTable tbody');
+            summaryBody.innerHTML = '<tr><td colspan="7" class="text-center text-muted p-4">Loading...</td></tr>';
+            detailsBody.innerHTML = '<tr><td colspan="9" class="text-center text-muted p-4">Loading...</td></tr>';
+
+            try {
+                const resp = await fetch(url);
+                const data = await resp.json();
+                if (!resp.ok || !data || !data.success) {
+                    throw new Error(data?.error || 'Failed to load report');
+                }
+
+                document.getElementById('generatedAt').textContent = data.generated_at ? `Generated: ${data.generated_at}` : '';
+
+                const rows = Array.isArray(data.rows) ? data.rows : [];
+                const collectedMap = getCollectedMap();
+
+                const detailRows = rows.map((r, i) => {
+                    const clientKey = normalizeKey(r);
+                    const rowKey = penaltyRowKey(r);
+                    return {
+                        ...r,
+                        sr: i + 1,
+                        clientKey,
+                        rowKey,
+                        _collected: !!(r.collected || collectedMap[rowKey])
+                    };
+                });
+
+                window.__penaltyDetailRows = detailRows;
+
+                const clientKeys = Array.from(new Set(detailRows.map(r => r.clientKey)))
+                    .sort((a, b) => a.localeCompare(b));
+
+                if (clientKeys.length === 0) {
+                    summaryBody.innerHTML = '<tr><td colspan="7" class="text-center text-muted p-4">No pending short payments in this range</td></tr>';
+                } else {
+                    summaryBody.innerHTML = clientKeys.map((key, idx) => {
+                        const name = (detailRows.find(r => r.clientKey === key)?.name) || '';
+                        return `
+                            <tr data-client-key="${escapeAttr(key)}">
+                                <td>${idx + 1}</td>
+                                <td class="fw-semibold"><a href="#" class="client-detail-link" data-client-key="${escapeAttr(key)}">${escapeHtml(name)}</a></td>
+                                <td class="text-end" data-role="items">0</td>
+                                <td class="text-end money" data-role="pending">₹0</td>
+                                <td class="text-end">
+                                    <input class="form-control form-control-sm penalty-input" type="number" min="0" step="1" value="${perDay}" data-role="client-penalty-per-day" data-client-key="${escapeAttr(key)}" data-locked="0" oninput="onClientPenaltyPerDayInput(this)" onchange="this.dataset.locked='1'; onClientPenaltyPerDayInput(this)">
+                                </td>
+                                <td class="text-end money fw-bold" data-role="due">₹0</td>
+                                <td class="text-end money" data-role="collected">₹0</td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+
+                if (detailRows.length === 0) {
+                    detailsBody.innerHTML = '<tr><td colspan="9" class="text-center text-muted p-4">No data</td></tr>';
+                } else {
+                    detailsBody.innerHTML = detailRows.map((r) => {
+                        return `
+                            <tr data-row-key="${escapeAttr(r.rowKey)}" data-client-key="${escapeAttr(r.clientKey)}" data-name="${escapeAttr(r.name)}" data-pending="${Number(r.pending_amount || 0)}" data-days="${Number(r.days_overdue || 0)}">
+                                <td>${r.sr}</td>
+                                <td>${escapeHtml(r.name)}</td>
+                                <td>${escapeHtml(r.repayment_type)}</td>
+                                <td>${escapeHtml(r.due_date)}</td>
+                                <td class="text-end money">${fmtMoney(r.pending_amount)}</td>
+                                <td class="text-end">${Number(r.days_overdue || 0)}</td>
+                                <td class="text-end">
+                                    <input class="form-control form-control-sm penalty-input" type="number" min="0" step="1" value="${perDay}" data-role="penalty-per-day" data-client-key="${escapeAttr(r.clientKey)}" data-row-key="${escapeAttr(r.rowKey)}" data-locked="0" oninput="onRowPenaltyPerDayInput()" onchange="this.dataset.locked='1'; onRowPenaltyPerDayInput()">
+                                </td>
+                                <td class="text-end money fw-bold" data-role="penalty-amount">₹0</td>
+                                <td class="text-center">
+                                    <input type="checkbox" data-role="penalty-collected" data-row-key="${escapeAttr(r.rowKey)}" data-loan-id="${escapeAttr(String(r.loan_id || ''))}" data-due-date="${escapeAttr(String(r.due_date || ''))}" data-repayment-type="${escapeAttr(String(r.repayment_type || ''))}" ${r._collected ? 'checked' : ''} onchange="onRowCollectedToggle(this)">
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+
+                document.querySelectorAll('#detailsTable input[data-role="penalty-collected"]:checked').forEach(cb => {
+                    const tr = cb.closest('tr');
+                    if (tr) tr.style.background = 'linear-gradient(135deg, #e8f5e8, #c8e6c9)';
+                });
+
+                recalcPenalty();
+
+            } catch (e) {
+                summaryBody.innerHTML = `<tr><td colspan="7" class="text-center text-danger p-4">${String(e.message || e)}</td></tr>`;
+                detailsBody.innerHTML = `<tr><td colspan="9" class="text-center text-danger p-4">${String(e.message || e)}</td></tr>`;
+            }
+        }
+
+        window.addEventListener('load', () => {
+            const modal = document.getElementById('clientModal');
+            modal.addEventListener('click', (e) => {
+                if (e.target && e.target.id === 'clientModal') {
+                    closeClientModal();
+                }
+            });
+
+            document.addEventListener('click', (e) => {
+                const link = e.target?.closest?.('a.client-detail-link');
+                if (!link) return;
+                e.preventDefault();
+                openClientModal(link.dataset.clientKey || '');
+            });
+
+            loadPenaltyReport();
+        });
+    </script>
+</body>
+</html>

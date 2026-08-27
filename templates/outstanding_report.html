@@ -1,0 +1,1669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Outstanding 10-Day Analysis</title>
+    {% include "_pwa_head.html" %}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .main-container {
+            max-width: 1280px;
+            margin: 20px auto;
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        .report-header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 50%, #4f46e5 100%);
+            color: #ffffff;
+            padding: 20px 28px;
+        }
+        .report-header h2 {
+            margin: 0;
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+        .filters-bar {
+            padding: 16px 24px;
+            border-bottom: 1px solid #e5e7eb;
+            background: #f9fafb;
+        }
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            padding: 16px 24px 8px 24px;
+        }
+        .summary-card {
+            border-radius: 12px;
+            padding: 14px 16px;
+            background: #f3f4f6;
+            border: 1px solid #e5e7eb;
+        }
+        .summary-card h6 {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #6b7280;
+            margin-bottom: 4px;
+        }
+        .summary-card .amount {
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+        .summary-card.positive .amount { color: #16a34a; }
+        .summary-card.negative .amount { color: #dc2626; }
+        .summary-card.neutral .amount { color: #2563eb; }
+        .table-wrapper {
+            padding: 8px 24px 24px 24px;
+        }
+        .summary-tables-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 8px;
+            padding: 0 12px 12px 12px;
+        }
+        .summary-tables-row .table-wrapper {
+            padding: 8px 12px 16px 12px;
+        }
+
+        /* Position tables so that Loans Closed sits next to Installments on wide screens */
+        @media (min-width: 992px) {
+            .summary-tables-row {
+                grid-template-columns: 1fr 1fr 1fr;
+            }
+            #newLoansSection { grid-column: 1; }
+            #instDaySection { grid-column: 2; }
+            #closedLoansSection { grid-column: 3; }
+        }
+        .sub-section-title {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #6b7280;
+            margin-bottom: 4px;
+        }
+        .computation-box {
+            margin: 4px 24px 4px 24px;
+            padding: 8px 12px;
+            border-radius: 10px;
+            background: #eff6ff;
+            border: 1px dashed #bfdbfe;
+            font-size: 0.8rem;
+        }
+        .badge-event {
+            font-size: 0.75rem;
+        }
+        @media print {
+            body {
+                background: #ffffff;
+            }
+            .main-container {
+                box-shadow: none;
+                margin: 0;
+                border-radius: 0;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="main-container">
+    <div class="report-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+            <h2 class="mb-1"><i class="bi bi-graph-up"></i> Outstanding 10-Day Analysis</h2>
+            <div class="small opacity-75" id="subtitleRange">From – To</div>
+        </div>
+
+    <!-- Modal: Adjust Opening Outstanding -->
+    <div class="modal fade" id="openingAdjustModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title"><i class="bi bi-pencil-square"></i> Edit Opening Outstanding</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="small text-muted mb-2">
+                        Base opening outstanding is fetched from Receivable Report as on the previous day.
+                        You can override it here if you need to reconcile with external books.
+                    </p>
+                    <div class="mb-3">
+                        <label class="form-label">Base Opening Outstanding</label>
+                        <div class="form-control form-control-sm bg-light" id="openingAdjustBase">₹0</div>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Edited Opening Outstanding</label>
+                        <input type="number" step="0.01" min="0" class="form-control form-control-sm text-end" id="openingAdjustInput">
+                    </div>
+                    <p class="small text-muted mb-0">
+                        Leave blank to reset back to the base opening outstanding.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="resetOpeningToDefault()">Reset to Default</button>
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary btn-sm" onclick="saveOpeningAdjustment()">Save &amp; Apply</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Adjust Installments Collected (Day-wise) -->
+    <div class="modal fade" id="installmentAdjustModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-warning">
+                    <h5 class="modal-title"><i class="bi bi-pencil-square"></i> Edit Installments Collection (Day-wise)</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="small text-muted mb-2">
+                        Below are day-wise installment amounts calculated from Daily Report logic. Edit the <strong>Edited Amount</strong> column as needed and save.
+                    </p>
+                    <div class="table-responsive" style="max-height: 360px; overflow-y: auto;">
+                        <table class="table table-sm align-middle">
+                            <thead class="table-light">
+                            <tr>
+                                <th style="width: 80px;">Date</th>
+                                <th class="text-end">System Amount</th>
+                                <th style="width: 140px;" class="text-end">Edited Amount</th>
+                            </tr>
+                            </thead>
+                            <tbody id="instAdjustBody">
+                            </tbody>
+                            <tfoot class="table-secondary">
+                            <tr>
+                                <th>Total</th>
+                                <th class="text-end" id="instAdjustBaseTotal">₹0</th>
+                                <th class="text-end" id="instAdjustEditTotal">₹0</th>
+                            </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="resetInstallmentAdjustToDefault()">Reset to Default</button>
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary btn-sm" onclick="saveInstallmentAdjustment()">Save &amp; Apply</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Adjust Advance Received (Day-wise) -->
+    <div class="modal fade" id="advanceAdjustModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title"><i class="bi bi-pencil-square"></i> Edit Advance Received (Day-wise)</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="small text-muted mb-2">
+                        Below are day-wise advance amounts on new WEEKLY / 10-Days loans. Edit the <strong>Edited Amount</strong> column as needed and save.
+                    </p>
+                    <div class="table-responsive" style="max-height: 260px; overflow-y: auto;">
+                        <table class="table table-sm align-middle">
+                            <thead class="table-light">
+                            <tr>
+                                <th style="width: 80px;">Date</th>
+                                <th class="text-end">System Amount</th>
+                                <th style="width: 140px;" class="text-end">Edited Amount</th>
+                            </tr>
+                            </thead>
+                            <tbody id="advAdjustBody">
+                            </tbody>
+                            <tfoot class="table-secondary">
+                            <tr>
+                                <th>Total</th>
+                                <th class="text-end" id="advAdjustBaseTotal">₹0</th>
+                                <th class="text-end" id="advAdjustEditTotal">₹0</th>
+                            </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    <hr class="my-3">
+                    <p class="small text-muted mb-1">
+                        Clients with advance received in this period (read-only list):
+                    </p>
+                    <div class="table-responsive" style="max-height: 220px; overflow-y: auto;">
+                        <table class="table table-sm align-middle mb-0">
+                            <thead class="table-light">
+                            <tr>
+                                <th style="width: 80px;">Date</th>
+                                <th>Client</th>
+                                <th class="text-end" style="width: 130px;">Advance Received</th>
+                            </tr>
+                            </thead>
+                            <tbody id="advClientBody">
+                            <tr>
+                                <td colspan="3" class="text-center text-muted py-2">No advance clients in this period.</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="resetAdvanceToDefault()">Reset to Default</button>
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary btn-sm" onclick="saveAdvanceAdjustment()">Save &amp; Apply</button>
+                </div>
+            </div>
+        </div>
+    </div>
+        <div class="text-end small">
+            <div><strong>Generated:</strong> <span id="generatedAt">-</span></div>
+        </div>
+    </div>
+
+    <div class="filters-bar no-print">
+        <form class="row g-2 align-items-end" onsubmit="event.preventDefault(); loadOutstanding();">
+            <div class="col-sm-4">
+                <label class="form-label mb-1"><i class="bi bi-calendar"></i> From Date</label>
+                <input type="date" id="startDate" class="form-control form-control-sm" value="{{ default_start }}">
+            </div>
+            <div class="col-sm-4">
+                <label class="form-label mb-1"><i class="bi bi-calendar2"></i> To Date</label>
+                <input type="date" id="endDate" class="form-control form-control-sm" value="{{ default_end }}">
+            </div>
+            <div class="col-sm-4 d-flex flex-wrap gap-2 justify-content-end">
+                <button type="submit" class="btn btn-primary btn-sm">
+                    <i class="bi bi-search"></i> Show Outstanding
+                </button>
+                <button type="button" class="btn btn-outline-primary btn-sm" onclick="openShortModal()">
+                    <i class="bi bi-pencil-square"></i> Feed Installment Short
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="printOutstanding()">
+                    <i class="bi bi-printer"></i> Print / PDF
+                </button>
+                <button type="button" class="btn btn-outline-success btn-sm" onclick="shareOutstandingWhatsApp()">
+                    <i class="bi bi-whatsapp"></i> WhatsApp
+                </button>
+                <button type="button" class="btn btn-outline-dark btn-sm" onclick="window.close();">
+                    Close
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="summary-cards" id="summarySection" style="display:none;">
+        <div class="summary-card neutral" style="cursor:pointer;" onclick="openOpeningAdjustModal()" title="Click to adjust opening outstanding">
+            <h6>Opening Outstanding</h6>
+            <div class="amount" id="openingOutstanding">₹0</div>
+            <div class="small text-muted" id="openingAsOnLabel"></div>
+        </div>
+        <div class="summary-card neutral">
+            <h6>Closing Outstanding</h6>
+            <div class="amount" id="closingOutstanding">₹0</div>
+            <div class="small text-muted" id="closingAsOnLabel"></div>
+        </div>
+        <div class="summary-card positive">
+            <h6>New Loans (Increase)</h6>
+            <div class="amount" id="newLoansTotal">₹0</div>
+            <div class="small text-muted"><span id="newLoansCount">0</span> loans</div>
+        </div>
+        <div class="summary-card negative" style="cursor:pointer;" onclick="openInstallmentAdjustModal()" title="Click to adjust installments total">
+            <h6>Installments Collected (Decrease)</h6>
+            <div class="amount" id="installmentsTotal">₹0</div>
+        </div>
+        <div class="summary-card positive">
+            <h6>Short EMIs (Increase)</h6>
+            <div class="amount" id="shortTotal">₹0</div>
+            <div class="small text-muted"><span id="shortCount">0</span> entries</div>
+        </div>
+        <div class="summary-card negative">
+            <h6>Loans Closed (Decrease)</h6>
+            <div class="amount" id="closedLoansTotal">₹0</div>
+            <div class="small text-muted"><span id="closedLoansCount">0</span> loans</div>
+        </div>
+        <div class="summary-card neutral" style="cursor:pointer;" onclick="openShortModal()" title="Click to edit manual short entries">
+            <h6>Manual Short (Adjust)</h6>
+            <div class="amount" id="manualShortTotal">₹0</div>
+            <div class="small text-muted">Click to view/edit manual short persons</div>
+        </div>
+        <div class="summary-card neutral" style="cursor:pointer;" onclick="openAdvanceAdjustModal()" title="Click to adjust advance received on new WEEKLY / 10-Days loans">
+            <h6>Advance Received</h6>
+            <div class="amount" id="advanceTotal">₹0</div>
+            <div class="small text-muted">Advance on new WEEKLY / 10-Days loans</div>
+        </div>
+        <div class="summary-card neutral">
+            <h6>Computed Closing O/S</h6>
+            <div class="amount" id="computedClosingOutstanding">₹0</div>
+            <div class="small text-muted" id="computedDiffLine">Based on opening + movements</div>
+        </div>
+        <div class="summary-card neutral">
+            <h6>Net Movement (Close - Open)</h6>
+            <div class="amount" id="netMovementAmount">₹0</div>
+            <div class="small text-muted">Total change in outstanding in this period</div>
+        </div>
+        <div class="summary-card neutral">
+            <h6>Adjustments</h6>
+            <div class="amount" id="diffVsReceivable">₹0</div>
+            <div class="small text-muted">Amount to reconcile computed vs receivable closing</div>
+        </div>
+    </div>
+
+    <div class="computation-box" id="computationBox" style="display:none;">
+        <div class="sub-section-title mb-1">How Outstanding is Computed</div>
+        <div id="computationFormula" class="small"></div>
+    </div>
+
+    <div id="summaryTablesRow" class="summary-tables-row">
+        <div class="table-wrapper" id="newLoansSection" style="display:none;">
+            <div class="sub-section-title"><i class="bi bi-plus-circle"></i> Loans Added in Period</div>
+            <div class="table-responsive">
+                <table class="table table-sm table-striped align-middle mb-1">
+                    <thead class="table-light">
+                    <tr>
+                        <th style="width: 80px;">Date</th>
+                        <th>Client</th>
+                        <th class="text-end" style="width: 130px;">Amount</th>
+                    </tr>
+                    </thead>
+                    <tbody id="newLoansBody">
+                    <tr>
+                        <td colspan="3" class="text-center text-muted py-2">No loans added in this period.</td>
+                    </tr>
+                    </tbody>
+                    <tfoot class="table-secondary">
+                    <tr>
+                        <th colspan="2">Total New Loans</th>
+                        <th class="text-end" id="newLoansTableTotal">₹0</th>
+                    </tr>
+                    </tfoot>
+                </table>
+            </div>
+            <div class="text-end mt-1 no-print">
+                <button class="btn btn-sm btn-outline-secondary" onclick="printSection('newLoansSection', 'Loans Added in Period')">
+                    <i class="bi bi-printer"></i> Print / PDF This Table
+                </button>
+            </div>
+        </div>
+
+        <div class="table-wrapper" id="instDaySection" style="display:none;">
+            <div class="sub-section-title"><i class="bi bi-calendar3"></i> Daily Pages Report</div>
+            <div class="table-responsive">
+                <table class="table table-sm table-striped align-middle mb-1">
+                    <thead class="table-light">
+                    <tr>
+                        <th style="width: 80px;">Date</th>
+                        <th style="width: 140px;" class="text-end">No. of Installments</th>
+                        <th class="text-end">Total Collected</th>
+                    </tr>
+                    </thead>
+                    <tbody id="instDayBody">
+                    <tr>
+                        <td colspan="3" class="text-center text-muted py-2">No data</td>
+                    </tr>
+                    </tbody>
+                    <tfoot class="table-secondary">
+                    <tr>
+                        <th>Grand Total</th>
+                        <th class="text-end" id="instDayGrandCount">0</th>
+                        <th class="text-end" id="instDayGrandTotal">₹0</th>
+                    </tr>
+                    </tfoot>
+                </table>
+            </div>
+            <div class="text-end mt-1 no-print">
+                <button class="btn btn-sm btn-outline-secondary" onclick="printSection('instDaySection', 'Installment Collection Summary (Day-wise)')">
+                    <i class="bi bi-printer"></i> Print / PDF This Table
+                </button>
+            </div>
+
+            <!-- Advance details now nested directly under Daily Pages Report for perfect alignment -->
+            <div id="advanceDetailsSection" class="mt-3" style="display:none;">
+                <div class="sub-section-title"><i class="bi bi-cash-coin"></i> Advance Received Details</div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped align-middle mb-1">
+                        <thead class="table-light">
+                        <tr>
+                            <th style="width: 80px;">Date</th>
+                            <th>Client</th>
+                            <th class="text-end" style="width: 130px;">Advance Received</th>
+                        </tr>
+                        </thead>
+                        <tbody id="advanceDetailsBody">
+                        <tr>
+                            <td colspan="3" class="text-center text-muted py-2">No advance received in this period.</td>
+                        </tr>
+                        </tbody>
+                        <tfoot class="table-secondary">
+                        <tr>
+                            <th colspan="2">Total Advance Received</th>
+                            <th class="text-end" id="advanceDetailsTotal"></th>
+                        </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <div class="text-end mt-1 no-print">
+                    <button class="btn btn-sm btn-outline-secondary" onclick="printSection('advanceDetailsSection', 'Advance Received Details')">
+                        <i class="bi bi-printer"></i> Print / PDF This Table
+                    </button>
+                </div>
+            </div>
+
+            <!-- Closing O/S from Receivable Snapshot -->
+            <div class="table-wrapper" id="receivableSnapshotSection" style="display:none;">
+                <div class="sub-section-title"><i class="bi bi-receipt"></i> Closing O/S from Receivable Report (as on <span id="receivableSnapshotDate"></span>)</div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped align-middle mb-1">
+                        <thead class="table-light">
+                        <tr>
+                            <th style="width: 80px;">Date</th>
+                            <th class="text-end" style="width: 130px;">Closing O/S</th>
+                        </tr>
+                        </thead>
+                        <tbody id="receivableSnapshotBody">
+                        <tr>
+                            <td colspan="2" class="text-center text-muted py-2">No receivable data available for this date.</td>
+                        </tr>
+                        </tbody>
+                        <tfoot class="table-secondary">
+                        <tr>
+                            <th>Total</th>
+                            <th class="text-end" id="receivableSnapshotTotal">₹0</th>
+                        </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <div class="text-end mt-1 no-print">
+                    <button class="btn btn-sm btn-outline-secondary" onclick="printSection('receivableSnapshotSection', 'Closing O/S from Receivable Report')">
+                        <i class="bi bi-printer"></i> Print / PDF This Table
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-wrapper" id="closedLoansSection" style="display:none;">
+            <div class="sub-section-title"><i class="bi bi-check2-circle"></i> Case Closed</div>
+            <div class="table-responsive">
+                <table class="table table-sm table-striped align-middle mb-1">
+                    <thead class="table-light">
+                    <tr>
+                        <th style="width: 80px;">Date</th>
+                        <th>Client</th>
+                        <th class="text-end" style="width: 130px;">Amount</th>
+                    </tr>
+                    </thead>
+                    <tbody id="closedLoansBody">
+                    <tr>
+                        <td colspan="3" class="text-center text-muted py-2">No loans closed in this period.</td>
+                    </tr>
+                    </tbody>
+                    <tfoot class="table-secondary">
+                    <tr>
+                        <th colspan="2">Total Closing Amount</th>
+                        <th class="text-end" id="closedLoansTableTotal">₹0</th>
+                    </tr>
+                    </tfoot>
+                </table>
+            </div>
+            <div class="text-end mt-1 no-print">
+                <button class="btn btn-sm btn-outline-secondary" onclick="printSection('closedLoansSection', 'Loans Closed in Period')">
+                    <i class="bi bi-printer"></i> Print / PDF This Table
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-wrapper" id="detailsSection" style="display:none;">
+        <h6 class="mb-2"><i class="bi bi-list-ul"></i> Detailed Movements</h6>
+        <div class="table-responsive" style="max-height: 520px; overflow-y: auto;">
+            <table class="table table-sm table-striped table-hover align-middle mb-0">
+                <thead class="table-dark">
+                <tr>
+                    <th style="width: 70px;">Date</th>
+                    <th>Client / Loan</th>
+                    <th style="width: 120px;">Event</th>
+                    <th style="width: 110px;" class="text-end">Amount</th>
+                    <th style="width: 110px;" class="text-end">Δ Outstanding</th>
+                </tr>
+                </thead>
+                <tbody id="detailsBody">
+                <tr>
+                    <td colspan="5" class="text-center text-muted py-4">
+                        Select dates and click <strong>Show Outstanding</strong>.
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <div class="modal fade" id="shortModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title"><i class="bi bi-pencil-square"></i> Feed Installment Short (Manual)</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="small text-muted mb-2">
+                        Add up to 30 manual short installment entries. Only the <strong>total amount</strong> will be used in outstanding calculation.
+                    </p>
+                    <div class="table-responsive" style="max-height: 360px; overflow-y: auto;">
+                        <table class="table table-sm align-middle">
+                            <thead class="table-light">
+                            <tr>
+                                <th style="width: 40px;">#</th>
+                                <th>Name / Note</th>
+                                <th style="width: 140px;" class="text-end">Short Amount</th>
+                            </tr>
+                            </thead>
+                            <tbody id="shortRowsBody">
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mt-2">
+                        <div class="small text-muted">
+                            Manual short total: <strong id="shortModalTotal">₹0</strong>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addShortRow()">
+                                <i class="bi bi-plus-circle"></i> Add Row
+                            </button>
+                            <button type="button" class="btn btn-outline-danger btn-sm" onclick="clearShortRows()">
+                                <i class="bi bi-trash"></i> Clear All
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveShortAdjustments()">Save &amp; Apply</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const IS_CLOUD_ENV = "{{ 'true' if is_cloud else 'false' }}" === 'true';
+    let latestSummary = null;
+    let latestPeriod = null;
+    let manualShortEntries = [];
+    let manualShortTotal = 0;
+    let baseInstallmentsTotal = 0;   // from backend (daily report logic)
+    let overrideInstallmentsTotal = null; // user-edited total (sum of edited day-wise amounts)
+    let installmentsByDay = [];      // [{ date, count, base_total, edited_total }]
+    let baseAdvanceTotal = 0;        // from backend (advance on new WEEKLY / TEN_DAYS loans)
+    let overrideAdvanceTotal = null; // user-edited total advance
+    let advanceByDay = [];           // [{ date, base_total, edited_total }]
+    let advanceDetails = [];         // [{ date, name, amount }] for per-client display
+    let baseOpeningOutstanding = 0;  // from backend receivable report
+    let overrideOpeningOutstanding = null; // user-edited opening outstanding
+
+    function isCloudEnv() {
+        if (typeof IS_CLOUD_ENV === 'boolean') {
+            return IS_CLOUD_ENV;
+        }
+        // Fallback for older templates if flag missing
+        const host = window.location.hostname;
+        return host !== '127.0.0.1' && host !== 'localhost';
+    }
+
+    function fmtAmount(v) {
+        const n = Number(v || 0);
+        return '₹' + n.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+    }
+
+    function fmtDateDisplay(value) {
+        if (!value) return '';
+        const s = String(value).trim();
+
+        // Handle ISO format YYYY-MM-DD
+        let m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (m) {
+            const [, y, mo, d] = m;
+            return `${d}-${mo}-${y.slice(2)}`;
+        }
+
+        // Handle DD-MM-YYYY
+        m = s.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+        if (m) {
+            const [, d, mo, y] = m;
+            return `${d}-${mo}-${y.slice(2)}`;
+        }
+
+        return s;
+    }
+
+    function eventLabel(evType) {
+        switch ((evType || '').toUpperCase()) {
+            case 'NEW_LOAN': return 'New Loan';
+            case 'INSTALLMENT': return 'Installment';
+            case 'SHORT_EMI': return 'Short EMI';
+            case 'LOAN_CLOSED': return 'Loan Closed';
+            default: return evType || '';
+        }
+    }
+
+    function openOpeningAdjustModal() {
+        if (!latestSummary) {
+            alert('Please load the outstanding report first.');
+            return;
+        }
+
+        const input = document.getElementById('openingAdjustInput');
+        const baseEl = document.getElementById('openingAdjustBase');
+        if (!input || !baseEl) return;
+
+        const s = latestSummary || {};
+        baseOpeningOutstanding = baseOpeningOutstanding != null
+            ? Number(baseOpeningOutstanding || 0)
+            : Number(s.opening_outstanding || 0);
+
+        const effective = overrideOpeningOutstanding != null
+            ? Number(overrideOpeningOutstanding || 0)
+            : baseOpeningOutstanding;
+
+        baseEl.textContent = fmtAmount(baseOpeningOutstanding);
+        input.value = effective ? String(effective) : '';
+
+        const modalEl = document.getElementById('openingAdjustModal');
+        if (!modalEl) return;
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+    }
+
+    function saveOpeningAdjustment() {
+        const input = document.getElementById('openingAdjustInput');
+        if (!input) return;
+
+        const raw = input.value;
+        if (raw === '' || raw === null) {
+            // Reset to base opening
+            overrideOpeningOutstanding = null;
+        } else {
+            const num = Number(raw);
+            if (Number.isNaN(num) || num < 0) {
+                alert('Please enter a valid non-negative amount for edited opening outstanding.');
+                return;
+            }
+            overrideOpeningOutstanding = num;
+        }
+
+        // Update card display and recompute summary
+        const openingEl = document.getElementById('openingOutstanding');
+        const effective = overrideOpeningOutstanding != null
+            ? Number(overrideOpeningOutstanding || 0)
+            : Number(baseOpeningOutstanding || 0);
+        if (openingEl) openingEl.textContent = fmtAmount(effective);
+
+        updateComputedSummaryDisplay();
+
+        const modalEl = document.getElementById('openingAdjustModal');
+        if (modalEl) {
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
+        }
+    }
+
+    function openAdvanceAdjustModal() {
+        if (!latestSummary) {
+            alert('Please load the report first.');
+            return;
+        }
+        if (!advanceByDay || !advanceByDay.length) {
+            alert('No advance data to adjust for this period.');
+            return;
+        }
+
+        const tbody = document.getElementById('advAdjustBody');
+        const baseTotalEl = document.getElementById('advAdjustBaseTotal');
+        const editTotalEl = document.getElementById('advAdjustEditTotal');
+        if (!tbody || !baseTotalEl || !editTotalEl) return;
+
+        let rows = '';
+        let baseTotal = 0;
+        let editTotal = 0;
+        advanceByDay.forEach((r, idx) => {
+            const base = Number(r.base_total || 0);
+            const edit = r.edited_total != null ? Number(r.edited_total || 0) : base;
+            baseTotal += base;
+            editTotal += edit;
+            rows += '<tr>' +
+                '<td>' + fmtDateDisplay(r.date || '') + '</td>' +
+                '<td class="text-end">' + fmtAmount(base) + '</td>' +
+                '<td><input type="number" step="0.01" min="0" class="form-control form-control-sm text-end adv-edit-input" data-index="' + idx + '" value="' + edit + '"></td>' +
+                '</tr>';
+        });
+
+        tbody.innerHTML = rows;
+        baseTotalEl.textContent = fmtAmount(baseTotal);
+        editTotalEl.textContent = fmtAmount(editTotal);
+
+        // Also show per-client advance details (date, name, amount) inside this modal
+        const clientBody = document.getElementById('advClientBody');
+        if (clientBody) {
+            if (!advanceDetails || !advanceDetails.length) {
+                clientBody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-2">No advance clients in this period.</td></tr>';
+            } else {
+                let clientRows = '';
+                advanceDetails.forEach(ev => {
+                    const d = ev.date || '';
+                    const nm = ev.name || '';
+                    const amtNum = Number(ev.amount || 0);
+                    clientRows += '<tr>' +
+                        '<td>' + fmtDateDisplay(d) + '</td>' +
+                        '<td>' + nm + '</td>' +
+                        '<td class="text-end">' + fmtAmount(amtNum) + '</td>' +
+                        '</tr>';
+                });
+                clientBody.innerHTML = clientRows;
+            }
+        }
+
+        const modalEl = document.getElementById('advanceAdjustModal');
+        if (!modalEl) return;
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+    }
+
+    function recalcAdvanceAdjustFromInputs() {
+        const tbody = document.getElementById('advAdjustBody');
+        const baseTotalEl = document.getElementById('advAdjustBaseTotal');
+        const editTotalEl = document.getElementById('advAdjustEditTotal');
+        if (!tbody || !baseTotalEl || !editTotalEl || !advanceByDay) return;
+
+        let baseTotal = 0;
+        let editTotal = 0;
+
+        const inputs = tbody.querySelectorAll('.adv-edit-input');
+        inputs.forEach(inp => {
+            const idx = parseInt(inp.getAttribute('data-index') || '-1', 10);
+            if (Number.isNaN(idx) || !advanceByDay[idx]) return;
+            const base = Number(advanceByDay[idx].base_total || 0);
+            baseTotal += base;
+            let edit = Number(inp.value || 0);
+            if (Number.isNaN(edit) || edit < 0) {
+                edit = 0;
+            }
+            advanceByDay[idx].edited_total = edit;
+            editTotal += edit;
+        });
+
+        baseTotalEl.textContent = fmtAmount(baseTotal);
+        editTotalEl.textContent = fmtAmount(editTotal);
+    }
+
+    function saveAdvanceAdjustment() {
+        const tbody = document.getElementById('advAdjustBody');
+        if (!tbody || !advanceByDay) return;
+
+        // First validate and update edited totals
+        const inputs = tbody.querySelectorAll('.adv-edit-input');
+        for (const inp of inputs) {
+            const idx = parseInt(inp.getAttribute('data-index') || '-1', 10);
+            if (Number.isNaN(idx) || !advanceByDay[idx]) continue;
+            const raw = inp.value;
+            if (raw === '' || raw === null) {
+                // Treat empty as 0
+                advanceByDay[idx].edited_total = 0;
+                continue;
+            }
+            const num = Number(raw);
+            if (Number.isNaN(num) || num < 0) {
+                alert('Please enter valid non-negative amounts for all edited advance entries.');
+                return;
+            }
+            advanceByDay[idx].edited_total = num;
+        }
+
+        // Compute override total and decide if override is active
+        let editedSum = 0;
+        let hasChange = false;
+        advanceByDay.forEach(r => {
+            const base = Number(r.base_total || 0);
+            const edit = r.edited_total != null ? Number(r.edited_total || 0) : base;
+            editedSum += edit;
+            if (Math.abs(edit - base) > 0.005) {
+                hasChange = true;
+            }
+        });
+
+        overrideAdvanceTotal = hasChange ? editedSum : null;
+
+        // Re-render center day-wise table and refresh flash cards
+        renderInstallmentsDayTable();
+        updateComputedSummaryDisplay();
+
+        const modalEl = document.getElementById('advanceAdjustModal');
+        if (modalEl) {
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
+        }
+    }
+
+    function resetAdvanceToDefault() {
+        if (!advanceByDay || !advanceByDay.length) {
+            alert('No advance data to reset.');
+            return;
+        }
+
+        advanceByDay.forEach(r => {
+            r.edited_total = r.base_total;
+        });
+
+        overrideAdvanceTotal = null;
+
+        renderInstallmentsDayTable();
+        updateComputedSummaryDisplay();
+
+        // Rebuild the modal table with system values
+        openAdvanceAdjustModal();
+    }
+
+    function resetOpeningToDefault() {
+        if (!latestSummary) {
+            alert('Please load the outstanding report first.');
+            return;
+        }
+
+        const s = latestSummary || {};
+        baseOpeningOutstanding = baseOpeningOutstanding != null
+            ? Number(baseOpeningOutstanding || 0)
+            : Number(s.opening_outstanding || 0);
+
+        overrideOpeningOutstanding = null;
+
+        const openingEl = document.getElementById('openingOutstanding');
+        if (openingEl) openingEl.textContent = fmtAmount(baseOpeningOutstanding);
+
+        const input = document.getElementById('openingAdjustInput');
+        if (input) input.value = '';
+
+        updateComputedSummaryDisplay();
+    }
+
+    function eventBadgeClass(evType) {
+        switch ((evType || '').toUpperCase()) {
+            case 'NEW_LOAN': return 'bg-success';
+            case 'INSTALLMENT': return 'bg-danger';
+            case 'SHORT_EMI': return 'bg-warning text-dark';
+            case 'LOAN_CLOSED': return 'bg-secondary';
+            default: return 'bg-primary';
+        }
+    }
+
+    function renderInstallmentsDayTable() {
+        const instBody = document.getElementById('instDayBody');
+        const instSec = document.getElementById('instDaySection');
+        const grandCountEl = document.getElementById('instDayGrandCount');
+        const grandTotalEl = document.getElementById('instDayGrandTotal');
+
+        if (!instBody || !instSec) return;
+
+        if (!installmentsByDay || !installmentsByDay.length) {
+            instBody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-2">No installment collection in this period.</td></tr>';
+            instSec.style.display = 'none';
+            if (grandCountEl) grandCountEl.textContent = '0';
+            if (grandTotalEl) grandTotalEl.textContent = fmtAmount(0);
+            return;
+        }
+
+        let rows = '';
+        let grandCount = 0;
+        let grandTotal = 0;
+
+        for (const r of installmentsByDay) {
+            const d = r.date || '';
+            const c = Number(r.count || 0);
+            const base = Number(r.base_total || 0);
+            const edited = r.edited_total != null ? Number(r.edited_total || 0) : base;
+            grandCount += c;
+            grandTotal += edited;
+            rows += '<tr>' +
+                '<td>' + fmtDateDisplay(d) + '</td>' +
+                '<td class="text-end">' + c + '</td>' +
+                '<td class="text-end">' + fmtAmount(edited) + '</td>' +
+                '</tr>';
+        }
+        instBody.innerHTML = rows;
+        if (grandCountEl) grandCountEl.textContent = grandCount.toString();
+        if (grandTotalEl) grandTotalEl.textContent = fmtAmount(grandTotal);
+        instSec.style.display = 'block';
+    }
+
+    function openInstallmentAdjustModal() {
+        if (!latestSummary) {
+            alert('Please load the report first.');
+            return;
+        }
+        if (!installmentsByDay || !installmentsByDay.length) {
+            alert('No day-wise installment data to adjust for this period.');
+            return;
+        }
+
+        const tbody = document.getElementById('instAdjustBody');
+        const baseTotalEl = document.getElementById('instAdjustBaseTotal');
+        const editTotalEl = document.getElementById('instAdjustEditTotal');
+        if (!tbody || !baseTotalEl || !editTotalEl) return;
+
+        let rows = '';
+        let baseTotal = 0;
+        let editTotal = 0;
+        installmentsByDay.forEach((r, idx) => {
+            const base = Number(r.base_total || 0);
+            const edit = r.edited_total != null ? Number(r.edited_total || 0) : base;
+            baseTotal += base;
+            editTotal += edit;
+            rows += '<tr>' +
+                '<td>' + fmtDateDisplay(r.date || '') + '</td>' +
+                '<td class="text-end">' + fmtAmount(base) + '</td>' +
+                '<td><input type="number" step="0.01" min="0" class="form-control form-control-sm text-end inst-edit-input" data-index="' + idx + '" value="' + edit + '"></td>' +
+                '</tr>';
+        });
+
+        tbody.innerHTML = rows;
+        baseTotalEl.textContent = fmtAmount(baseTotal);
+        editTotalEl.textContent = fmtAmount(editTotal);
+
+        const modalEl = document.getElementById('installmentAdjustModal');
+        if (!modalEl) return;
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+    }
+
+    function recalcInstallmentAdjustFromInputs() {
+        const tbody = document.getElementById('instAdjustBody');
+        const baseTotalEl = document.getElementById('instAdjustBaseTotal');
+        const editTotalEl = document.getElementById('instAdjustEditTotal');
+        if (!tbody || !baseTotalEl || !editTotalEl || !installmentsByDay) return;
+
+        let baseTotal = 0;
+        let editTotal = 0;
+
+        const inputs = tbody.querySelectorAll('.inst-edit-input');
+        inputs.forEach(inp => {
+            const idx = parseInt(inp.getAttribute('data-index') || '-1', 10);
+            if (Number.isNaN(idx) || !installmentsByDay[idx]) return;
+            const base = Number(installmentsByDay[idx].base_total || 0);
+            baseTotal += base;
+            let edit = Number(inp.value || 0);
+            if (Number.isNaN(edit) || edit < 0) {
+                edit = 0;
+            }
+            installmentsByDay[idx].edited_total = edit;
+            editTotal += edit;
+        });
+
+        baseTotalEl.textContent = fmtAmount(baseTotal);
+        editTotalEl.textContent = fmtAmount(editTotal);
+    }
+
+    function saveInstallmentAdjustment() {
+        const tbody = document.getElementById('instAdjustBody');
+        if (!tbody || !installmentsByDay) return;
+
+        // First validate and update edited totals
+        const inputs = tbody.querySelectorAll('.inst-edit-input');
+        for (const inp of inputs) {
+            const idx = parseInt(inp.getAttribute('data-index') || '-1', 10);
+            if (Number.isNaN(idx) || !installmentsByDay[idx]) continue;
+            const raw = inp.value;
+            if (raw === '' || raw === null) {
+                // Treat empty as 0
+                installmentsByDay[idx].edited_total = 0;
+                continue;
+            }
+            const num = Number(raw);
+            if (Number.isNaN(num) || num < 0) {
+                alert('Please enter valid non-negative amounts for all edited installments.');
+                return;
+            }
+            installmentsByDay[idx].edited_total = num;
+        }
+
+        // Compute override total and decide if override is active
+        let editedSum = 0;
+        let hasChange = false;
+        installmentsByDay.forEach(r => {
+            const base = Number(r.base_total || 0);
+            const edit = r.edited_total != null ? Number(r.edited_total || 0) : base;
+            editedSum += edit;
+            if (Math.abs(edit - base) > 0.005) {
+                hasChange = true;
+            }
+        });
+
+        overrideInstallmentsTotal = hasChange ? editedSum : null;
+
+        // Re-render center day-wise table and refresh flash cards
+        renderInstallmentsDayTable();
+        updateComputedSummaryDisplay();
+
+        const modalEl = document.getElementById('installmentAdjustModal');
+        if (modalEl) {
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
+        }
+    }
+
+    function updateComputedSummaryDisplay() {
+        const s = latestSummary || {};
+
+        const baseOpening = baseOpeningOutstanding != null
+            ? Number(baseOpeningOutstanding || 0)
+            : Number(s.opening_outstanding || 0);
+        const opening = overrideOpeningOutstanding != null
+            ? Number(overrideOpeningOutstanding || 0)
+            : baseOpening;
+        const newLoans = Number(s.new_loans_total || 0);
+        const baseShort = Number(s.short_total || 0);
+        const totalShort = baseShort + (manualShortTotal || 0);
+
+        // Base installments from backend, but allow manual override from day-wise edits
+        const backendInstallments = baseInstallmentsTotal != null
+            ? Number(baseInstallmentsTotal || 0)
+            : Number(s.installments_total || 0);
+        const effectiveInstallments = overrideInstallmentsTotal != null
+            ? Number(overrideInstallmentsTotal || 0)
+            : backendInstallments;
+        const backendAdvance = baseAdvanceTotal != null
+            ? Number(baseAdvanceTotal || 0)
+            : Number(s.advance_total || 0);
+        const effectiveAdvance = overrideAdvanceTotal != null
+            ? Number(overrideAdvanceTotal || 0)
+            : backendAdvance;
+        const closedLoans = Number(s.closed_loans_total || 0);
+        const closingFromReceivable = s.closing_outstanding != null ? Number(s.closing_outstanding || 0) : null;
+
+        const computedClosing = opening + newLoans + totalShort - effectiveInstallments - effectiveAdvance - closedLoans;
+        // Net movement for this report is based on the movement formula itself
+        // so it always matches the "How Outstanding is Computed" line.
+        const netChange = computedClosing - opening;
+        const diffVsReceivable = closingFromReceivable != null ? (computedClosing - closingFromReceivable) : null;
+
+        const manualSpan = document.getElementById('manualShortTotal');
+        const computedSpan = document.getElementById('computedClosingOutstanding');
+        const diffLine = document.getElementById('computedDiffLine');
+        const netSpan = document.getElementById('netMovementAmount');
+        const diffCardSpan = document.getElementById('diffVsReceivable');
+        const box = document.getElementById('computationBox');
+        const formulaEl = document.getElementById('computationFormula');
+        const instCardSpan = document.getElementById('installmentsTotal');
+        const advCardSpan = document.getElementById('advanceTotal');
+
+        if (manualSpan) manualSpan.textContent = fmtAmount(manualShortTotal);
+        if (computedSpan) computedSpan.textContent = fmtAmount(computedClosing);
+
+        const openingEl = document.getElementById('openingOutstanding');
+        if (openingEl) openingEl.textContent = fmtAmount(opening);
+
+        if (netSpan) netSpan.textContent = fmtAmount(netChange);
+
+        // Show effective installments in the Installments Collected card
+        if (instCardSpan) instCardSpan.textContent = fmtAmount(effectiveInstallments);
+
+        // Show advance received in its card
+        if (advCardSpan) advCardSpan.textContent = fmtAmount(effectiveAdvance);
+
+        if (diffCardSpan) {
+            if (diffVsReceivable == null) {
+                diffCardSpan.textContent = fmtAmount(0);
+            } else {
+                diffCardSpan.textContent = fmtAmount(diffVsReceivable);
+            }
+        }
+
+        if (diffLine) {
+            if (diffVsReceivable == null) {
+                diffLine.textContent = 'Computed from opening + movements.';
+            } else {
+                const signed = diffVsReceivable >= 0 ? '+' : '';
+                diffLine.textContent = `Vs. receivable closing: ${signed}${fmtAmount(diffVsReceivable).replace('₹', '')}`;
+            }
+        }
+
+        if (box && formulaEl) {
+            const parts = [
+                `Opening ${fmtAmount(opening)}`,
+                `+ New Loans ${fmtAmount(newLoans)}`,
+                `+ Short (DB ${fmtAmount(baseShort)} + Manual ${fmtAmount(manualShortTotal)})`,
+                `- Installments ${fmtAmount(effectiveInstallments)}`,
+                `- Advance Received ${fmtAmount(effectiveAdvance)}`,
+                `- Loans Closed ${fmtAmount(closedLoans)}`,
+                `= ${fmtAmount(computedClosing)}`
+            ];
+            formulaEl.textContent = parts.join('  ');
+            box.style.display = 'block';
+        }
+    }
+
+    async function loadOutstanding() {
+        const startInput = document.getElementById('startDate');
+        const endInput = document.getElementById('endDate');
+        const start = startInput.value;
+        const end = endInput.value;
+
+        if (!start || !end) {
+            alert('Please select both From and To dates.');
+            return;
+        }
+
+        const tbody = document.getElementById('detailsBody');
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4">' +
+            '<div class="spinner-border text-primary"></div>' +
+            '<div class="mt-2 text-muted">Loading outstanding movement...</div>' +
+            '</td></tr>';
+
+        const params = new URLSearchParams({ start, end, _: Date.now() });
+        try {
+            const resp = await fetch('/api/payment-entry/outstanding-report?' + params.toString());
+            if (!resp.ok) {
+                let message = 'HTTP ' + resp.status;
+                try {
+                    const errData = await resp.json();
+                    if (errData && errData.error) {
+                        message = errData.error;
+                    }
+                } catch (e) {
+                    // Ignore JSON parse errors and keep default message
+                }
+                throw new Error(message);
+            }
+            const data = await resp.json();
+            if (!data.success) {
+                throw new Error(data.error || 'Failed to load report');
+            }
+
+            // Update header range & generated time
+            document.getElementById('subtitleRange').textContent =
+                'From ' + fmtDateDisplay(data.start) + ' To ' + fmtDateDisplay(data.end);
+            document.getElementById('generatedAt').textContent = data.generated_at || '';
+
+            // Reset any cached override when loading fresh data
+            overrideInstallmentsTotal = null;
+            installmentsByDay = [];
+            manualShortEntries = [];
+            manualShortTotal = 0;
+
+            latestSummary = data.summary || {};
+            latestPeriod = { start: data.start, end: data.end };
+
+            const s = latestSummary;
+            baseOpeningOutstanding = Number(s.opening_outstanding || 0);
+            overrideOpeningOutstanding = null;
+            document.getElementById('openingOutstanding').textContent = fmtAmount(baseOpeningOutstanding);
+            document.getElementById('closingOutstanding').textContent = fmtAmount(s.closing_outstanding);
+
+            const openLabelEl = document.getElementById('openingAsOnLabel');
+            const closeLabelEl = document.getElementById('closingAsOnLabel');
+            if (openLabelEl) {
+                const asOn = s.opening_as_on || '';
+                openLabelEl.textContent = asOn ? ('as on ' + asOn) : '';
+            }
+            if (closeLabelEl) {
+                const asOn = s.closing_as_on || '';
+                closeLabelEl.textContent = asOn ? ('as on ' + asOn) : '';
+            }
+            document.getElementById('newLoansTotal').textContent = fmtAmount(s.new_loans_total);
+            document.getElementById('newLoansCount').textContent = s.new_loans_count || 0;
+            baseInstallmentsTotal = Number(s.installments_total || 0);
+            overrideInstallmentsTotal = null; // reset override when reloading
+            document.getElementById('installmentsTotal').textContent = fmtAmount(baseInstallmentsTotal);
+            baseAdvanceTotal = Number(s.advance_total || 0);
+            overrideAdvanceTotal = null;
+            const advCardEl = document.getElementById('advanceTotal');
+            if (advCardEl) advCardEl.textContent = fmtAmount(baseAdvanceTotal);
+            document.getElementById('shortTotal').textContent = fmtAmount(s.short_total);
+            document.getElementById('shortCount').textContent = s.short_count || 0;
+            document.getElementById('closedLoansTotal').textContent = fmtAmount(s.closed_loans_total);
+            document.getElementById('closedLoansCount').textContent = s.closed_loans_count || 0;
+
+            document.getElementById('summarySection').style.display = 'grid';
+
+            // Day-wise advance summary
+            const advList = Array.isArray(data.advance_by_day) ? data.advance_by_day : [];
+            advanceByDay = advList.map(r => ({
+                date: r.date || '',
+                base_total: Number(r.total || 0),
+                edited_total: Number(r.total || 0)
+            }));
+
+            // Build maps for installments and advances keyed by date
+            const instList = Array.isArray(data.installments_by_day) ? data.installments_by_day : [];
+            const instMap = {};
+            instList.forEach(r => {
+                const d = r.date || '';
+                if (!d) return;
+                instMap[d] = {
+                    count: Number(r.count || 0),
+                    total: Number(r.total || 0)
+                };
+            });
+            const advMap2 = {};
+            advanceByDay.forEach(r => {
+                const d = r.date || '';
+                if (!d) return;
+                advMap2[d] = Number(r.base_total || 0);
+            });
+
+            // Union of dates from installments and advance
+            const allDates = new Set([
+                ...Object.keys(instMap),
+                ...Object.keys(advMap2)
+            ]);
+
+            installmentsByDay = Array.from(allDates)
+                .sort()
+                .map(d => {
+                    const inst = instMap[d] || { count: 0, total: 0 };
+                    return {
+                        date: d,
+                        count: Number(inst.count || 0),
+                        base_total: Number(inst.total || 0),
+                        edited_total: Number(inst.total || 0)
+                    };
+                });
+            renderInstallmentsDayTable();
+
+            const details = Array.isArray(data.details) ? data.details : [];
+
+            let rowsHtml = '';
+            const newLoanRows = [];
+            const closedLoanRows = [];
+
+            if (!details.length) {
+                // No movements for this period
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">' +
+                    'No movements found for the selected period.' +
+                    '</td></tr>';
+            } else {
+                for (const ev of details) {
+                    const evType = ev.event_type || '';
+                    const badgeClass = eventBadgeClass(evType);
+                    const label = eventLabel(evType);
+                    const dateText = fmtDateDisplay(ev.date || '');
+                    const name = ev.name || '';
+                    const loanId = ev.loan_id != null ? ('#' + ev.loan_id) : '';
+                    const amount = fmtAmount(ev.amount);
+                    const delta = Number(ev.delta || 0);
+                    const deltaText = (delta >= 0 ? '+' : '') + fmtAmount(delta).replace('₹', '');
+                    const deltaClass = delta > 0 ? 'text-success' : (delta < 0 ? 'text-danger' : 'text-muted');
+
+                    rowsHtml += '<tr>' +
+                        '<td>' + dateText + '</td>' +
+                        '<td>' +
+                            '<div class="fw-semibold">' + name + '</div>' +
+                            '<div class="small text-muted">' +
+                                (loanId ? ('Loan ' + loanId) : '') +
+                            '</div>' +
+                        '</td>' +
+                        '<td><span class="badge badge-event ' + badgeClass + '">' + label + '</span></td>' +
+                        '<td class="text-end">' + amount + '</td>' +
+                        '<td class="text-end ' + deltaClass + '">' + deltaText + '</td>' +
+                    '</tr>';
+
+                    if (evType === 'NEW_LOAN') {
+                        newLoanRows.push(ev);
+                    } else if (evType === 'LOAN_CLOSED') {
+                        closedLoanRows.push(ev);
+                    }
+                }
+                tbody.innerHTML = rowsHtml;
+            }
+
+            // Loans added table
+            const newSec = document.getElementById('newLoansSection');
+            const newBody = document.getElementById('newLoansBody');
+            if (newSec && newBody) {
+                if (!newLoanRows.length) {
+                    newBody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-2">No loans added in this period.</td></tr>';
+                    newSec.style.display = 'none';
+                } else {
+                    let rows = '';
+                    let total = 0;
+                    for (const ev of newLoanRows) {
+                        const d = ev.date || '';
+                        const nm = ev.name || '';
+                        const amtNum = Number(ev.amount || 0);
+                        total += amtNum;
+                        rows += '<tr>' +
+                            '<td>' + fmtDateDisplay(d) + '</td>' +
+                            '<td>' + nm + '</td>' +
+                            '<td class="text-end">' + fmtAmount(amtNum) + '</td>' +
+                            '</tr>';
+                    }
+                    newBody.innerHTML = rows;
+                    document.getElementById('newLoansTableTotal').textContent = fmtAmount(total);
+                    newSec.style.display = 'block';
+                }
+            }
+
+            // Loans closed table
+            const closedSec = document.getElementById('closedLoansSection');
+            const closedBody = document.getElementById('closedLoansBody');
+            if (closedSec && closedBody) {
+                if (!closedLoanRows.length) {
+                    closedBody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-2">No loans closed in this period.</td></tr>';
+                    closedSec.style.display = 'none';
+                } else {
+                    let rows = '';
+                    let total = 0;
+                    for (const ev of closedLoanRows) {
+                        const d = ev.date || '';
+                        const nm = ev.name || '';
+                        const amtNum = Number(ev.amount || 0);
+                        total += amtNum;
+                        rows += '<tr>' +
+                            '<td>' + fmtDateDisplay(d) + '</td>' +
+                            '<td>' + nm + '</td>' +
+                            '<td class="text-end">' + fmtAmount(amtNum) + '</td>' +
+                            '</tr>';
+                    }
+                    closedBody.innerHTML = rows;
+                    document.getElementById('closedLoansTableTotal').textContent = fmtAmount(total);
+                    closedSec.style.display = 'block';
+                }
+            }
+
+            // Advance received details table (date, client, amount)
+            const advDetailsSec = document.getElementById('advanceDetailsSection');
+            const advDetailsBody = document.getElementById('advanceDetailsBody');
+            if (advDetailsSec && advDetailsBody) {
+                const advDetailsArr = Array.isArray(data.advance_details) ? data.advance_details : [];
+                // Cache for modal usage
+                advanceDetails = advDetailsArr.slice();
+
+                if (!advDetailsArr.length) {
+                    advDetailsBody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-2">No advance received in this period.</td></tr>';
+                    advDetailsSec.style.display = 'none';
+                } else {
+                    let rows = '';
+                    let totalAdv = 0;
+                    for (const ev of advDetailsArr) {
+                        const d = ev.date || '';
+                        const nm = ev.name || '';
+                        const amtNum = Number(ev.amount || 0);
+                        totalAdv += amtNum;
+                        rows += '<tr>' +
+                            '<td>' + fmtDateDisplay(d) + '</td>' +
+                            '<td>' + nm + '</td>' +
+                            '<td class="text-end">' + fmtAmount(amtNum) + '</td>' +
+                            '</tr>';
+                    }
+                    advDetailsBody.innerHTML = rows;
+                    const totalEl = document.getElementById('advanceDetailsTotal');
+                    if (totalEl) totalEl.textContent = fmtAmount(totalAdv);
+                    advDetailsSec.style.display = 'block';
+                }
+            }
+
+            // Closing O/S from Receivable Snapshot table
+            const snapSec = document.getElementById('receivableSnapshotSection');
+            const snapBody = document.getElementById('receivableSnapshotBody');
+            const snapDateEl = document.getElementById('receivableSnapshotDate');
+            const snapTotalEl = document.getElementById('receivableSnapshotTotal');
+            if (snapSec && snapBody && snapDateEl && snapTotalEl) {
+                const snapData = data.closing_outstanding_from_receivable_snapshot;
+                if (snapData && typeof snapData === 'object') {
+                    snapDateEl.textContent = snapData.as_on || '';
+                    
+                    // Check if we have day-wise breakdown
+                    const dayWise = snapData.day_wise_breakdown || [];
+                    if (dayWise.length > 0) {
+                        let rows = '';
+                        let total = 0;
+                        for (const entry of dayWise) {
+                            const amount = Number(entry.total || 0);
+                            total += amount;
+                            rows += '<tr>' +
+                                '<td>' + fmtDateDisplay(entry.date || '') + '</td>' +
+                                '<td class="text-end">' + fmtAmount(amount) + '</td>' +
+                                '</tr>';
+                        }
+                        snapBody.innerHTML = rows;
+                        snapTotalEl.textContent = fmtAmount(total);
+                    } else {
+                        // Fallback to grand total only
+                        const total = Number(snapData.grand_total || 0);
+                        snapBody.innerHTML = '<tr><td>' + (snapData.as_on || '') + '</td><td class="text-end">' + fmtAmount(total) + '</td></tr>';
+                        snapTotalEl.textContent = fmtAmount(total);
+                    }
+                    snapSec.style.display = 'block';
+                } else if (snapData && typeof snapData === 'number') {
+                    // Only total available (fallback)
+                    const endDt = new Date(data.end);
+                    const asOn = endDt.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' }).replace(/\//g, '-');
+                    snapDateEl.textContent = asOn;
+                    snapBody.innerHTML = '<tr><td>' + asOn + '</td><td class="text-end">' + fmtAmount(snapData) + '</td></tr>';
+                    snapTotalEl.textContent = fmtAmount(snapData);
+                    snapSec.style.display = 'block';
+                } else {
+                    snapSec.style.display = 'none';
+                }
+            }
+
+            updateComputedSummaryDisplay();
+        } catch (err) {
+            console.error('Outstanding report error:', err);
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger py-4">' +
+                'Failed to load outstanding report. ' + (err.message || '') +
+                '</td></tr>';
+        }
+    }
+
+    function openShortModal() {
+        const modalEl = document.getElementById('shortModal');
+        if (!modalEl) return;
+        const modal = new bootstrap.Modal(modalEl);
+
+        const body = document.getElementById('shortRowsBody');
+        if (!body) return;
+
+        body.innerHTML = '';
+        const entries = manualShortEntries && manualShortEntries.length ? manualShortEntries : [];
+        const baseCount = Math.max(entries.length, 5);
+        for (let i = 0; i < baseCount; i++) {
+            const existing = entries[i] || { name: '', amount: '' };
+            const row = document.createElement('tr');
+            row.innerHTML =
+                '<td>' + (i + 1) + '</td>' +
+                '<td><input type="text" class="form-control form-control-sm short-name-input" value="' + (existing.name || '') + '"></td>' +
+                '<td><input type="number" step="0.01" min="0" class="form-control form-control-sm text-end short-amount-input" value="' + (existing.amount || '') + '"></td>';
+            body.appendChild(row);
+        }
+
+        recalcShortModalTotal();
+        modal.show();
+    }
+
+    function addShortRow() {
+        const body = document.getElementById('shortRowsBody');
+        if (!body) return;
+        const existingRows = body.querySelectorAll('tr').length;
+        if (existingRows >= 30) {
+            alert('Maximum 30 entries allowed.');
+            return;
+        }
+        const row = document.createElement('tr');
+        row.innerHTML =
+            '<td>' + (existingRows + 1) + '</td>' +
+            '<td><input type="text" class="form-control form-control-sm short-name-input"></td>' +
+            '<td><input type="number" step="0.01" min="0" class="form-control form-control-sm text-end short-amount-input"></td>';
+        body.appendChild(row);
+        recalcShortModalTotal();
+    }
+
+    function clearShortRows() {
+        const body = document.getElementById('shortRowsBody');
+        if (body) {
+            body.innerHTML = '';
+        }
+        manualShortEntries = [];
+        manualShortTotal = 0;
+        const totalEl = document.getElementById('shortModalTotal');
+        if (totalEl) totalEl.textContent = fmtAmount(0);
+    }
+
+    function recalcShortModalTotal() {
+        const body = document.getElementById('shortRowsBody');
+        if (!body) return;
+        let total = 0;
+        const inputs = body.querySelectorAll('.short-amount-input');
+        inputs.forEach(inp => {
+            const v = Number(inp.value || 0);
+            if (!Number.isNaN(v)) total += v;
+        });
+        const totalEl = document.getElementById('shortModalTotal');
+        if (totalEl) totalEl.textContent = fmtAmount(total);
+    }
+
+    document.addEventListener('input', function (e) {
+        if (e.target && e.target.classList && e.target.classList.contains('short-amount-input')) {
+            recalcShortModalTotal();
+        }
+        if (e.target && e.target.classList && e.target.classList.contains('inst-edit-input')) {
+            recalcInstallmentAdjustFromInputs();
+        }
+        if (e.target && e.target.classList && e.target.classList.contains('adv-edit-input')) {
+            recalcAdvanceAdjustFromInputs();
+        }
+    });
+
+    function saveShortAdjustments() {
+        const body = document.getElementById('shortRowsBody');
+        if (!body) return;
+        const rows = Array.from(body.querySelectorAll('tr'));
+        const entries = [];
+        let total = 0;
+        for (const row of rows) {
+            const nameInput = row.querySelector('.short-name-input');
+            const amtInput = row.querySelector('.short-amount-input');
+            if (!amtInput) continue;
+            const rawAmt = Number(amtInput.value || 0);
+            const name = nameInput ? nameInput.value.trim() : '';
+            if (!name && (!rawAmt || Number.isNaN(rawAmt))) {
+                continue;
+            }
+            if (!Number.isNaN(rawAmt) && rawAmt > 0) {
+                total += rawAmt;
+            }
+            entries.push({ name: name, amount: rawAmt });
+        }
+        manualShortEntries = entries;
+        manualShortTotal = total;
+        updateComputedSummaryDisplay();
+
+        const modalEl = document.getElementById('shortModal');
+        if (modalEl) {
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
+        }
+    }
+
+    function printOutstanding() {
+        window.print();
+    }
+
+    function printSection(sectionId, title) {
+        const section = document.getElementById(sectionId);
+        if (!section) {
+            alert('Section not found for printing.');
+            return;
+        }
+
+        const wrappers = document.querySelectorAll('.table-wrapper');
+        const hidden = [];
+        wrappers.forEach(el => {
+            if (el !== section) {
+                hidden.push({ el, prevDisplay: el.style.display });
+                el.style.display = 'none';
+            }
+        });
+
+        try {
+            window.print();
+        } finally {
+            hidden.forEach(h => {
+                h.el.style.display = h.prevDisplay;
+            });
+        }
+    }
+
+    function shareOutstandingWhatsApp() {
+        if (!latestSummary || !latestPeriod) {
+            alert('Please load the report first.');
+            return;
+        }
+        const s = latestSummary;
+        const opening = fmtAmount(s.opening_outstanding || 0);
+        const closing = fmtAmount(s.closing_outstanding || 0);
+        const newLoans = fmtAmount(s.new_loans_total || 0);
+
+        // Use the same effective installments logic as the cards
+        const backendInstallments = baseInstallmentsTotal != null
+            ? Number(baseInstallmentsTotal || 0)
+            : Number(s.installments_total || 0);
+        const effectiveInstallments = overrideInstallmentsTotal != null
+            ? Number(overrideInstallmentsTotal || 0)
+            : backendInstallments;
+        const installments = fmtAmount(effectiveInstallments || 0);
+        const dbShort = fmtAmount(s.short_total || 0);
+        const manualShort = fmtAmount(manualShortTotal || 0);
+        const closedLoans = fmtAmount(s.closed_loans_total || 0);
+
+        const backendAdvance = baseAdvanceTotal != null
+            ? Number(baseAdvanceTotal || 0)
+            : Number(s.advance_total || 0);
+        const effectiveAdvance = overrideAdvanceTotal != null
+            ? Number(overrideAdvanceTotal || 0)
+            : backendAdvance;
+        const advance = fmtAmount(effectiveAdvance || 0);
+
+        const baseShortNum = Number(s.short_total || 0);
+        const openingNum = Number(s.opening_outstanding || 0);
+        const newLoansNum = Number(s.new_loans_total || 0);
+        const instNum = Number(effectiveInstallments || 0);
+        const closedNum = Number(s.closed_loans_total || 0);
+        const advNum = Number(effectiveAdvance || 0);
+        const computedClosingNum = openingNum + newLoansNum + baseShortNum + manualShortTotal - instNum - advNum - closedNum;
+        const computedClosing = fmtAmount(computedClosingNum);
+
+        let message = 'Outstanding Movement Report\n';
+        message += `Period: ${latestPeriod.start} to ${latestPeriod.end}\n\n`;
+        message += `Opening O/S: ${opening}\n`;
+        message += `New Loans: ${newLoans}\n`;
+        message += `Installments Collected: ${installments}\n`;
+        message += `Short EMIs (DB): ${dbShort}\n`;
+        message += `Short EMIs (Manual): ${manualShort}\n`;
+        message += `Advance Received: ${advance}\n`;
+        message += `Loans Closed: ${closedLoans}\n`;
+        message += `Computed Closing O/S: ${computedClosing}`;
+
+        const url = 'https://wa.me/?text=' + encodeURIComponent(message);
+        window.open(url, '_blank');
+    }
+
+    // Auto-load on first open using default dates
+    window.addEventListener('load', () => {
+        const startInput = document.getElementById('startDate');
+        const endInput = document.getElementById('endDate');
+        if (!startInput || !endInput) {
+            return;
+        }
+
+        // Do NOT auto-adjust range; use exactly what the user selects
+        if (startInput.value && endInput.value) {
+            loadOutstanding();
+        }
+    });
+</script>
+</body>
+</html>

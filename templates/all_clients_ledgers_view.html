@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Complete ledger data for all clients - SHIVI PROJECT">
+    <meta name="robots" content="noindex, nofollow">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>All Clients Ledgers - Complete Data View</title>
+    {% include "_pwa_head.html" %}
+
+    
+    <!-- ✅ CACHE-BUSTING VERSION CONTROL -->
+    <meta name="app-version" content="2.1.0">
+    
+    <!-- ✅ PERFORMANCE & SECURITY -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css?v=5.3.2&t={{ range(1000000, 9999999) | random }}" rel="stylesheet" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css?v=1.11.3&t={{ range(1000000, 9999999) | random }}" rel="stylesheet" crossorigin="anonymous">
+    
+    <!-- ✅ EXCEL EXPORT LIBRARY -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" integrity="sha512-r22gChDnGvBylk90+2e/ycr3RVrDi8DIOkIGNhJlKfuyQM4tIRAI062MaV8sfjQKYVGjOBaZBOA87z+IhZE9DA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    
+    <style>
+        /* ✅ PRODUCTION-OPTIMIZED STYLES */
+        :root {
+            --app-version: '2.1.0';
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --border-radius: 0.625rem;
+            --shadow: 0 0.25rem 0.9375rem rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --font-stack: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        /* ✅ PRODUCTION PRINT OPTIMIZATION */
+        @media print { 
+            .no-print { 
+                display: none !important; 
+            }
+            body {
+                background: white !important;
+                color: black !important;
+                font-size: 12px !important;
+                line-height: 1.3 !important;
+            }
+            .table {
+                border: 1px solid black !important;
+                font-size: 10px !important;
+                page-break-inside: avoid;
+            }
+            .table th,
+            .table td {
+                border: 1px solid black !important;
+                padding: 0.2rem !important;
+            }
+            .client-section {
+                page-break-before: always;
+                border: 2px solid black !important;
+                margin-bottom: 1rem !important;
+            }
+            .client-header {
+                background: #f0f0f0 !important;
+                color: black !important;
+                border: 1px solid black !important;
+            }
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            font-family: var(--font-stack);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .client-header {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 1.5rem;
+            text-align: center;
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .client-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .client-header h3 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.75rem;
+            font-weight: 700;
+            position: relative;
+            z-index: 1;
+        }
+
+        .client-header p {
+            margin: 0;
+            position: relative;
+            z-index: 1;
+            opacity: 0.9;
+            font-size: 0.95rem;
+        }
+        
+        .main-header {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 1.25rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 1.875rem;
+            box-shadow: var(--shadow);
+            position: relative;
+        }
+
+        .main-header::after {
+            content: 'v' var(--app-version);
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 0.7rem;
+            opacity: 0.7;
+            font-family: monospace;
+        }
+        
+        .export-buttons {
+            margin: 1.5rem 0;
+            text-align: center;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: center;
+        }
+
+        .export-buttons .btn {
+            border-radius: var(--border-radius);
+            font-weight: 600;
+            transition: var(--transition);
+            padding: 0.75rem 1.25rem;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .export-buttons .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #0d6efd, #0b5ed7);
+            color: white;
+        }
+
+        .btn-outline-danger {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            color: white;
+        }
+
+        .btn-outline-success {
+            background: linear-gradient(135deg, #198754, #157347);
+            color: white;
+        }
+
+        .btn-outline-info {
+            background: linear-gradient(135deg, #0dcaf0, #0baccc);
+            color: white;
+        }
+        
+        .client-section {
+            margin-bottom: 2.5rem;
+            border: 1px solid #dee2e6;
+            border-radius: var(--border-radius);
+            padding: 1.25rem;
+            background: white;
+            box-shadow: var(--shadow);
+            animation: slideInUp 0.3s ease-out;
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .datetime-display {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 0.75rem;
+            border-radius: var(--border-radius);
+            border: 1px solid #dee2e6;
+            font-weight: 700;
+            z-index: 1000;
+            box-shadow: var(--shadow);
+            font-family: monospace;
+            font-size: 0.85rem;
+        }
+
+        .datetime-display::after {
+            content: ' • v2.1.0';
+            color: #667eea;
+            font-size: 0.7rem;
+        }
+        
+        .table-responsive {
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            background: white;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .table {
+            margin-bottom: 0;
+            background: white;
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table thead th {
+            background: linear-gradient(135deg, #343a40, #495057);
+            color: white;
+            font-weight: 600;
+            padding: 0.875rem 0.75rem;
+            border: none;
+            font-size: 0.85rem;
+            text-align: left;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .ledger-table-wrapper {
+            border: 2px solid #cfd4da;
+            border-radius: var(--border-radius);
+        }
+
+        .ledger-table {
+            border: 1px solid #adb5bd;
+            border-collapse: collapse;
+        }
+
+        .ledger-table th,
+        .ledger-table td {
+            border: 1px solid #cfd4da;
+            padding: 0.65rem;
+        }
+
+        .ledger-table .thick-row-start td {
+            border-top-width: 2px;
+            border-top-color: #495057;
+        }
+
+        .ledger-table .totals-row td {
+            border-top: 3px solid #212529;
+            border-bottom: 3px solid #212529;
+        }
+
+        .ledger-table .table-column-headings th {
+            border-bottom: 2px solid #000;
+            border-top-width: 2px;
+        }
+
+        .client-info-row th {
+            background: #f8f9fa !important;
+            color: #212529 !important;
+            text-align: center;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 12;
+        }
+
+        .client-info-row .client-name {
+            display: block;
+            font-size: 1.2rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .client-info-row .client-contact {
+            display: block;
+            font-size: 0.9rem;
+            opacity: 0.85;
+            margin-top: 0.15rem;
+        }
+
+        .table-column-headings th {
+            background: linear-gradient(135deg, #2f3640, #4a5568) !important;
+            color: #fff;
+        }
+
+        .ledger-col-date { width: 9%; }
+        .ledger-col-day { width: 6%; }
+        .ledger-col-end { width: 9%; }
+        .ledger-col-close { width: 9%; }
+        .ledger-col-fees { width: 7%; }
+        .ledger-col-loan { width: 9%; }
+        .ledger-col-inst { width: 8%; }
+        .ledger-col-type { width: 7%; }
+        .ledger-col-advance { width: 8%; }
+        .ledger-col-closing { width: 8%; }
+        .ledger-col-balance { width: 9%; }
+        .ledger-col-pending { width: 6%; }
+        .ledger-col-status { width: 7%; }
+
+        .table tbody td {
+            padding: 0.75rem;
+            vertical-align: middle;
+            border-bottom: 1px solid #dee2e6;
+            font-size: 0.9rem;
+        }
+
+        .table tbody tr:hover {
+            background-color: rgba(102, 126, 234, 0.05);
+        }
+
+        .table-bordered th,
+        .table-bordered td {
+            border: 1px solid #dee2e6;
+        }
+        
+        .table-success {
+            background-color: rgba(25, 135, 84, 0.1) !important;
+        }
+        
+        .text-danger {
+            color: #dc3545 !important;
+            font-weight: 700 !important;
+        }
+        
+        .fw-bold {
+            font-weight: 700 !important;
+        }
+
+        .badge {
+            border-radius: calc(var(--border-radius) * 0.5);
+            padding: 0.35em 0.65em;
+            font-size: 0.75em;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .bg-secondary {
+            background-color: #6c757d !important;
+        }
+
+        .bg-success {
+            background-color: #198754 !important;
+        }
+
+        .bg-warning {
+            background-color: #ffc107 !important;
+        }
+
+        .text-dark {
+            color: #212529 !important;
+        }
+
+        .summary-footer {
+            background: var(--primary-gradient);
+            color: white;
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            margin-top: 2rem;
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+
+        /* ✅ MOBILE OPTIMIZATIONS */
+        @media (max-width: 768px) {
+            .datetime-display {
+                position: relative;
+                top: auto;
+                right: auto;
+                margin-bottom: 1rem;
+                text-align: center;
+                font-size: 0.8rem;
+            }
+            
+            .export-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .export-buttons .btn {
+                width: 100%;
+                max-width: 300px;
+            }
+            
+            .table-responsive {
+                font-size: 0.8rem;
+                overflow-x: auto;
+            }
+
+            .table thead th {
+                padding: 0.5rem 0.25rem;
+                font-size: 0.75rem;
+            }
+
+            .table tbody td {
+                padding: 0.5rem 0.25rem;
+                font-size: 0.8rem;
+            }
+            
+            .client-header h3 {
+                font-size: 1.5rem;
+            }
+
+            .main-header {
+                padding: 1rem;
+            }
+
+            .client-section {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body class="p-4">
+
+    <!-- ✅ LIVE DATE/TIME WITH JAVASCRIPT -->
+    <div class="datetime-display no-print" id="liveDateTime" role="timer" aria-live="polite" aria-label="Current date, time and app version"></div>
+
+    <!-- ✅ MAIN HEADER -->
+    <header class="main-header" role="banner">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="h2 mb-1">
+                    <i class="bi bi-clipboard-data me-2" aria-hidden="true"></i>
+                    LIST OF ALL CLIENTS
+                </h1>
+                <p class="mb-0">Complete Ledger Data - Alphabetically Sorted • Production Ready</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <h2 class="h5 mb-0">Total Clients: {{ clients|length }}</h2>
+                <!-- ✅ FIXED: Use JavaScript for build time -->
+                <small class="opacity-75">Build: <span id="buildTime"></span></small>
+            </div>
+        </div>
+    </header>
+
+    <!-- ✅ CACHE-BUSTED EXPORT BUTTONS -->
+    <div class="export-buttons no-print" role="toolbar" aria-label="Export options">
+        <button class="btn btn-primary" onclick="printAllLedgers()" type="button">
+            <i class="bi bi-printer" aria-hidden="true"></i> Print HTML
+        </button>
+        <button class="btn btn-outline-danger" onclick="exportAllLedgersPDF()" type="button">
+            <i class="bi bi-file-earmark-pdf" aria-hidden="true"></i> Export PDF
+        </button>
+        <button class="btn btn-outline-success" onclick="exportAllLedgersExcel()" type="button">
+            <i class="bi bi-file-earmark-excel" aria-hidden="true"></i> Export Excel
+        </button>
+        <button class="btn btn-outline-info" onclick="autoDownloadPDF()" type="button">
+            <i class="bi bi-download" aria-hidden="true"></i> Auto PDF
+        </button>
+        <button class="btn btn-outline-success" onclick="shareWhatsAppAll()" type="button">
+            <i class="bi bi-whatsapp" aria-hidden="true"></i> WhatsApp
+        </button>
+    </div>
+
+    <!-- ✅ ALL CLIENTS LEDGERS -->
+    <main role="main">
+        {% for client in clients %}
+        <section class="client-section" aria-labelledby="client-{{ loop.index }}-heading">
+            <div class="table-responsive ledger-table-wrapper">
+                <table class="table table-bordered table-hover ledger-table" role="table" aria-labelledby="client-{{ loop.index }}-heading">
+                    <caption class="visually-hidden">Loan records for {{ client.name|e }} - {{ client.loans|length }} total loans</caption>
+                    <colgroup>
+                        <col class="ledger-col-date">
+                        <col class="ledger-col-day">
+                        <col class="ledger-col-end">
+                        <col class="ledger-col-close">
+                        <col class="ledger-col-fees">
+                        <col class="ledger-col-loan">
+                        <col class="ledger-col-inst">
+                        <col class="ledger-col-type">
+                        <col class="ledger-col-advance">
+                        <col class="ledger-col-closing">
+                        <col class="ledger-col-balance">
+                        <col class="ledger-col-pending">
+                        <col class="ledger-col-status">
+                    </colgroup>
+                    <thead class="table-dark">
+                        <tr class="client-info-row" role="row">
+                            <th colspan="13" scope="colgroup">
+                                <span class="client-name" id="client-{{ loop.index }}-heading">{{ client.name|e }}</span>
+                                <span class="client-contact">{{ client.contact_info|e if client.contact_info else "Contact information not available" }}</span>
+                            </th>
+                        </tr>
+                        <tr class="table-column-headings" role="row">
+                            <th scope="col">Loan Date</th>
+                            <th scope="col">Day</th>
+                            <th scope="col">End Date</th>
+                            <th scope="col">Close Date</th>
+                            <th scope="col">Proc. Fees</th>
+                            <th scope="col">Loan Amount</th>
+                            <th scope="col">Inst. Amount</th>
+                            <th scope="col">Type</th>
+                            <th scope="col">Advance</th>
+                            <th scope="col">Closing Amt</th>
+                            <th scope="col">Balance</th>
+                            <th scope="col">Pending</th>
+                            <th scope="col">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for loan in client.loans %}
+                        <tr class="{{ 'table-success' if loan.status == 'CLOSED' else '' }} thick-row-start" role="row">
+                            <td>{{ loan.loan_date|e if loan.loan_date else '-' }}</td>
+                            <td>{{ loan.day_name|e if loan.day_name else '-' }}</td>
+                            <td>{{ loan.loan_end_date|e if loan.loan_end_date else '-' }}</td>
+                            <td>{{ loan.loan_closed_date|e if loan.loan_closed_date else '-' }}</td>
+                            <td>₹{{ '{:,.0f}'.format(loan.processing_fees or 0) }}</td>
+                            <td>₹{{ '{:,.0f}'.format(loan.amount or 0) }}</td>
+                            <td>₹{{ '{:,.0f}'.format(loan.installment_amount or 0) }}</td>
+                            <td><span class="badge bg-secondary">{{ loan.repayment_type|e if loan.repayment_type else 'N/A' }}</span></td>
+                            <td>₹{{ '{:,.0f}'.format(loan.advance_amount or 0) }}</td>
+                            <td>₹{{ '{:,.0f}'.format(loan.case_closing_amt or 0) }}</td>
+                            <td class="{{ 'text-danger fw-bold' if (loan.balance_amount or 0) > 0 else '' }}">₹{{ '{:,.0f}'.format(loan.balance_amount or 0) }}</td>
+                            <td>{{ loan.pending_installments or 0 }}</td>
+                            <td><span class="badge {{ 'bg-success' if loan.status == 'CLOSED' else 'bg-warning text-dark' }}">{{ loan.status|e if loan.status else 'UNKNOWN' }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot class="table-secondary fw-bold">
+                        <tr role="row" class="totals-row">
+                            <td colspan="4" class="text-end"><strong>TOTALS:</strong></td>
+                            <td><strong>₹{{ '{:,.0f}'.format(client.totals.processing_fees or 0) }}</strong></td>
+                            <td><strong>₹{{ '{:,.0f}'.format(client.totals.loan_amount or 0) }}</strong></td>
+                            <td><strong>₹{{ '{:,.0f}'.format(client.totals.installment_amount or 0) }}</strong></td>
+                            <td></td>
+                            <td><strong>₹{{ '{:,.0f}'.format(client.totals.advance_amount or 0) }}</strong></td>
+                            <td><strong>₹{{ '{:,.0f}'.format(client.totals.case_closing_amount or 0) }}</strong></td>
+                            <td class="text-danger"><strong>₹{{ '{:,.0f}'.format(client.totals.balance_amount or 0) }}</strong></td>
+                            <td><strong>{{ client.totals.pending_installments or 0 }}</strong></td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </section>
+        {% endfor %}
+    </main>
+
+    <!-- ✅ SUMMARY FOOTER -->
+    <footer class="summary-footer" role="contentinfo">
+        <h2 class="h5 mb-3">
+            <i class="bi bi-graph-up me-2" aria-hidden="true"></i>
+            SUMMARY REPORT
+        </h2>
+        <div class="row">
+            <div class="col-md-4">
+                <strong>Total Clients:</strong> {{ clients|length }}
+            </div>
+            <div class="col-md-4">
+                <strong>Generated:</strong> <span id="generationTime"></span>
+            </div>
+            <div class="col-md-4">
+                <strong>SHIVI PROJECT v2.1.0</strong> - Loan Management System
+            </div>
+        </div>
+        <div class="mt-2">
+            <!-- ✅ FIXED: Use JavaScript for timestamp -->
+            <small class="opacity-75">Cache-Free Production Build • Last Updated: <span id="lastUpdated"></span></small>
+        </div>
+    </footer>
+
+    <script>
+        'use strict';
+
+        // ✅ PRODUCTION CONFIGURATION
+        const APP_CONFIG = {
+            version: '2.1.0',
+            buildTimestamp: Date.now(),
+            environment: 'production'
+        };
+
+        // ✅ ENHANCED DATE/TIME UPDATE
+        function updateDateTime() {
+            try {
+                const now = new Date();
+                const dd = String(now.getDate()).padStart(2, '0');
+                const mm = String(now.getMonth() + 1).padStart(2, '0');
+                const yyyy = now.getFullYear();
+                const hours = now.getHours();
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                const seconds = String(now.getSeconds()).padStart(2, '0');
+                const ampm = hours >= 12 ? 'PM' : 'AM';
+                const displayHours = hours % 12 || 12;
+                
+                const dateTimeStr = `${dd}-${mm}-${yyyy} ${displayHours}:${minutes}:${seconds} ${ampm}`;
+                const buildTimeStr = `${yyyy}-${mm}-${dd} ${hours.toString().padStart(2, '0')}:${minutes}:${seconds}`;
+                
+                // Update all datetime elements
+                const elements = ['liveDateTime', 'generationTime', 'buildTime', 'lastUpdated'];
+                elements.forEach(id => {
+                    const element = document.getElementById(id);
+                    if (element) {
+                        if (id === 'buildTime' || id === 'lastUpdated') {
+                            element.textContent = buildTimeStr;
+                        } else {
+                            element.textContent = dateTimeStr;
+                        }
+                    }
+                });
+                
+            } catch (error) {
+                console.warn('DateTime update failed:', error);
+            }
+        }
+
+        // ✅ EXPORT FUNCTIONS
+        function printAllLedgers() {
+            try {
+                window.print();
+            } catch (error) {
+                console.error('Print error:', error);
+                alert('Print failed. Please try again.');
+            }
+        }
+
+        function exportAllLedgersPDF() {
+            try {
+                const timestamp = Date.now();
+                window.open(`/export-all-clients-ledgers-pdf?v=2.1.0&t=${timestamp}`, '_blank', 'noopener,noreferrer');
+            } catch (error) {
+                console.error('PDF export error:', error);
+                alert('PDF export failed. Please try again.');
+            }
+        }
+
+        function exportAllLedgersExcel() {
+            // Use server-side Excel generation with openpyxl (HAS BORDERS!)
+            const timestamp = Date.now();
+            window.open('/export-all-clients-ledgers-excel-server?v=2.1.0&t=' + timestamp, '_blank');
+        }
+
+        async function autoDownloadPDF() {
+            try {
+                const timestamp = Date.now();
+                const response = await fetch(`/export-all-clients-ledgers-pdf?v=2.1.0&t=${timestamp}`, {
+                    cache: 'no-cache'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `all_clients_ledgers_${new Date().toISOString().split('T')[0]}_v2.1.0.pdf`;
+                a.style.display = 'none';
+                
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                
+                alert('📄 PDF downloaded successfully!');
+                
+            } catch (error) {
+                console.error('Auto download error:', error);
+                alert('Automatic download failed. Please try the regular PDF export.');
+            }
+        }
+
+        function shareWhatsAppAll() {
+            try {
+                const totalClients = {{ clients|length }};
+                const currentDate = new Date().toLocaleDateString('en-GB');
+                const currentTime = new Date().toLocaleTimeString('en-GB');
+                
+                const text = '*Complete Clients Ledger Data Report*\n\n' +
+                           'Generated: ' + currentDate + ' at ' + currentTime + '\n' +
+                           'Total Clients: ' + totalClients + '\n' +
+                           'SHIVI PROJECT v2.1.0\n\n' +
+                           'Access full report: ' + window.location.href + '\n\n' +
+                           'Production Build - Cache-Free Data';
+                
+                const whatsappURL = 'https://wa.me/?text=' + encodeURIComponent(text);
+                window.open(whatsappURL, '_blank', 'noopener,noreferrer');
+                
+            } catch (error) {
+                console.error('WhatsApp share error:', error);
+                alert('WhatsApp share failed. Please try again.');
+            }
+        }
+
+        // ✅ INITIALIZATION
+        document.addEventListener('DOMContentLoaded', function() {
+            try {
+                console.log('🚀 Initializing SHIVI PROJECT v2.1.0');
+                updateDateTime();
+                setInterval(updateDateTime, 1000);
+                console.log('✅ Application initialized successfully');
+            } catch (error) {
+                console.error('Initialization error:', error);
+            }
+        });
+
+        // ✅ ERROR HANDLERS
+        window.addEventListener('error', function(event) {
+            console.error('Global error:', event.error);
+        });
+
+        window.addEventListener('unhandledrejection', function(event) {
+            console.error('Unhandled promise rejection:', event.reason);
+        });
+
+    </script>
+    {% include "_pwa_scripts.html" %}
+
+
+</body>
+</html>
+

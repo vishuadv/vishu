@@ -1,0 +1,1276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Report Reconciliation - Swift Financials</title>
+    {% include "_pwa_head.html" %}
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        
+        .header-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header-section h2 {
+            margin: 0;
+            font-size: 2.2rem;
+            font-weight: bold;
+        }
+        
+        .snapshot-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .comparison-section {
+            padding: 20px;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: bold;
+            border-radius: 10px 10px 0 0 !important;
+        }
+        
+        .table {
+            margin-bottom: 0;
+        }
+        
+        .table thead th {
+            background: #f8f9fa;
+            border-bottom: 2px solid #667eea;
+            font-weight: bold;
+        }
+        
+        .match {
+            background-color: #d4edda !important;
+        }
+        
+        .mismatch {
+            background-color: #f8d7da !important;
+        }
+        
+        .neutral {
+            background-color: #fff3cd !important;
+        }
+        
+        .total-row {
+            background: #e9ecef;
+            font-weight: bold;
+        }
+        
+        .difference-positive {
+            color: #28a745;
+            font-weight: bold;
+        }
+        
+        .difference-negative {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        
+        .difference-zero {
+            color: #6c757d;
+            font-weight: bold;
+        }
+        
+        .badge-daily {
+            background-color: #007bff;
+        }
+        
+        .badge-weekly {
+            background-color: #28a745;
+        }
+        
+        .badge-ten-days {
+            background-color: #ffc107;
+            color: #000;
+        }
+        
+        .badge-monthly {
+            background-color: #6c757d;
+        }
+        
+        .loading-spinner {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="header-section">
+            <h2 class="mb-3">📊 Daily Report Reconciliation (RECO)</h2>
+            <p class="mb-0">Compare yesterday's snapshot with today's live data</p>
+        </div>
+        
+        <div class="snapshot-info" id="snapshotInfo">
+            <h5><i class="bi bi-info-circle"></i> Snapshot Information</h5>
+            <p class="mb-0" id="snapshotDetails">Loading snapshot information...</p>
+        </div>
+        
+        <div class="comparison-section">
+            <!-- Date Selection -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-calendar"></i> Select Comparison Date
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-end">
+                        <div class="col-md-4">
+                            <label class="form-label">Yesterday's Snapshot Date</label>
+                            <input type="date" class="form-control" id="yesterdayDate">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Today's Date</label>
+                            <input type="date" class="form-control" id="todayDate">
+                        </div>
+                        <div class="col-md-4">
+                            <button class="btn btn-primary w-100" onclick="runReconciliation()">
+                                <i class="bi bi-search"></i> Run Reconciliation
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Loading -->
+            <div class="loading-spinner" id="loadingSpinner" style="display: none;">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <span class="ms-3">Running reconciliation...</span>
+            </div>
+            
+            <!-- Results -->
+            <div id="resultsSection" style="display: none;">
+                <!-- Summary Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="bi bi-calculator"></i> Reconciliation Summary
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Yesterday's Daily Collection (DAILY only)</h6>
+                                <h3 id="yesterdayDailyTotal">₹0</h3>
+                                <small class="text-muted">Excluding Weekly, 10-Days, Monthly</small>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Daily Collection Lost</h6>
+                                <h3 id="totalDailyLost" class="text-danger">₹0</h3>
+                                <small class="text-muted">
+                                    Manual Closed: ₹<span id="manualClosedLost">0</span> | 
+                                    Going to Close: ₹<span id="goingToCloseLost">0</span>
+                                </small>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Today's Expected Daily Collection</h6>
+                                <h3 id="todayExpectedTotal">₹0</h3>
+                                <small class="text-muted" id="todayExpectedBreakdown">Yesterday + Yesterday New Sales - Daily Lost</small>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Today's Actual Daily Collection</h6>
+                                <h3 id="todayActualTotal">₹0</h3>
+                                <small class="text-muted">From today's snapshot</small>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="row">
+                            <div class="col-md-12 text-center">
+                                <h6>Difference</h6>
+                                <h2 id="differenceTotal">₹0</h2>
+                                <small class="text-muted" id="differenceStatus">Checking...</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Yesterday's New Sales -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="bi bi-person-plus"></i> Yesterday's New Sales (Full Details)
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Client Name</th>
+                                        <th>Phone</th>
+                                        <th>Type</th>
+                                        <th>Loan Amount</th>
+                                        <th>Daily Installment</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="yesterdayNewSales">
+                                </tbody>
+                                <tfoot>
+                                    <tr class="total-row">
+                                        <td colspan="3"><strong>Total New Sales (All Types)</strong></td>
+                                        <td><strong id="yesterdayNewSalesLoanTotal">₹0</strong></td>
+                                        <td><strong id="yesterdayNewSalesTotal">₹0</strong> <small class="text-muted">(DAILY only)</small></td>
+                                        <td></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Yesterday's Closed Cases -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="bi bi-x-circle"></i> Yesterday's Closed Cases (Specific Loan Case)
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Client Name</th>
+                                        <th>Phone</th>
+                                        <th>Loan ID</th>
+                                        <th>Loan Start Date</th>
+                                        <th>Closing Amount</th>
+                                        <th>Daily Installment Lost</th>
+                                        <th>Close Type</th>
+                                        <th>Close Date</th>
+                                        <th>Days Active</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="yesterdayClosedCases">
+                                </tbody>
+                                <tfoot>
+                                    <tr class="total-row">
+                                        <td colspan="5"><strong>Total Daily Collection Lost</strong></td>
+                                        <td><strong id="yesterdayClosedDailyLost">₹0</strong></td>
+                                        <td colspan="3"></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Yesterday's Going to Close -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="bi bi-clock-history"></i> Yesterday's "Going to Close" (Due to Finish)
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small">These cases were due to finish on yesterday based on loan end date. Manual close entry may be needed.</p>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Client Name</th>
+                                        <th>Phone</th>
+                                        <th>Type</th>
+                                        <th>Loan Amount</th>
+                                        <th>Daily Installment</th>
+                                        <th>Due End Date</th>
+                                        <th>Manual Entry Needed</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="yesterdayGoingToClose">
+                                </tbody>
+                                <tfoot>
+                                    <tr class="total-row">
+                                        <td colspan="5"><strong>Total Daily Collection Lost (Going to Close)</strong></td>
+                                        <td><strong id="yesterdayGoingToCloseDailyLost">₹0</strong></td>
+                                        <td></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Client Reduction Details -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="bi bi-person-dash"></i> Clients Reduced (Disappeared from Today's List)
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Client Name</th>
+                                        <th>Phone</th>
+                                        <th>Status</th>
+                                        <th>Installment Amount</th>
+                                        <th>Reason</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="clientReductionDetails">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Weekly Comparison -->
+                <div class="card" id="weeklyComparisonCard">
+                    <div class="card-header bg-success text-white">
+                        <i class="bi bi-calendar-week"></i> Weekly Clients Comparison (Snapshot vs System)
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-3">
+                                <div class="text-center p-2 bg-light rounded">
+                                    <small>Snapshot Count</small>
+                                    <h5 id="weeklySnapshotCount">0</h5>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center p-2 bg-light rounded">
+                                    <small>System Count</small>
+                                    <h5 id="weeklySystemCount">0</h5>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center p-2 bg-light rounded">
+                                    <small>Snapshot Total</small>
+                                    <h5 id="weeklySnapshotTotal">₹0</h5>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center p-2 bg-light rounded">
+                                    <small>System Total</small>
+                                    <h5 id="weeklySystemTotal">₹0</h5>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <ul class="nav nav-tabs" id="weeklyTabs" role="tablist">
+                            <li class="nav-item">
+                                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#weeklyAdded">Added (System has, Snapshot doesn't)</button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#weeklyRemoved">Removed (Snapshot has, System doesn't)</button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#weeklyCommon">Common (Both have)</button>
+                            </li>
+                        </ul>
+                        
+                        <div class="tab-content mt-3" id="weeklyTabsContent">
+                            <div class="tab-pane fade show active" id="weeklyAdded">
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead><tr><th>Name</th><th>Amount</th><th>New Client</th><th>Reason</th></tr></thead>
+                                        <tbody id="weeklyAdded"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="weeklyRemoved">
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead><tr><th>Name</th><th>Amount</th><th>Closed Loan</th><th>Reason</th></tr></thead>
+                                        <tbody id="weeklyRemoved"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="weeklyCommon">
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead><tr><th>Name</th><th>Snapshot Amount</th><th>System Amount</th><th>Difference</th></tr></thead>
+                                        <tbody id="weeklyCommon"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Monthly Comparison -->
+                <div class="card" id="monthlyComparisonCard" style="display: none;">
+                    <div class="card-header bg-secondary text-white">
+                        <i class="bi bi-calendar-month"></i> Monthly Clients Comparison (Snapshot vs System)
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-3">
+                                <div class="text-center p-2 bg-light rounded">
+                                    <small>Snapshot Count</small>
+                                    <h5 id="monthlySnapshotCount">0</h5>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center p-2 bg-light rounded">
+                                    <small>System Count</small>
+                                    <h5 id="monthlySystemCount">0</h5>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center p-2 bg-light rounded">
+                                    <small>Snapshot Total</small>
+                                    <h5 id="monthlySnapshotTotal">₹0</h5>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center p-2 bg-light rounded">
+                                    <small>System Total</small>
+                                    <h5 id="monthlySystemTotal">₹0</h5>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <ul class="nav nav-tabs" id="monthlyTabs" role="tablist">
+                            <li class="nav-item">
+                                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#monthlyAdded">Added (System has, Snapshot doesn't)</button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#monthlyRemoved">Removed (Snapshot has, System doesn't)</button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#monthlyCommon">Common (Both have)</button>
+                            </li>
+                        </ul>
+                        
+                        <div class="tab-content mt-3" id="monthlyTabsContent">
+                            <div class="tab-pane fade show active" id="monthlyAdded">
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead><tr><th>Name</th><th>Amount</th><th>New Client</th><th>Reason</th></tr></thead>
+                                        <tbody id="monthlyAdded"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="monthlyRemoved">
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead><tr><th>Name</th><th>Amount</th><th>Closed Loan</th><th>Reason</th></tr></thead>
+                                        <tbody id="monthlyRemoved"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="monthlyCommon">
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead><tr><th>Name</th><th>Snapshot Amount</th><th>System Amount</th><th>Difference</th></tr></thead>
+                                        <tbody id="monthlyCommon"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 10-Days Comparison -->
+                <div class="card" id="tenDaysComparisonCard" style="display: none;">
+                    <div class="card-header bg-warning text-dark">
+                        <i class="bi bi-calendar3"></i> 10-Days Clients Comparison (Snapshot vs System)
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-3">
+                                <div class="text-center p-2 bg-light rounded">
+                                    <small>Snapshot Count</small>
+                                    <h5 id="tenDaysSnapshotCount">0</h5>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center p-2 bg-light rounded">
+                                    <small>System Count</small>
+                                    <h5 id="tenDaysSystemCount">0</h5>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center p-2 bg-light rounded">
+                                    <small>Snapshot Total</small>
+                                    <h5 id="tenDaysSnapshotTotal">₹0</h5>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center p-2 bg-light rounded">
+                                    <small>System Total</small>
+                                    <h5 id="tenDaysSystemTotal">₹0</h5>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <ul class="nav nav-tabs" id="tenDaysTabs" role="tablist">
+                            <li class="nav-item">
+                                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tenDaysAdded">Added (System has, Snapshot doesn't)</button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tenDaysRemoved">Removed (Snapshot has, System doesn't)</button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tenDaysCommon">Common (Both have)</button>
+                            </li>
+                        </ul>
+                        
+                        <div class="tab-content mt-3" id="tenDaysTabsContent">
+                            <div class="tab-pane fade show active" id="tenDaysAdded">
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead><tr><th>Name</th><th>Amount</th><th>New Client</th><th>Reason</th></tr></thead>
+                                        <tbody id="tenDaysAdded"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="tenDaysRemoved">
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead><tr><th>Name</th><th>Amount</th><th>Closed Loan</th><th>Reason</th></tr></thead>
+                                        <tbody id="tenDaysRemoved"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="tenDaysCommon">
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead><tr><th>Name</th><th>Snapshot Amount</th><th>System Amount</th><th>Difference</th></tr></thead>
+                                        <tbody id="tenDaysCommon"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Today's Other Installments -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="bi bi-calendar-week"></i> Today's Other Installments (Weekly, 10-Days, Monthly)
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="text-center p-3 bg-light rounded">
+                                    <h6>Weekly Total</h6>
+                                    <h4 id="todayWeeklyTotal" class="text-success">₹0</h4>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="text-center p-3 bg-light rounded">
+                                    <h6>10-Days Total</h6>
+                                    <h4 id="todayTenDaysTotal" class="text-warning">₹0</h4>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="text-center p-3 bg-light rounded">
+                                    <h6>Monthly Total</h6>
+                                    <h4 id="todayMonthlyTotal" class="text-secondary">₹0</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Detailed Comparison -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="bi bi-table"></i> Detailed Comparison
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Metric</th>
+                                        <th>Comparison Date Snapshot</th>
+                                        <th>Expected Inst</th>
+                                        <th>Today Snapshot</th>
+                                        <th>Difference</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="detailedComparison">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Simple tab handler for comparison cards
+        document.addEventListener('DOMContentLoaded', function() {
+            // Handle weekly tabs
+            const weeklyTabs = document.querySelectorAll('#weeklyTabs button');
+            weeklyTabs.forEach(tab => {
+                tab.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    // Remove active class from all tabs
+                    weeklyTabs.forEach(t => t.classList.remove('active'));
+                    // Add active class to clicked tab
+                    this.classList.add('active');
+                    
+                    // Hide all tab panes
+                    document.querySelectorAll('#weeklyTabsContent .tab-pane').forEach(pane => {
+                        pane.classList.remove('show', 'active');
+                    });
+                    
+                    // Show target tab pane
+                    const targetId = this.getAttribute('data-bs-target');
+                    const targetPane = document.querySelector(targetId);
+                    if (targetPane) {
+                        targetPane.classList.add('show', 'active');
+                    }
+                });
+            });
+            
+            // Handle monthly tabs
+            const monthlyTabs = document.querySelectorAll('#monthlyTabs button');
+            monthlyTabs.forEach(tab => {
+                tab.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    monthlyTabs.forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    document.querySelectorAll('#monthlyTabsContent .tab-pane').forEach(pane => {
+                        pane.classList.remove('show', 'active');
+                    });
+                    const targetId = this.getAttribute('data-bs-target');
+                    const targetPane = document.querySelector(targetId);
+                    if (targetPane) {
+                        targetPane.classList.add('show', 'active');
+                    }
+                });
+            });
+            
+            // Handle tenDays tabs
+            const tenDaysTabs = document.querySelectorAll('#tenDaysTabs button');
+            tenDaysTabs.forEach(tab => {
+                tab.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    tenDaysTabs.forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    document.querySelectorAll('#tenDaysTabsContent .tab-pane').forEach(pane => {
+                        pane.classList.remove('show', 'active');
+                    });
+                    const targetId = this.getAttribute('data-bs-target');
+                    const targetPane = document.querySelector(targetId);
+                    if (targetPane) {
+                        targetPane.classList.add('show', 'active');
+                    }
+                });
+            });
+        });
+    </script>
+    
+    <script>
+        // Set default dates
+        document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            
+            document.getElementById('yesterdayDate').value = formatDateForInput(yesterday);
+            document.getElementById('todayDate').value = formatDateForInput(today);
+            
+            // Auto-run reconciliation on load
+            runReconciliation();
+        });
+        
+        function formatDateForInput(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+        
+        async function runReconciliation() {
+            const fromDate = document.getElementById('yesterdayDate').value;
+            const toDate = document.getElementById('todayDate').value;
+            
+            if (!fromDate || !toDate) {
+                alert('Please select both dates');
+                return;
+            }
+            
+            // Show loading
+            document.getElementById('loadingSpinner').style.display = 'flex';
+            document.getElementById('resultsSection').style.display = 'none';
+            
+            try {
+                const response = await fetch(`/reconciliation/data?yesterday=${fromDate}&today=${toDate}`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                    document.getElementById('loadingSpinner').style.display = 'none';
+                    return;
+                }
+                
+                // Update UI with results
+                updateSnapshotInfo(data.snapshot_info);
+                updateSummary(data);
+                updateYesterdayNewSales(data.yesterday_new_sales);
+                updateYesterdayClosedCases(data.yesterday_closed_cases);
+                updateYesterdayGoingToClose(data.yesterday_going_to_close);
+                updateClientReductionDetails(data.client_reduction_details);
+                updateCategoryComparison(data.weekly_comparison, 'weekly');
+                updateCategoryComparison(data.monthly_comparison, 'monthly');
+                updateCategoryComparison(data.ten_days_comparison, 'tenDays');
+                updateTodayOtherInstallments(data.today_other_installments);
+                updateDetailedComparisonWithExplanation(data.detailed_comparison, data, toDate);
+                
+                // Show results
+                document.getElementById('loadingSpinner').style.display = 'none';
+                document.getElementById('resultsSection').style.display = 'block';
+                
+            } catch (error) {
+                alert('Error running reconciliation: ' + error.message);
+                document.getElementById('loadingSpinner').style.display = 'none';
+            }
+        }
+        
+        function updateSnapshotInfo(info) {
+            document.getElementById('snapshotDetails').innerHTML = `
+                <strong>Yesterday's Snapshot:</strong> ${info.yesterday_snapshot_date || 'N/A'} (Generated: ${info.yesterday_snapshot_generated_at || 'N/A'})<br>
+                <strong>Today's Snapshot:</strong> ${info.today_snapshot_date || 'N/A'} (Generated: ${info.today_snapshot_generated_at || 'N/A'})
+            `;
+        }
+        
+        function updateSummary(data) {
+            document.getElementById('yesterdayDailyTotal').textContent = `₹${data.yesterday_daily_total.toLocaleString()}`;
+            document.getElementById('totalDailyLost').textContent = `₹${data.total_daily_lost.toLocaleString()}`;
+            document.getElementById('manualClosedLost').textContent = data.yesterday_closed_daily_lost.toLocaleString();
+            document.getElementById('goingToCloseLost').textContent = data.yesterday_going_to_close_daily_lost.toLocaleString();
+            document.getElementById('todayExpectedTotal').textContent = `₹${data.today_expected_total.toLocaleString()}`;
+            document.getElementById('todayActualTotal').textContent = `₹${data.today_actual_total.toLocaleString()}`;
+            
+            // Show calculation breakdown
+            const yesterdayTotal = data.yesterday_daily_total || 0;
+            const yesterdayNewSales = data.yesterday_new_daily_sales || 0;
+            const dailyLost = data.total_daily_lost || 0;
+            
+            document.getElementById('todayExpectedBreakdown').innerHTML = 
+                `₹${yesterdayTotal.toLocaleString()} (Yesterday) + ₹${yesterdayNewSales.toLocaleString()} (Yesterday New Sales) - ₹${dailyLost.toLocaleString()} (Lost) = ₹${data.today_expected_total.toLocaleString()}`;
+            
+            const difference = data.difference;
+            const differenceEl = document.getElementById('differenceTotal');
+            const statusEl = document.getElementById('differenceStatus');
+            
+            differenceEl.textContent = `₹${Math.abs(difference).toLocaleString()}`;
+            
+            if (difference === 0) {
+                differenceEl.className = 'difference-zero';
+                statusEl.textContent = '✅ Perfect Match - No Difference';
+                statusEl.className = 'text-success';
+            } else if (difference > 0) {
+                differenceEl.className = 'difference-positive';
+                statusEl.textContent = `⚠️ Today is higher by ₹${difference.toLocaleString()}`;
+                statusEl.className = 'text-warning';
+            } else {
+                differenceEl.className = 'difference-negative';
+                statusEl.textContent = `⚠️ Today is lower by ₹${Math.abs(difference).toLocaleString()}`;
+                statusEl.className = 'text-danger';
+            }
+        }
+        
+        function updateYesterdayNewSales(sales) {
+            const tbody = document.getElementById('yesterdayNewSales');
+            tbody.innerHTML = '';
+            
+            let totalDaily = 0;
+            let totalLoanAmount = 0;
+            
+            sales.forEach(sale => {
+                const row = document.createElement('tr');
+                const typeBadge = getTypeBadge(sale.repayment_type);
+                
+                row.innerHTML = `
+                    <td>${sale.name}</td>
+                    <td>${sale.phone || '-'}</td>
+                    <td>${typeBadge}</td>
+                    <td>₹${sale.loan_amount?.toLocaleString() || 0}</td>
+                    <td>₹${sale.daily_installment?.toLocaleString() || 0}</td>
+                    <td>${sale.status || 'ACTIVE'}</td>
+                `;
+                tbody.appendChild(row);
+                
+                // Sum loan amounts for both DAILY and WEEKLY
+                totalLoanAmount += sale.loan_amount || 0;
+                
+                // Sum daily installments for DAILY only
+                if (sale.repayment_type === 'DAILY') {
+                    totalDaily += sale.daily_installment || 0;
+                }
+            });
+            
+            document.getElementById('yesterdayNewSalesTotal').textContent = `₹${totalDaily.toLocaleString()}`;
+            document.getElementById('yesterdayNewSalesLoanTotal').textContent = `₹${totalLoanAmount.toLocaleString()}`;
+        }
+        
+        function updateYesterdayClosedCases(cases) {
+            const tbody = document.getElementById('yesterdayClosedCases');
+            tbody.innerHTML = '';
+            
+            let totalDailyLost = 0;
+            
+            if (cases.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted">No cases closed yesterday</td></tr>';
+            } else {
+                cases.forEach(closed => {
+                    const row = document.createElement('tr');
+                    const closeTypeBadge = closed.close_type === 'AUTO (101 days)' 
+                        ? '<span class="badge bg-info">AUTO (101 days)</span>' 
+                        : '<span class="badge bg-warning text-dark">MANUAL</span>';
+                    
+                    row.innerHTML = `
+                        <td>${closed.name}</td>
+                        <td>${closed.phone || '-'}</td>
+                        <td>${closed.loan_id || '-'}</td>
+                        <td>${closed.loan_start_date || '-'}</td>
+                        <td>₹${closed.closing_amount?.toLocaleString() || 0}</td>
+                        <td>₹${closed.daily_installment_lost?.toLocaleString() || 0}</td>
+                        <td>${closeTypeBadge}</td>
+                        <td>${closed.close_date || '-'}</td>
+                        <td>${closed.days_active || 0}</td>
+                    `;
+                    tbody.appendChild(row);
+                    
+                    totalDailyLost += closed.daily_installment_lost || 0;
+                });
+            }
+            
+            document.getElementById('yesterdayClosedDailyLost').textContent = `₹${totalDailyLost.toLocaleString()}`;
+        }
+        
+        function updateYesterdayGoingToClose(cases) {
+            const tbody = document.getElementById('yesterdayGoingToClose');
+            tbody.innerHTML = '';
+            
+            let totalDailyLost = 0;
+            
+            if (cases.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No cases due to finish on yesterday</td></tr>';
+            } else {
+                cases.forEach(going_to_close => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${going_to_close.name}</td>
+                        <td>${going_to_close.phone || '-'}</td>
+                        <td>${going_to_close.repayment_type || '-'}</td>
+                        <td>₹${going_to_close.loan_amount?.toLocaleString() || 0}</td>
+                        <td>₹${going_to_close.daily_installment?.toLocaleString() || 0}</td>
+                        <td>${going_to_close.due_end_date || '-'}</td>
+                        <td><span class="badge bg-warning text-dark">${going_to_close.manual_entry_needed || 'YES'}</span></td>
+                    `;
+                    tbody.appendChild(row);
+                    
+                    totalDailyLost += going_to_close.daily_installment || 0;
+                });
+            }
+            
+            document.getElementById('yesterdayGoingToCloseDailyLost').textContent = `₹${totalDailyLost.toLocaleString()}`;
+        }
+        
+        function updateClientReductionDetails(details) {
+            const tbody = document.getElementById('clientReductionDetails');
+            tbody.innerHTML = '';
+            
+            if (details.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No clients reduced</td></tr>';
+            } else {
+                details.forEach(client => {
+                    const row = document.createElement('tr');
+                    const statusBadge = client.status === 'CLOSED' 
+                        ? '<span class="badge bg-danger">CLOSED</span>' 
+                        : '<span class="badge bg-secondary">' + (client.status || 'UNKNOWN') + '</span>';
+                    
+                    row.innerHTML = `
+                        <td>${client.name}</td>
+                        <td>${client.phone || '-'}</td>
+                        <td>${statusBadge}</td>
+                        <td>₹${client.installment_amount?.toLocaleString() || 0}</td>
+                        <td>${client.reason || 'UNKNOWN'}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
+        }
+        
+        function updateCategoryComparison(comparison, prefix) {
+            // Hide card if no data (except for weekly - always show)
+            let cardId;
+            if (prefix === 'weekly') {
+                cardId = 'weeklyComparisonCard';
+            } else if (prefix === 'monthly') {
+                cardId = 'monthlyComparisonCard';
+            } else if (prefix === 'tenDays') {
+                cardId = 'tenDaysComparisonCard';
+            }
+            
+            const cardElement = document.getElementById(cardId);
+            
+            if (!cardElement) {
+                console.error('Card element not found:', cardId);
+                return;
+            }
+            
+            if (prefix !== 'weekly' && !comparison.has_data) {
+                cardElement.style.display = 'none';
+                return;
+            }
+            
+            // Show card if has data or is weekly
+            cardElement.style.display = 'block';
+            
+            // Update summary with comparison date info
+            document.getElementById(prefix + 'SnapshotCount').textContent = comparison.snapshot_count;
+            document.getElementById(prefix + 'SystemCount').textContent = comparison.system_count;
+            document.getElementById(prefix + 'SnapshotTotal').textContent = `₹${comparison.snapshot_total.toLocaleString()}`;
+            document.getElementById(prefix + 'SystemTotal').textContent = `₹${comparison.system_total.toLocaleString()}`;
+            
+            // Update card header to show comparison date
+            const headerElement = cardElement.querySelector('.card-header');
+            if (headerElement && comparison.comparison_date) {
+                const dateLabel = comparison.comparison_date;
+                headerElement.innerHTML = `
+                    <i class="bi bi-calendar${prefix === 'tenDays' ? '3' : (prefix === 'weekly' ? '-week' : '-month')}"></i> 
+                    ${prefix === 'weekly' ? 'Weekly' : (prefix === 'monthly' ? 'Monthly' : '10-Days')} Clients Comparison 
+                    <small>(Snapshot: ${dateLabel} vs Today: ${comparison.current_date || 'Today'})</small>
+                `;
+            }
+            
+            // Update added
+            const addedTbody = document.getElementById(prefix + 'Added');
+            addedTbody.innerHTML = '';
+            if (comparison.added.length === 0) {
+                addedTbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No clients added</td></tr>';
+            } else {
+                comparison.added.forEach(client => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${client.name}</td>
+                        <td>₹${client.amount?.toLocaleString() || 0}</td>
+                        <td>${client.is_new_client ? '<span class="badge bg-success">YES</span>' : '<span class="badge bg-secondary">NO</span>'}</td>
+                        <td><small class="text-muted">${client.reason || 'Unknown'}</small></td>
+                    `;
+                    addedTbody.appendChild(row);
+                });
+            }
+            
+            // Update removed
+            const removedTbody = document.getElementById(prefix + 'Removed');
+            removedTbody.innerHTML = '';
+            if (comparison.removed.length === 0) {
+                removedTbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No clients removed</td></tr>';
+            } else {
+                comparison.removed.forEach(client => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${client.name}</td>
+                        <td>₹${client.amount?.toLocaleString() || 0}</td>
+                        <td>${client.is_closed_loan ? '<span class="badge bg-danger">YES</span>' : '<span class="badge bg-secondary">NO</span>'}</td>
+                        <td><small class="text-muted">${client.reason || 'Unknown'}</small></td>
+                    `;
+                    removedTbody.appendChild(row);
+                });
+            }
+            
+            // Update common
+            const commonTbody = document.getElementById(prefix + 'Common');
+            commonTbody.innerHTML = '';
+            if (comparison.common.length === 0) {
+                commonTbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No common clients</td></tr>';
+            } else {
+                comparison.common.forEach(client => {
+                    const row = document.createElement('tr');
+                    const diffClass = client.amount_diff === 0 ? 'text-success' : (client.amount_diff > 0 ? 'text-warning' : 'text-danger');
+                    row.innerHTML = `
+                        <td>${client.name}</td>
+                        <td>₹${client.snapshot_amount?.toLocaleString() || 0}</td>
+                        <td>₹${client.system_amount?.toLocaleString() || 0}</td>
+                        <td class="${diffClass}">₹${client.amount_diff?.toLocaleString() || 0}</td>
+                    `;
+                    commonTbody.appendChild(row);
+                });
+            }
+        }
+        
+        function updateTodayOtherInstallments(installments) {
+            document.getElementById('todayWeeklyTotal').textContent = `₹${installments.weekly_total?.toLocaleString() || 0}`;
+            document.getElementById('todayTenDaysTotal').textContent = `₹${installments.ten_days_total?.toLocaleString() || 0}`;
+            document.getElementById('todayMonthlyTotal').textContent = `₹${installments.monthly_total?.toLocaleString() || 0}`;
+        }
+        
+        function updateDetailedComparison(comparison) {
+            const tbody = document.getElementById('detailedComparison');
+            tbody.innerHTML = '';
+            
+            comparison.forEach(item => {
+                const row = document.createElement('tr');
+                const diff = item.today_value - item.yesterday_value;
+                
+                let statusClass = 'neutral';
+                let statusText = 'Neutral';
+                
+                if (diff === 0) {
+                    statusClass = 'match';
+                    statusText = '✅ Match';
+                } else if (Math.abs(diff) < 1) {
+                    statusClass = 'match';
+                    statusText = '✅ Match (rounded)';
+                } else {
+                    statusClass = 'mismatch';
+                    statusText = `⚠️ Difference: ₹${Math.abs(diff).toLocaleString()}`;
+                }
+                
+                row.className = statusClass;
+                row.innerHTML = `
+                    <td><strong>${item.metric}</strong></td>
+                    <td>₹${item.yesterday_value?.toLocaleString() || 0}</td>
+                    <td>₹${item.today_value?.toLocaleString() || 0}</td>
+                    <td>₹${Math.abs(diff).toLocaleString()}</td>
+                    <td>${statusText}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+        
+        function updateDetailedComparisonWithExplanation(comparison, data, todayStr) {
+            const tbody = document.getElementById('detailedComparison');
+            tbody.innerHTML = '';
+            
+            comparison.forEach(item => {
+                const row = document.createElement('tr');
+                const diff = item.today_value - item.yesterday_value;
+                
+                let statusClass = 'neutral';
+                let statusText = 'Neutral';
+                
+                if (diff === 0) {
+                    statusClass = 'match';
+                    statusText = '✅ Match';
+                } else if (Math.abs(diff) < 1) {
+                    statusClass = 'match';
+                    statusText = '✅ Match (rounded)';
+                } else {
+                    statusClass = 'mismatch';
+                    
+                    // For Daily Collection Total, check if difference is explained by new sales - closed cases
+                    if (item.metric === 'Daily Collection Total') {
+                        const netChange = (data.yesterday_new_daily_sales || 0) - (data.total_daily_lost || 0);
+                        if (Math.abs(diff - netChange) < 1) {
+                            statusClass = 'match';
+                            statusText = `✅ Explained: New Sales (₹${(data.yesterday_new_daily_sales || 0).toLocaleString()}) - Closed (₹${(data.total_daily_lost || 0).toLocaleString()}) = ₹${netChange.toLocaleString()}`;
+                        } else {
+                            statusText = `⚠️ Difference: ₹${Math.abs(diff).toLocaleString()} (Expected: ₹${netChange.toLocaleString()})`;
+                        }
+                    } 
+                    // For Weekly Collection Total, show detailed explanation
+                    else if (item.metric === 'Weekly Collection Total') {
+                        const comparisonDate = item.comparison_date || 'N/A';
+                        const weeklyComp = data.weekly_comparison;
+                        const expectedFromSales = item.expected_from_sales;
+                        const salesDetails = item.sales_details || [];
+                        const matchedClients = item.matched_clients || [];
+                        
+                        // Check if snapshot amount matches expected from sales on comparison date
+                        if (expectedFromSales !== null && expectedFromSales !== undefined) {
+                            const diff = item.today_value - item.yesterday_value;
+                            const salesTotal = salesDetails.reduce((sum, s) => sum + s.installment_amt, 0);
+                            const removedTotal = weeklyComp.removed?.reduce((sum, c) => sum + (c.amount || 0), 0) || 0;
+                            const calculatedToday = item.yesterday_value + salesTotal - removedTotal;
+                            
+                            // Check if calculated today matches actual today snapshot
+                            if (Math.abs(item.today_value - calculatedToday) < 1) {
+                                statusClass = 'match';
+                                statusText = `✅ Difference explained: Comparison snapshot (₹${item.yesterday_value.toLocaleString()}) + New sales (₹${salesTotal.toLocaleString()}) - Removed (₹${removedTotal.toLocaleString()}) = ₹${calculatedToday.toLocaleString()} (matches today snapshot)`;
+                            } else {
+                                statusText = `⚠️ Difference ₹${Math.abs(diff).toLocaleString()} vs Expected: Comparison (₹${item.yesterday_value.toLocaleString()}) + New sales (₹${salesTotal.toLocaleString()}) - Removed (₹${removedTotal.toLocaleString()}) = ₹${calculatedToday.toLocaleString()}`;
+                            }
+                            
+                            // Add sales details breakdown
+                            if (salesDetails.length > 0) {
+                                const salesBreakdown = salesDetails.map(s => 
+                                    `${s.name}: Loan ₹${s.loan_amount?.toLocaleString() || 0} → Inst ₹${s.installment_amt?.toLocaleString() || 0}`
+                                ).join('; ');
+                                statusText += `<br><small>New sales on ${comparisonDate}: ${salesBreakdown}</small>`;
+                            }
+                            
+                            // Add matched clients breakdown (for info only)
+                            if (matchedClients.length > 0) {
+                                const matchedBreakdown = matchedClients.map(m => 
+                                    `${m.name} (₹${m.amount?.toLocaleString() || 0})`
+                                ).join(', ');
+                                statusText += `<br><small>Similar names in both snapshots: ${matchedBreakdown}</small>`;
+                            }
+                        }
+                        
+                        if (weeklyComp) {
+                            const addedNames = weeklyComp.added?.map(c => `${c.name} (₹${c.amount?.toLocaleString() || 0})`).join(', ') || 'None';
+                            const removedNames = weeklyComp.removed?.map(c => `${c.name} (₹${c.amount?.toLocaleString() || 0})`).join(', ') || 'None';
+                            statusText += `<br><small>Added: ${addedNames}<br>Removed: ${removedNames}</small>`;
+                        }
+                    }
+                    // For 10-Days Collection Total, show detailed explanation
+                    else if (item.metric === '10-Days Collection Total') {
+                        const comparisonDate = item.comparison_date || 'N/A';
+                        const tenDaysComp = data.ten_days_comparison;
+                        const expectedFromSales = item.expected_from_sales;
+                        const salesDetails = item.sales_details || [];
+                        const matchedClients = item.matched_clients || [];
+                        
+                        // Check if snapshot amount matches expected from sales on comparison date
+                        if (expectedFromSales !== null && expectedFromSales !== undefined) {
+                            const diff = item.today_value - item.yesterday_value;
+                            const salesTotal = salesDetails.reduce((sum, s) => sum + s.installment_amt, 0);
+                            const removedTotal = tenDaysComp.removed?.reduce((sum, c) => sum + (c.amount || 0), 0) || 0;
+                            const calculatedToday = item.yesterday_value + salesTotal - removedTotal;
+                            
+                            // Check if calculated today matches actual today snapshot
+                            if (Math.abs(item.today_value - calculatedToday) < 1) {
+                                statusClass = 'match';
+                                statusText = `✅ Difference explained: Comparison snapshot (₹${item.yesterday_value.toLocaleString()}) + New sales (₹${salesTotal.toLocaleString()}) - Removed (₹${removedTotal.toLocaleString()}) = ₹${calculatedToday.toLocaleString()} (matches today snapshot)`;
+                            } else {
+                                statusText = `⚠️ Difference ₹${Math.abs(diff).toLocaleString()} vs Expected: Comparison (₹${item.yesterday_value.toLocaleString()}) + New sales (₹${salesTotal.toLocaleString()}) - Removed (₹${removedTotal.toLocaleString()}) = ₹${calculatedToday.toLocaleString()}`;
+                            }
+                            
+                            // Add sales details breakdown
+                            if (salesDetails.length > 0) {
+                                const salesBreakdown = salesDetails.map(s => 
+                                    `${s.name}: Loan ₹${s.loan_amount?.toLocaleString() || 0} → Inst ₹${s.installment_amt?.toLocaleString() || 0}`
+                                ).join('; ');
+                                statusText += `<br><small>New sales on ${comparisonDate}: ${salesBreakdown}</small>`;
+                            }
+                            
+                            // Add matched clients breakdown (for info only)
+                            if (matchedClients.length > 0) {
+                                const matchedBreakdown = matchedClients.map(m => 
+                                    `${m.name} (₹${m.amount?.toLocaleString() || 0})`
+                                ).join(', ');
+                                statusText += `<br><small>Similar names in both snapshots: ${matchedBreakdown}</small>`;
+                            }
+                        }
+                        
+                        if (tenDaysComp) {
+                            const addedNames = tenDaysComp.added?.map(c => `${c.name} (₹${c.amount?.toLocaleString() || 0})`).join(', ') || 'None';
+                            const removedNames = tenDaysComp.removed?.map(c => `${c.name} (₹${c.amount?.toLocaleString() || 0})`).join(', ') || 'None';
+                            statusText += `<br><small>Added: ${addedNames}<br>Removed: ${removedNames}</small>`;
+                        }
+                    }
+                    // For Monthly Collection Total, show detailed explanation
+                    else if (item.metric === 'Monthly Collection Total') {
+                        const comparisonDate = item.comparison_date || 'N/A';
+                        const monthlyComp = data.monthly_comparison;
+                        const expectedFromSales = item.expected_from_sales;
+                        const salesDetails = item.sales_details || [];
+                        const matchedClients = item.matched_clients || [];
+                        
+                        // Check if snapshot amount matches expected from sales on comparison date
+                        if (expectedFromSales !== null && expectedFromSales !== undefined) {
+                            const diff = item.today_value - item.yesterday_value;
+                            const salesTotal = salesDetails.reduce((sum, s) => sum + s.installment_amt, 0);
+                            const removedTotal = monthlyComp.removed?.reduce((sum, c) => sum + (c.amount || 0), 0) || 0;
+                            const calculatedToday = item.yesterday_value + salesTotal - removedTotal;
+                            
+                            // Check if calculated today matches actual today snapshot
+                            if (Math.abs(item.today_value - calculatedToday) < 1) {
+                                statusClass = 'match';
+                                statusText = `✅ Difference explained: Comparison snapshot (₹${item.yesterday_value.toLocaleString()}) + New sales (₹${salesTotal.toLocaleString()}) - Removed (₹${removedTotal.toLocaleString()}) = ₹${calculatedToday.toLocaleString()} (matches today snapshot)`;
+                            } else {
+                                statusText = `⚠️ Difference ₹${Math.abs(diff).toLocaleString()} vs Expected: Comparison (₹${item.yesterday_value.toLocaleString()}) + New sales (₹${salesTotal.toLocaleString()}) - Removed (₹${removedTotal.toLocaleString()}) = ₹${calculatedToday.toLocaleString()}`;
+                            }
+                            
+                            // Add sales details breakdown
+                            if (salesDetails.length > 0) {
+                                const salesBreakdown = salesDetails.map(s => 
+                                    `${s.name}: Loan ₹${s.loan_amount?.toLocaleString() || 0} → Inst ₹${s.installment_amt?.toLocaleString() || 0}`
+                                ).join('; ');
+                                statusText += `<br><small>New sales on ${comparisonDate}: ${salesBreakdown}</small>`;
+                            }
+                            
+                            // Add matched clients breakdown (for info only)
+                            if (matchedClients.length > 0) {
+                                const matchedBreakdown = matchedClients.map(m => 
+                                    `${m.name} (₹${m.amount?.toLocaleString() || 0})`
+                                ).join(', ');
+                                statusText += `<br><small>Similar names in both snapshots: ${matchedBreakdown}</small>`;
+                            }
+                        }
+                        
+                        if (monthlyComp) {
+                            const addedNames = monthlyComp.added?.map(c => `${c.name} (₹${c.amount?.toLocaleString() || 0})`).join(', ') || 'None';
+                            const removedNames = monthlyComp.removed?.map(c => `${c.name} (₹${c.amount?.toLocaleString() || 0})`).join(', ') || 'None';
+                            statusText += `<br><small>Added: ${addedNames}<br>Removed: ${removedNames}</small>`;
+                        }
+                    }
+                    else {
+                        statusText = `⚠️ Difference: ₹${Math.abs(diff).toLocaleString()}`;
+                    }
+                }
+                
+                row.className = statusClass;
+                row.innerHTML = `
+                    <td><strong>${item.metric}</strong></td>
+                    <td>₹${item.yesterday_value?.toLocaleString() || 0}<br><small class="text-muted">${item.comparison_date}</small></td>
+                    <td>${item.expected_from_sales !== null && item.expected_from_sales !== undefined ? '₹' + item.expected_from_sales.toLocaleString() : '-'}</td>
+                    <td>₹${item.today_value?.toLocaleString() || 0}<br><small class="text-muted">${todayStr}</small></td>
+                    <td>₹${Math.abs(diff).toLocaleString()}</td>
+                    <td>${statusText}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+        
+        function getTypeBadge(type) {
+            const badges = {
+                'DAILY': '<span class="badge badge-daily">DAILY</span>',
+                'WEEKLY': '<span class="badge badge-weekly">WEEKLY</span>',
+                'TEN_DAYS': '<span class="badge badge-ten-days">10-DAYS</span>',
+                'MONTHLY': '<span class="badge badge-monthly">MONTHLY</span>'
+            };
+            return badges[type] || type;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - SHIVI PROJECT</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+        }
+        
+        .dashboard-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .page-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            padding: 25px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+        
+        .page-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        
+        .page-icon {
+            font-size: 2.5rem;
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+        
+        .page-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .page-description {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .admin-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .user-badge {
+            background: #28a745;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Header -->
+        <div class="header-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-2">📊 Dashboard</h2>
+                    <p class="text-muted mb-0">Welcome back, {{ user.username }}!</p>
+                </div>
+                <div class="text-end">
+                    <span class="badge {{ 'admin-badge' if user.role == 'admin' else 'user-badge' }}">
+                        {{ user.role.upper() }}
+                    </span>
+                    <div class="mt-2">
+                        <a href="/logout" class="btn btn-outline-danger btn-sm">
+                            <i class="bi bi-box-arrow-right"></i> Logout
+                        </a>
+                        {% if user.role == 'admin' %}
+                        <a href="/admin/users" class="btn btn-outline-primary btn-sm ms-2">
+                            <i class="bi bi-people"></i> Manage Users
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Pages Grid -->
+        <div class="row">
+            {% for page in pages %}
+            <div class="col-md-4 col-sm-6 mb-4">
+                {% if page.name == 'clients' %}
+                <div class="page-card" onclick="openClientsModal()">
+                    <div class="text-center">
+                        <i class="bi bi-people page-icon"></i>
+                        <h5 class="page-title">{{ page.title }}</h5>
+                        <p class="page-description">Search and view client ledgers</p>
+                    </div>
+                </div>
+                {% else %}
+                <a href="{{ page.route }}" class="page-card">
+                    <div class="text-center">
+                        <i class="bi bi-file-earmark-text page-icon"></i>
+                        <h5 class="page-title">{{ page.title }}</h5>
+                        <p class="page-description">Access {{ page.title }}</p>
+                    </div>
+                </a>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        
+        {% if pages|length == 0 %}
+        <div class="alert alert-warning text-center">
+            <i class="bi bi-exclamation-triangle"></i> No pages assigned to your account. Please contact administrator.
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Clients Search Modal -->
+    <div class="modal fade" id="clientsSearchModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content" style="background: rgba(6,6,6,0.85); color: #fff; border: 1px solid rgba(255,255,255,0.1);">
+                <div class="modal-header border-0">
+                    <div>
+                        <h5 class="modal-title">Client Directory</h5>
+                        <p class="mb-0 text-muted small">Search any client & open their ledger instantly</p>
+                        <small id="clientsLoadedCount" class="text-light fw-semibold" style="display:block;">Loading clients...</small>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body clients-modal-body">
+                    <div class="clients-actions-bar">
+                        <div class="clients-actions-buttons">
+                            <button type="button" class="btn btn-success btn-sm" id="massWhatsAppBtn" onclick="handleMassWhatsApp()" disabled>
+                                <i class="bi bi-whatsapp"></i> Send Selected Ledgers
+                            </button>
+                            <button type="button" class="btn btn-outline-light btn-sm" data-bs-dismiss="modal">
+                                Close
+                            </button>
+                            <button type="button" class="btn btn-outline-light btn-sm" id="clearSelectionBtn" onclick="clearClientSelection()" style="display:none;">
+                                Clear Selection
+                            </button>
+                        </div>
+                        <small class="text-muted">Data refreshes automatically every load.</small>
+                    </div>
+                    <div class="clients-modal-search mb-3">
+                        <input type="text" id="clientSearchInput" class="form-control form-control-lg" placeholder="🔍 Type client name to search..." oninput="handleClientSearch(event)">
+                        <i class="bi bi-search"></i>
+                    </div>
+                    <div id="clientsStatusText" class="text-muted small mb-3"></div>
+                    <div id="clientsLoadingState" class="clients-loading text-center d-none">
+                        <div class="spinner-border text-light mb-3"></div>
+                        <p class="mb-0">Fetching latest client list...</p>
+                    </div>
+                    <div id="clientsErrorState" class="alert alert-danger py-3 d-none"></div>
+                    <div id="clientsListContainer" class="clients-list-container"></div>
+                </div>
+                <div class="modal-footer border-0"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ledger Modal -->
+    <div class="modal fade" id="ledgerModal" tabindex="-1" aria-labelledby="ledgerModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="ledgerModalLabel"><i class="bi bi-journal-text"></i> Client Ledger</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="ledgerModalBody">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary mb-3"></div>
+                        <p class="mb-0"><strong>Loading ledger...</strong></p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-outline-primary" id="refreshLedgerBtn" style="display:none;">
+                        <i class="bi bi-arrow-clockwise"></i> Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .clients-modal .modal-dialog {
+            max-width: 960px;
+            width: calc(100% - 32px);
+            margin: 1.5rem auto;
+        }
+        .clients-modal .modal-content {
+            background: rgba(6, 6, 6, 0.88);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 18px;
+            min-height: 70vh;
+            backdrop-filter: blur(12px);
+        }
+        .clients-modal .modal-body {
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+        .clients-modal-search {
+            position: relative;
+        }
+        .clients-modal-search input {
+            padding-left: 42px;
+        }
+        .clients-modal-search i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c757d;
+        }
+        .clients-list-container {
+            max-height: min(55vh, 500px);
+            overflow-y: auto;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 0.5rem;
+            background: rgba(255, 255, 255, 0.04);
+        }
+        .client-result {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem 1rem;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+        .client-result:hover {
+            border-color: rgba(102, 126, 234, 0.6);
+            transform: translateY(-2px);
+        }
+        .client-result.selected {
+            border-color: rgba(102, 126, 234, 0.9);
+            background: rgba(102, 126, 234, 0.25);
+        }
+        .client-result.multi-selected {
+            border-color: rgba(40, 167, 69, 0.9);
+            background: rgba(40, 167, 69, 0.25);
+        }
+        .client-meta {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.75);
+        }
+        .clients-loading {
+            border-radius: 12px;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px dashed rgba(255, 255, 255, 0.25);
+        }
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script>
+        let clientsData = [];
+        let clientsLoaded = false;
+        let clientsLoading = false;
+        let clientsModalInstance = null;
+        let ledgerModalInstance = null;
+        let currentLedgerCustomer = null;
+        let currentLedgerData = null;
+        let ledgerCache = new Map();
+        const LEDGER_CACHE_DURATION = 5 * 60 * 1000;
+        let multiSelectedClients = new Map();
+        let reopenClientsAfterLedgerClose = false;
+        let pendingMassWhatsAppShare = null;
+
+        function openClientsModal() {
+            if (!clientsModalInstance) {
+                clientsModalInstance = new bootstrap.Modal(document.getElementById('clientsSearchModal'));
+            }
+            clientsModalInstance.show();
+            if (!clientsLoaded && !clientsLoading) {
+                loadClientsData();
+            } else {
+                renderClientsList(clientsData);
+            }
+            setTimeout(() => document.getElementById('clientSearchInput')?.focus(), 350);
+        }
+
+        function getFormattedDate() {
+            const now = new Date();
+            const day = String(now.getDate()).padStart(2, '0');
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const year = now.getFullYear();
+            return `${day}-${month}-${year}`;
+        }
+
+        function escapeHtml(unsafe = '') {
+            return String(unsafe)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function showToast(message, type = 'info', timeout = 3500) {
+            const container = document.getElementById('globalToastContainer');
+            if (!container) {
+                const toastContainer = document.createElement('div');
+                toastContainer.id = 'globalToastContainer';
+                toastContainer.className = 'toast-stack';
+                toastContainer.style.cssText = 'position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 2000;';
+                document.body.appendChild(toastContainer);
+            }
+            const containerEl = document.getElementById('globalToastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast-message ${type}`;
+            toast.style.cssText = 'padding: 12px 18px; border-radius: 12px; color: #fff; min-width: 260px; box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);';
+            if (type === 'info') toast.style.background = 'rgba(23, 162, 184, 0.9)';
+            if (type === 'success') toast.style.background = 'rgba(40, 167, 69, 0.95)';
+            if (type === 'warning') toast.style.background = 'rgba(255, 193, 7, 0.95); color: #1f1f1f;';
+            if (type === 'error') toast.style.background = 'rgba(220, 53, 69, 0.95)';
+            toast.textContent = message;
+            containerEl.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, timeout);
+        }
+
+        async function loadClientsData() {
+            clientsLoading = true;
+            toggleClientsLoading(true);
+            toggleClientsError(false);
+            try {
+                const response = await fetch(`/clients?_=${Date.now()}`, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Cache-Control': 'no-cache'
+                    }
+                });
+                if (!response.ok) {
+                    throw new Error(`Server error ${response.status}`);
+                }
+                const data = await response.json();
+                const list = Array.isArray(data) ? data : (data.rows || []);
+                clientsData = list.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+                clientsLoaded = true;
+                renderClientsList(clientsData);
+                showClientsStatus(`${clientsData.length} clients loaded`);
+            } catch (error) {
+                console.error('Client fetch error:', error);
+                toggleClientsError(true, error.message || 'Failed to load clients.');
+            } finally {
+                clientsLoading = false;
+                toggleClientsLoading(false);
+            }
+        }
+
+        function toggleClientsLoading(show) {
+            const el = document.getElementById('clientsLoadingState');
+            if (el) {
+                el.classList.toggle('d-none', !show);
+            }
+        }
+
+        function toggleClientsError(show, message = '') {
+            const el = document.getElementById('clientsErrorState');
+            if (!el) return;
+            el.classList.toggle('d-none', !show);
+            if (show) {
+                el.innerHTML = `<strong>Error:</strong> ${escapeHtml(message)}<br><small class="d-block mt-2">Please try again.</small>`;
+            }
+        }
+
+        function showClientsStatus(text) {
+            const status = document.getElementById('clientsStatusText');
+            if (status) status.textContent = text;
+            const countEl = document.getElementById('clientsLoadedCount');
+            if (countEl) {
+                countEl.textContent = clientsLoaded ? text : '';
+            }
+        }
+
+        function handleClientSearch(event) {
+            const term = (event.target.value || '').trim().toUpperCase();
+            if (!term) {
+                renderClientsList(clientsData);
+                showClientsStatus('');
+                return;
+            }
+            const filtered = clientsData.filter(client => {
+                const name = (client.name || '').toUpperCase();
+                const phone = client.phone || '';
+                return name.includes(term) || phone.includes(term);
+            });
+            renderClientsList(filtered);
+            showClientsStatus(`${filtered.length} matches for "${event.target.value}"`);
+        }
+
+        function getClientKey(client) {
+            return client.id || client.phone || client.name || '';
+        }
+
+        function renderClientsList(list) {
+            const container = document.getElementById('clientsListContainer');
+            if (!container) return;
+            container.innerHTML = '';
+            if (!list.length) {
+                container.innerHTML = '<div class="text-center text-muted py-4">No clients to display.</div>';
+                return;
+            }
+            list.forEach(client => {
+                const row = document.createElement('div');
+                row.className = 'client-result';
+                row.onclick = () => handleClientSelect(client, row);
+                const clientKey = getClientKey(client);
+                const isSelected = multiSelectedClients.has(clientKey);
+                const rawBalance = client.balance_amount ?? client.balance;
+                const balanceValue = Number(rawBalance);
+                const balanceDisplay = Number.isFinite(balanceValue) && Math.abs(balanceValue) > 0
+                    ? `₹${balanceValue.toLocaleString()}`
+                    : '';
+                row.innerHTML = `
+                    <div class="d-flex align-items-center w-100">
+                        <div class="form-check me-3">
+                            <input class="form-check-input client-select-checkbox" type="checkbox" ${isSelected ? 'checked' : ''}>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold">${escapeHtml(client.name || 'Unnamed')}</div>
+                            <div class="client-meta">${client.phone ? `📞 ${escapeHtml(client.phone)}` : 'Phone unavailable'}</div>
+                        </div>
+                        <div class="text-end">
+                            <div class="fw-bold">${balanceDisplay}</div>
+                            <small class="text-muted">Select</small>
+                        </div>
+                    </div>`;
+                if (isSelected) {
+                    row.classList.add('multi-selected');
+                }
+                container.appendChild(row);
+                const checkbox = row.querySelector('.client-select-checkbox');
+                if (checkbox) {
+                    checkbox.addEventListener('click', (event) => {
+                        event.stopPropagation();
+                        handleClientMultiToggle(client, checkbox, row);
+                    });
+                }
+            });
+            updateMassActionsState();
+        }
+
+        function handleClientMultiToggle(client, checkbox, row) {
+            const key = getClientKey(client);
+            if (!key) return;
+            if (checkbox.checked) {
+                multiSelectedClients.set(key, client);
+                row.classList.add('multi-selected');
+            } else {
+                multiSelectedClients.delete(key);
+                row.classList.remove('multi-selected');
+            }
+            updateMassActionsState();
+        }
+
+        function clearClientSelection() {
+            multiSelectedClients.clear();
+            document.querySelectorAll('.client-result').forEach(row => row.classList.remove('multi-selected'));
+            document.querySelectorAll('.client-select-checkbox').forEach(cb => { cb.checked = false; });
+            pendingMassWhatsAppShare = null;
+            updateMassActionsState();
+        }
+
+        function updateMassActionsState() {
+            const count = multiSelectedClients.size;
+            const massBtn = document.getElementById('massWhatsAppBtn');
+            const clearBtn = document.getElementById('clearSelectionBtn');
+            if (massBtn) {
+                const isPending = !!(pendingMassWhatsAppShare && pendingMassWhatsAppShare.files && pendingMassWhatsAppShare.nextIndex < pendingMassWhatsAppShare.files.length);
+                massBtn.disabled = count === 0 && !isPending;
+                if (isPending) {
+                    const remaining = pendingMassWhatsAppShare.files.length - pendingMassWhatsAppShare.nextIndex;
+                    massBtn.innerHTML = `<i class="bi bi-whatsapp"></i> Send Next (${remaining} left)`;
+                } else {
+                    massBtn.innerHTML = count > 0
+                        ? `<i class="bi bi-whatsapp"></i> Send ${count} Ledgers`
+                        : `<i class="bi bi-whatsapp"></i> Send Selected Ledgers`;
+                }
+            }
+            if (clearBtn) {
+                clearBtn.style.display = (count > 0 || (pendingMassWhatsAppShare && pendingMassWhatsAppShare.files && pendingMassWhatsAppShare.files.length)) ? 'inline-flex' : 'none';
+            }
+        }
+
+        async function shareNextMassWhatsAppBatch() {
+            if (!pendingMassWhatsAppShare || !pendingMassWhatsAppShare.files || !pendingMassWhatsAppShare.files.length) return false;
+            const { files, asOn } = pendingMassWhatsAppShare;
+            let { batchSize, nextIndex } = pendingMassWhatsAppShare;
+            if (nextIndex >= files.length) return true;
+
+            while (batchSize > 1) {
+                const batchFiles = files.slice(nextIndex, nextIndex + batchSize);
+                if (!navigator.canShare || navigator.canShare({ files: batchFiles })) break;
+                batchSize -= 1;
+            }
+            pendingMassWhatsAppShare.batchSize = batchSize;
+
+            const batchFiles = files.slice(nextIndex, nextIndex + batchSize);
+            const batchIndex = Math.floor(nextIndex / batchSize) + 1;
+            const totalBatches = Math.ceil(files.length / batchSize);
+
+            try {
+                await navigator.share({
+                    files: batchFiles,
+                    title: `Client ledgers batch ${batchIndex}/${totalBatches} as on ${asOn}`,
+                    text: `Client ledgers batch ${batchIndex}/${totalBatches} as on ${asOn}`
+                });
+                pendingMassWhatsAppShare.nextIndex = nextIndex + batchFiles.length;
+
+                if (pendingMassWhatsAppShare.nextIndex >= files.length) {
+                    showToast(`Shared ${files.length} ledger images via WhatsApp.`, 'success');
+                    clearClientSelection();
+                    return true;
+                }
+
+                const remaining = files.length - pendingMassWhatsAppShare.nextIndex;
+                showToast(`Shared ${batchFiles.length} images. Tap Send Next to share remaining ${remaining}.`, 'info', 7000);
+                updateMassActionsState();
+                return false;
+            } catch (err) {
+                console.warn('Share batch failed:', err);
+                showToast('WhatsApp share cancelled/failed. Tap Send Next to try again.', 'warning', 7000);
+                updateMassActionsState();
+                return false;
+            }
+        }
+
+        async function generateLedgerScreenshotFileForClient(client, asOnDate) {
+            if (!client || !client.phone) return null;
+
+            const response = await fetch(`/ledger?phone=${encodeURIComponent(client.phone)}&as_on_date=${encodeURIComponent(asOnDate)}&_=${Date.now()}`);
+            if (!response.ok) {
+                throw new Error(`Failed to load ledger for ${client.name || client.phone}`);
+            }
+            const ledgerData = await response.json();
+            const content = buildLedgerContent(client, ledgerData);
+            if (!content.rows.length) {
+                throw new Error(`No ledger data for ${client.name || client.phone}`);
+            }
+
+            const cloneWrapper = document.createElement('div');
+            cloneWrapper.style.position = 'absolute';
+            cloneWrapper.style.left = '-9999px';
+            cloneWrapper.style.top = '0';
+            cloneWrapper.style.background = '#ffffff';
+            cloneWrapper.style.padding = '20px';
+            // Keep captures lightweight so mobile browsers/WhatsApp accept more attachments.
+            cloneWrapper.style.width = '1200px';
+            cloneWrapper.innerHTML = content.innerHtml;
+            document.body.appendChild(cloneWrapper);
+
+            try {
+                const canvas = await html2canvas(cloneWrapper, {
+                    backgroundColor: '#ffffff',
+                    scale: 2,
+                    useCORS: true,
+                    allowTaint: true
+                });
+
+                const targetWidth = 1200;
+                const ratio = targetWidth / canvas.width;
+                const outputCanvas = document.createElement('canvas');
+                outputCanvas.width = targetWidth;
+                outputCanvas.height = Math.max(1, Math.round(canvas.height * ratio));
+                const outCtx = outputCanvas.getContext('2d');
+                if (!outCtx) throw new Error('Unable to capture image.');
+                outCtx.drawImage(canvas, 0, 0, outputCanvas.width, outputCanvas.height);
+
+                const toBlobPromise = (c, type, quality) => new Promise((resolve, reject) => {
+                    c.toBlob((b) => {
+                        if (b) resolve(b);
+                        else reject(new Error('Unable to capture image.'));
+                    }, type, quality);
+                });
+
+                const maxBytes = 1500000;
+                const qualities = [0.92, 0.88, 0.84, 0.80, 0.76, 0.72, 0.68];
+                let workingCanvas = outputCanvas;
+                let blob = null;
+
+                for (let resizeAttempt = 0; resizeAttempt < 3; resizeAttempt++) {
+                    for (let i = 0; i < qualities.length; i++) {
+                        blob = await toBlobPromise(workingCanvas, 'image/jpeg', qualities[i]);
+                        if (blob.size <= maxBytes) break;
+                    }
+                    if (blob && blob.size <= maxBytes) break;
+                    const smaller = document.createElement('canvas');
+                    smaller.width = Math.max(1, Math.round(workingCanvas.width * 0.85));
+                    smaller.height = Math.max(1, Math.round(workingCanvas.height * 0.85));
+                    const sctx = smaller.getContext('2d');
+                    if (!sctx) break;
+                    sctx.drawImage(workingCanvas, 0, 0, smaller.width, smaller.height);
+                    workingCanvas = smaller;
+                }
+
+                if (!blob) throw new Error('Unable to capture image.');
+
+                const safeName = (client.name || 'Client').toString().replace(/[^a-z0-9]+/gi, '_').toUpperCase();
+                const fileName = `LEDGER_${safeName}_${client.phone}.jpg`;
+                return new File([blob], fileName, { type: 'image/jpeg' });
+            } finally {
+                if (cloneWrapper && cloneWrapper.parentNode) {
+                    cloneWrapper.parentNode.removeChild(cloneWrapper);
+                }
+            }
+        }
+
+        async function handleMassWhatsApp() {
+            if (pendingMassWhatsAppShare && pendingMassWhatsAppShare.files && pendingMassWhatsAppShare.nextIndex < pendingMassWhatsAppShare.files.length) {
+                await shareNextMassWhatsAppBatch();
+                return;
+            }
+
+            if (!multiSelectedClients.size) {
+                showToast('Select one or more clients first.', 'warning');
+                return;
+            }
+            const asOn = getFormattedDate();
+            const origin = window.location.origin;
+
+            const selectedClients = Array.from(multiSelectedClients.values()).filter(c => c && c.phone);
+            if (!selectedClients.length) {
+                showToast('Selected clients have no phone numbers.', 'warning');
+                return;
+            }
+
+            let sharedAsFiles = false;
+            if (typeof navigator !== 'undefined' && navigator.share && typeof File !== 'undefined' && typeof html2canvas !== 'undefined') {
+                try {
+                    showToast('Preparing ledger images for WhatsApp...', 'info', 8000);
+                    const files = [];
+                    for (const client of selectedClients) {
+                        const imageFile = await generateLedgerScreenshotFileForClient(client, asOn);
+                        if (imageFile) {
+                            files.push(imageFile);
+                        }
+                    }
+
+                    if (files.length) {
+                        let maxFilesPerShare = 5;
+                        if (navigator.canShare) {
+                            while (maxFilesPerShare > 1) {
+                                const batchFiles = files.slice(0, maxFilesPerShare);
+                                if (!navigator.canShare({ files: batchFiles })) {
+                                    maxFilesPerShare -= 1;
+                                } else {
+                                    break;
+                                }
+                            }
+                            if (!navigator.canShare({ files: files.slice(0, maxFilesPerShare) })) {
+                                throw new Error('Sharing files not supported on this device.');
+                            }
+                        }
+
+                        pendingMassWhatsAppShare = {
+                            files,
+                            asOn,
+                            batchSize: maxFilesPerShare,
+                            nextIndex: 0
+                        };
+                        updateMassActionsState();
+                        await shareNextMassWhatsAppBatch();
+                        sharedAsFiles = true;
+                    }
+                } catch (error) {
+                    console.error('Mass WhatsApp image share failed:', error);
+                    showToast('Sharing images not supported on this device, falling back to links.', 'warning');
+                }
+            }
+
+            if (!sharedAsFiles) {
+                const lines = [];
+                selectedClients.forEach(client => {
+                    const url = `${origin}/export/pdf?phone=${encodeURIComponent(client.phone)}&as_on_date=${encodeURIComponent(asOn)}`;
+                    lines.push(`${client.name || 'Client'} (${client.phone}): ${url}`);
+                });
+                const header = selectedClients.length === 1
+                    ? `${selectedClients[0].name || 'Client'} ledger as on ${asOn}`
+                    : `Ledgers for ${selectedClients.map(c => c.name || 'Client').join(', ')} as on ${asOn}`;
+                const message = `${header}:\n\n` + lines.join('\n');
+                openWhatsAppWithMessage(message);
+                showToast(`Opened WhatsApp with ${lines.length} ledger links.`, 'info');
+            }
+
+            if (!sharedAsFiles) {
+                clearClientSelection();
+            }
+        }
+
+        function openWhatsAppWithMessage(message) {
+            const encoded = encodeURIComponent(message);
+            const whatsappUrl = `https://wa.me/?text=${encoded}`;
+            window.open(whatsappUrl, '_blank');
+        }
+
+        function handleClientSelect(client, element) {
+            document.querySelectorAll('.client-result').forEach(row => row.classList.remove('selected'));
+            element?.classList.add('selected');
+            reopenClientsAfterLedgerClose = true;
+            showToast(`Opening ledger for ${client.name}`, 'info');
+            if (clientsModalInstance) {
+                clientsModalInstance.hide();
+            }
+            setTimeout(() => openLedgerModal(client), 350);
+        }
+
+        async function openLedgerModal(customer) {
+            if (!customer || !customer.phone) {
+                showToast('Client phone missing for ledger lookup.', 'warning');
+                return;
+            }
+
+            const modalElement = document.getElementById('ledgerModal');
+            const modalBody = document.getElementById('ledgerModalBody');
+            const modalTitle = document.getElementById('ledgerModalLabel');
+            const refreshBtn = document.getElementById('refreshLedgerBtn');
+            currentLedgerCustomer = customer;
+
+            modalTitle.innerHTML = `<i class="bi bi-journal-text"></i> Ledger - ${escapeHtml(customer.name)}`;
+            modalBody.innerHTML = `
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary mb-3"></div>
+                    <p class="mb-0"><strong>Loading ${escapeHtml(customer.name)}'s ledger...</strong></p>
+                </div>`;
+            refreshBtn.style.display = 'none';
+
+            const modal = new bootstrap.Modal(modalElement);
+            modal.show();
+
+            const cacheKey = `${customer.phone}|${getFormattedDate()}`;
+            const cached = ledgerCache.get(cacheKey);
+            const now = Date.now();
+
+            if (cached && (now - cached.timestamp) < LEDGER_CACHE_DURATION) {
+                renderLedgerModal(customer, cached.data);
+                refreshBtn.style.display = 'inline-flex';
+                refreshBtn.onclick = () => {
+                    ledgerCache.delete(cacheKey);
+                    openLedgerModal(customer);
+                };
+                return;
+            }
+
+            try {
+                const response = await fetch(`/ledger?phone=${encodeURIComponent(customer.phone)}&as_on_date=${encodeURIComponent(getFormattedDate())}&_=${Date.now()}`);
+                if (!response.ok) {
+                    throw new Error(`Server error ${response.status}`);
+                }
+                const data = await response.json();
+                ledgerCache.set(cacheKey, { data, timestamp: now });
+                renderLedgerModal(customer, data);
+                refreshBtn.style.display = 'inline-flex';
+                refreshBtn.onclick = () => {
+                    ledgerCache.delete(cacheKey);
+                    openLedgerModal(customer);
+                };
+            } catch (error) {
+                console.error('Ledger modal error:', error);
+                modalBody.innerHTML = `
+                    <div class="alert alert-danger">
+                        <strong>Unable to load ledger.</strong><br>
+                        ${escapeHtml(error.message || 'Please try again later.')}
+                    </div>`;
+            }
+        }
+
+        function buildLedgerContent(customer, ledgerResponse) {
+            if (!ledgerResponse || !ledgerResponse.rows) {
+                return {
+                    innerHtml: '<div class="alert alert-warning">No ledger data found for this client.</div>',
+                    rows: [],
+                    totals: {},
+                    summaryBalance: 0,
+                    totalLoans: 0,
+                    openLoans: 0
+                };
+            }
+
+            const safeNumber = (value, fallback = 0) => {
+                const num = Number(value);
+                return Number.isFinite(num) ? num : fallback;
+            };
+
+            const rows = ledgerResponse.rows || [];
+            const totals = ledgerResponse.totals || {};
+            const computedTotals = rows.reduce((acc, loan) => {
+                const isClosed = (loan.status || '').toUpperCase() === 'CLOSED';
+                acc.loan_amount += safeNumber(loan.amount || loan.loan_amount);
+                acc.installment_amount += safeNumber(loan.installment_amount);
+                acc.advance_amount += safeNumber(loan.advance_amount);
+                acc.processing_fees += safeNumber(loan.processing_fees);
+                acc.pending_installments += isClosed ? 0 : safeNumber(loan.pending_installments);
+                acc.balance_amount += isClosed ? 0 : safeNumber(loan.balance_amount);
+                return acc;
+            }, {
+                loan_amount: 0,
+                installment_amount: 0,
+                advance_amount: 0,
+                processing_fees: 0,
+                pending_installments: 0,
+                balance_amount: 0
+            });
+
+            const computedInstallmentSplit = rows.reduce((acc, loan) => {
+                const rawType = (loan.repayment_type || loan.type || '');
+                const normalizedType = rawType.toUpperCase().replace(/[^A-Z0-9]+/g, '_');
+                const inst = safeNumber(loan.installment_amount);
+                if (normalizedType === 'DAILY') {
+                    acc.daily_installment_amount += inst;
+                } else {
+                    acc.week_installment_amount += inst;
+                }
+                return acc;
+            }, {
+                daily_installment_amount: 0,
+                week_installment_amount: 0
+            });
+
+            const mergedTotals = {
+                loan_amount: safeNumber(totals.loan_amount, computedTotals.loan_amount),
+                installment_amount: safeNumber(totals.installment_amount, computedTotals.installment_amount),
+                advance_amount: safeNumber(totals.advance_amount, computedTotals.advance_amount),
+                processing_fees: safeNumber(totals.processing_fees, computedTotals.processing_fees),
+                pending_installments: safeNumber(totals.pending_installments, computedTotals.pending_installments),
+                balance_amount: safeNumber(totals.balance_amount, computedTotals.balance_amount)
+            };
+
+            const summaryBalance = mergedTotals.balance_amount;
+            const totalLoans = rows.length;
+            const openLoans = rows.filter(loan => (loan.status || '').toUpperCase() !== 'CLOSED').length;
+            const asOfDisplay = ledgerResponse.meta?.as_of
+                ? new Date(ledgerResponse.meta.as_of).toLocaleDateString('en-GB')
+                : getFormattedDate();
+
+            const dailyInstallmentTotal = computedInstallmentSplit.daily_installment_amount;
+            const weekInstallmentTotal = computedInstallmentSplit.week_installment_amount;
+
+            const dayLookup = {
+                'MON': 'Monday', 'MONDAY': 'Monday',
+                'TUE': 'Tuesday', 'TUESDAY': 'Tuesday',
+                'WED': 'Wednesday', 'WEDNESDAY': 'Wednesday',
+                'THU': 'Thursday', 'THUR': 'Thursday', 'THURSDAY': 'Thursday',
+                'FRI': 'Friday', 'FRIDAY': 'Friday',
+                'SAT': 'Saturday', 'SATURDAY': 'Saturday',
+                'SUN': 'Sunday', 'SUNDAY': 'Sunday'
+            };
+
+            const tableRows = rows.map((row, index) => {
+                const status = (row.status || 'OPEN').toUpperCase();
+                const isClosed = status === 'CLOSED';
+                const balance = isClosed ? 0 : safeNumber(row.balance_amount);
+                const pending = isClosed ? 0 : safeNumber(row.pending_installments);
+                const statusClass = isClosed ? 'badge bg-success' : 'badge bg-warning text-dark';
+                const serial = index + 1;
+                const rawType = (row.repayment_type || row.type || '');
+                const normalizedType = rawType.toUpperCase().replace(/[^A-Z0-9]+/g, '_');
+                let typeLabel = '';
+                if (normalizedType === 'WEEKLY') {
+                    const dayName = (row.day_name || row.week_day || '').toUpperCase();
+                    typeLabel = dayLookup[dayName] || 'Weekly';
+                } else if (normalizedType === 'DAILY') {
+                    typeLabel = 'Daily';
+                } else if (['TEN_DAYS', 'TEN_DAY', '10_DAYS', '10_DAY', '10'].includes(normalizedType)) {
+                    typeLabel = '10 Days Case';
+                } else if (rawType) {
+                    typeLabel = rawType;
+                }
+                const typeBadgeHtml = typeLabel
+                    ? `<span class="badge bg-secondary">${escapeHtml(typeLabel)}</span>`
+                    : '';
+                const closedClass = isClosed ? 'ledger-row-closed' : '';
+
+                const installmentValue = safeNumber(row.installment_amount);
+                const dailyInstallment = normalizedType === 'DAILY' ? `₹${installmentValue.toLocaleString()}` : '';
+                const weekInstallment = normalizedType === 'DAILY' ? '' : `₹${installmentValue.toLocaleString()}`;
+                return `
+                    <tr class="${closedClass}">
+                        <td>${serial}</td>
+                        <td>${escapeHtml(row.loan_date || '')}</td>
+                        <td>${escapeHtml(row.loan_end_date || '')}</td>
+                        <td>₹${safeNumber(row.amount || row.loan_amount).toLocaleString()}</td>
+                        <td>${dailyInstallment}</td>
+                        <td>${weekInstallment}</td>
+                        <td data-loan-type="${escapeHtml(normalizedType)}" data-day-name="${escapeHtml(row.day_name || row.week_day || '')}">${typeBadgeHtml}</td>
+                        <td>${pending}</td>
+                        <td class="${balance > 0 ? 'text-danger fw-bold' : ''}">₹${balance.toLocaleString()}</td>
+                        <td><span class="${statusClass}">${escapeHtml(row.status || 'OPEN')}</span></td>
+                    </tr>`;
+            }).join('') || '<tr><td colspan="10" class="text-center">No loan activity found.</td></tr>';
+
+            const ledgerStyles = `
+                <style>
+                    .ledger-surface {
+                        background: linear-gradient(145deg, #f6f8fb, #ebeff6);
+                        border-radius: 24px;
+                        padding: 1.5rem;
+                        box-shadow: 0 24px 45px rgba(44, 62, 80, 0.15);
+                        border: 1px solid rgba(44, 62, 80, 0.04);
+                        margin-bottom: 1.5rem;
+                    }
+                    .ledger-table-card {
+                        background: #ffffff;
+                        border-radius: 18px;
+                        box-shadow: 0 18px 35px rgba(44, 62, 80, 0.12);
+                        border: 1px solid rgba(44, 62, 80, 0.05);
+                        overflow: hidden;
+                    }
+                    .ledger-table-card table {
+                        border-collapse: collapse;
+                        border: 2px solid #000;
+                    }
+                    .ledger-table-card th,
+                    .ledger-table-card td {
+                        border: 1px solid #000;
+                    }
+                    .ledger-table-card thead {
+                        background: #111827;
+                        color: #ffffff;
+                        position: sticky;
+                        top: 0;
+                        z-index: 10;
+                        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+                    }
+                    .ledger-table-card thead th {
+                        padding: 0.55rem 0.35rem;
+                        text-transform: uppercase;
+                        letter-spacing: 0.08em;
+                        border: 1px solid rgba(255, 255, 255, 0.15);
+                    }
+                    .summary-cards {
+                        margin-top: 1.25rem;
+                        margin-bottom: 1.25rem;
+                        display: grid;
+                        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+                        gap: 1rem;
+                    }
+                    .summary-cards .card {
+                        border: 1px solid rgba(44, 62, 80, 0.05);
+                        box-shadow: 0 14px 30px rgba(44, 62, 80, 0.08);
+                        border-radius: 16px;
+                    }
+                    @media (max-width: 640px) {
+                        #ledgerModal .modal-dialog {
+                            max-width: 95vw;
+                            margin: 1rem auto;
+                        }
+                        .summary-cards {
+                            display: flex;
+                            flex-wrap: nowrap;
+                            overflow-x: auto;
+                            padding-bottom: 0.5rem;
+                        }
+                        .summary-cards .card {
+                            min-width: 180px;
+                            flex: 0 0 auto;
+                        }
+                        .ledger-action-buttons {
+                            justify-content: flex-start;
+                        }
+                    }
+                    .ledger-action-buttons {
+                        display: flex;
+                        flex-wrap: nowrap;
+                        gap: 0.75rem;
+                        margin-top: 1.25rem;
+                        overflow-x: auto;
+                        padding-bottom: 0.35rem;
+                    }
+                    .ledger-action-buttons .btn {
+                        border-radius: 999px;
+                        padding: 0.55rem 1.1rem;
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 0.35rem;
+                        box-shadow: 0 6px 15px rgba(44, 62, 80, 0.15);
+                        flex: 0 0 auto;
+                    }
+                    .ledger-row-closed td { background: #d9f5e6 !important; }
+                </style>`;
+
+            const innerHtml = `
+                ${ledgerStyles}
+                <div class="ledger-surface">
+                    <div class="mb-3">
+                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                            <div>
+                                <h4 class="text-primary mb-1">${escapeHtml(customer.name)}</h4>
+                                <div class="text-muted">${customer.phone ? `📞 ${customer.phone}` : ''}</div>
+                                <div class="text-muted">As on: <strong>${asOfDisplay}</strong></div>
+                            </div>
+                            <div class="text-end">
+                                <div class="text-muted">Outstanding Balance</div>
+                                <h5 class="mb-0 text-danger">₹${summaryBalance.toLocaleString()}</h5>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="summary-cards">
+                        <div class="card card-body text-center">
+                            <div class="text-muted small">Total Loans</div>
+                            <div class="fw-bold">${totalLoans}</div>
+                        </div>
+                        <div class="card card-body text-center">
+                            <div class="text-muted small">Open Loans</div>
+                            <div class="fw-bold text-warning">${openLoans}</div>
+                        </div>
+                        <div class="card card-body text-center">
+                            <div class="text-muted small">Total Sanctioned</div>
+                            <div class="fw-bold">₹${mergedTotals.loan_amount.toLocaleString()}</div>
+                        </div>
+                        <div class="card card-body text-center">
+                            <div class="text-muted small">Pending Installments</div>
+                            <div class="fw-bold">${mergedTotals.pending_installments}</div>
+                        </div>
+                    </div>
+                    <div class="ledger-action-buttons">
+                        <button class="btn btn-outline-success btn-sm" onclick="shareLedgerScreenshot()"><i class="bi bi-whatsapp"></i> WhatsApp Image</button>
+                        <button class="btn btn-outline-primary btn-sm" onclick="printLedgerModalContent()"><i class="bi bi-printer"></i> Print</button>
+                        <button class="btn btn-outline-danger btn-sm" onclick="downloadLedgerPdf()"><i class="bi bi-filetype-pdf"></i> PDF</button>
+                        <button class="btn btn-outline-info btn-sm" onclick="shareLedgerPdfViaWhatsApp()"><i class="bi bi-share"></i> WhatsApp PDF</button>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="openScheduleFromModal()"><i class="bi bi-calendar3"></i> Schedule</button>
+                        <button class="btn btn-outline-success btn-sm" onclick="shareLedgerScreenshot()"><i class="bi bi-share"></i> Share (Image)</button>
+                    </div>
+                    <div class="ledger-table-card mt-3">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-striped mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Sr No</th>
+                                        <th>Loan Date</th>
+                                        <th>End Date</th>
+                                        <th>Amount</th>
+                                        <th>Daily</th>
+                                        <th>Week/10-D</th>
+                                        <th>Type</th>
+                                        <th>Pending</th>
+                                        <th>Balance</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>${tableRows}</tbody>
+                                <tfoot>
+                                    <tr class="table-info">
+                                        <th></th>
+                                        <th>Totals</th>
+                                        <th></th>
+                                        <th>₹${mergedTotals.loan_amount.toLocaleString()}</th>
+                                        <th>₹${dailyInstallmentTotal.toLocaleString()}</th>
+                                        <th>₹${weekInstallmentTotal.toLocaleString()}</th>
+                                        <th></th>
+                                        <th>${mergedTotals.pending_installments}</th>
+                                        <th>₹${summaryBalance.toLocaleString()}</th>
+                                        <th>Open: ${openLoans} / ${totalLoans}</th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>`;
+
+            return { innerHtml, rows, totals: mergedTotals, summaryBalance, totalLoans, openLoans };
+        }
+
+        function renderLedgerModal(customer, ledgerResponse) {
+            const modalBody = document.getElementById('ledgerModalBody');
+            if (!modalBody) return;
+
+            const content = buildLedgerContent(customer, ledgerResponse);
+            modalBody.innerHTML = content.innerHtml;
+            if (!content.rows.length) {
+                currentLedgerData = null;
+                return;
+            }
+            currentLedgerData = { customer, rows: content.rows, meta: ledgerResponse.meta, totals: content.totals };
+        }
+
+        function ensureLedgerContext() {
+            if (!currentLedgerCustomer || !currentLedgerCustomer.phone || !currentLedgerData) {
+                showToast('Open a client ledger first.', 'warning');
+                return false;
+            }
+            return true;
+        }
+
+        function printLedgerModalContent() {
+            if (!ensureLedgerContext()) return;
+            const content = document.getElementById('ledgerModalBody')?.innerHTML;
+            if (!content) {
+                showToast('Nothing to print.', 'warning');
+                return;
+            }
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`<!DOCTYPE html><html><head><title>Ledger - ${escapeHtml(currentLedgerCustomer.name)}</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"></head><body>${content}</body></html>`);
+            printWindow.document.close();
+            printWindow.onload = () => {
+                printWindow.print();
+                printWindow.close();
+            };
+        }
+
+        function buildLedgerPdfUrl() {
+            const phone = currentLedgerCustomer?.phone;
+            if (!phone) return null;
+            return `/export/pdf?phone=${encodeURIComponent(phone)}&as_on_date=${encodeURIComponent(getFormattedDate())}&_=${Date.now()}`;
+        }
+
+        function downloadLedgerPdf() {
+            if (!ensureLedgerContext()) return;
+            const pdfUrl = buildLedgerPdfUrl();
+            if (!pdfUrl) {
+                showToast('Unable to create PDF link.', 'error');
+                return;
+            }
+            window.open(pdfUrl, '_blank');
+        }
+
+        async function shareLedgerPdfViaWhatsApp() {
+            if (!ensureLedgerContext()) return;
+            const pdfUrl = buildLedgerPdfUrl();
+            try {
+                if (navigator.canShare) {
+                    const response = await fetch(pdfUrl);
+                    const blob = await response.blob();
+                    const fileName = `ledger_${currentLedgerCustomer.phone}.pdf`;
+                    const shareLabel = currentLedgerCustomer.name || currentLedgerCustomer.phone || 'Client Ledger';
+                    
+                    const file = new File([blob], fileName, { type: 'application/pdf' });
+                    await navigator.share({
+                        title: shareLabel,
+                        text: shareLabel,
+                        files: [file]
+                    });
+                    showToast('PDF shared via WhatsApp.', 'success');
+                } else {
+                    // Fallback: open WhatsApp with PDF link
+                    openWhatsAppWithMessage(`Ledger PDF for ${currentLedgerCustomer.name}: ${window.location.origin}${pdfUrl}`);
+                }
+            } catch (error) {
+                console.error('PDF share failed:', error);
+                showToast('Unable to share PDF. Opening link instead.', 'warning');
+                window.open(pdfUrl, '_blank');
+            }
+        }
+
+        function openScheduleFromModal() {
+            if (!ensureLedgerContext()) return;
+            // For now, just show a toast - schedule feature would need additional implementation
+            showToast('Schedule feature - to be implemented', 'info');
+        }
+
+        async function shareLedgerScreenshot() {
+            if (!ensureLedgerContext()) return;
+            const modalBody = document.getElementById('ledgerModalBody');
+            if (!modalBody) {
+                showToast('Ledger content not found.', 'error');
+                return;
+            }
+
+            showToast('Preparing ledger image...', 'info');
+            const cloneWrapper = document.createElement('div');
+            cloneWrapper.style.position = 'absolute';
+            cloneWrapper.style.left = '-9999px';
+            cloneWrapper.style.top = '0';
+            cloneWrapper.style.background = '#ffffff';
+            cloneWrapper.style.padding = '20px';
+            cloneWrapper.style.width = '1200px';
+
+            const clone = modalBody.cloneNode(true);
+            clone.style.background = '#ffffff';
+            cloneWrapper.appendChild(clone);
+            document.body.appendChild(cloneWrapper);
+
+            try {
+                const canvas = await html2canvas(cloneWrapper, {
+                    backgroundColor: '#ffffff',
+                    scale: 2,
+                    useCORS: true,
+                    allowTaint: true
+                });
+                canvas.toBlob(async (blob) => {
+                    if (!blob) {
+                        showToast('Unable to capture image.', 'error');
+                        return;
+                    }
+                    const fileName = `ledger_${currentLedgerCustomer.phone}.png`;
+                    const shareLabel = currentLedgerCustomer.name || currentLedgerCustomer.phone || 'Client Ledger';
+
+                    // Try native share first (mobile browser support)
+                    if (navigator.canShare && navigator.canShare({ files: [new File([blob], fileName, { type: 'image/png' })] })) {
+                        try {
+                            const file = new File([blob], fileName, { type: 'image/png' });
+                            await navigator.share({
+                                title: shareLabel,
+                                text: shareLabel,
+                                files: [file]
+                            });
+                            showToast('Shared via WhatsApp.', 'success');
+                            return;
+                        } catch (shareErr) {
+                            console.warn('Native share failed, falling back:', shareErr);
+                        }
+                    }
+
+                    // Try copying to clipboard (desktop convenience)
+                    if (navigator.clipboard && window.ClipboardItem) {
+                        try {
+                            await navigator.clipboard.write([
+                                new ClipboardItem({ 'image/png': blob })
+                            ]);
+                            showToast('Image copied to clipboard!', 'success');
+                        } catch (clipboardError) {
+                            console.warn('Clipboard copy failed:', clipboardError);
+                        }
+                    }
+
+                    // Download image as fallback
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = fileName;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+
+                    // Open WhatsApp with simple message (user attaches downloaded image)
+                    openWhatsAppWithMessage(`Ledger for ${shareLabel}`);
+                    showToast('Image downloaded. WhatsApp opened.', 'success');
+                }, 'image/png', 0.95);
+            } catch (error) {
+                console.error('Screenshot capture failed:', error);
+                showToast('Failed to capture screenshot.', 'error');
+            } finally {
+                if (cloneWrapper && cloneWrapper.parentNode) {
+                    cloneWrapper.parentNode.removeChild(cloneWrapper);
+                }
+            }
+        }
+
+        // Handle ledger modal close - reopen clients modal if needed
+        document.getElementById('ledgerModal').addEventListener('hidden.bs.modal', function() {
+            if (reopenClientsAfterLedgerClose) {
+                reopenClientsAfterLedgerClose = false;
+                setTimeout(() => {
+                    if (clientsModalInstance) {
+                        clientsModalInstance.show();
+                    }
+                }, 300);
+            }
+        });
+    </script>
+</body>
+</html>

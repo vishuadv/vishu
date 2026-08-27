@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Recovery Report</title>
+  {% include "_pwa_head.html" %}
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    body { background: #f6f7fb; }
+    .page-header {
+      background: linear-gradient(135deg, #00897b, #00695c);
+      color: #fff;
+      padding: 16px 18px;
+      border-radius: 12px;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.12);
+      margin: 16px 0 18px;
+    }
+    .metric { background:#fff; border:1px solid rgba(0,0,0,0.05); border-radius:10px; padding:12px; }
+    .metric .label { font-size:12px; color:#607d8b; text-transform: uppercase; font-weight:700; }
+    .metric .value { font-size:22px; font-weight:900; color:#00695c; }
+    .card-soft { background:#fff; border:1px solid rgba(0,0,0,0.06); border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,0.06); }
+    .table thead th { position: sticky; top: 0; background: #fff; z-index: 1; }
+    .money { font-variant-numeric: tabular-nums; white-space: nowrap; }
+    @media print {
+      @page { size: A4 landscape; margin: 6mm; }
+      .no-print { display: none !important; }
+      body { background: #fff; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container-fluid" style="max-width: 1400px;">
+    <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <div>
+        <h3 class="m-0 fw-bold"><i class="bi bi-arrow-repeat"></i> Recovery Report</h3>
+        <div class="small" style="opacity:0.9;">Client recovery details with days delayed and penalty calculation</div>
+      </div>
+      <div class="d-flex gap-2 no-print">
+        <button class="btn btn-light" onclick="window.print()"><i class="bi bi-printer"></i> Print</button>
+        <button class="btn btn-dark" onclick="window.close()"><i class="bi bi-x-lg"></i> Close</button>
+      </div>
+    </div>
+
+    <div class="card card-soft p-3 mb-3 no-print">
+      <div class="row g-3 align-items-end">
+        <div class="col-12 col-sm-6 col-md-3">
+          <label class="form-label fw-bold">From</label>
+          <input type="date" id="startDate" class="form-control" value="{{ default_start }}">
+        </div>
+        <div class="col-12 col-sm-6 col-md-3">
+          <label class="form-label fw-bold">To</label>
+          <input type="date" id="endDate" class="form-control" value="{{ default_end }}">
+        </div>
+        <div class="col-12 col-sm-6 col-md-3">
+          <label class="form-label fw-bold">Penalty per day (₹)</label>
+          <input type="number" id="perDayPenalty" class="form-control" value="{{ default_penalty_per_day }}" min="0" step="1" oninput="recalcAndRender()">
+        </div>
+        <div class="col-12 col-sm-6 col-md-3 d-grid">
+          <button class="btn btn-success fw-bold" onclick="loadRecoveryReport()"><i class="bi bi-arrow-clockwise"></i> Load</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-3 mb-3">
+      <div class="col-12 col-md-3">
+        <div class="metric"><div class="label">Records</div><div id="mRecords" class="value">0</div></div>
+      </div>
+      <div class="col-12 col-md-3">
+        <div class="metric"><div class="label">Total Recovered</div><div id="mRecovered" class="value money">₹0</div></div>
+      </div>
+      <div class="col-12 col-md-3">
+        <div class="metric"><div class="label">Total Penalty (calc)</div><div id="mPenalty" class="value money">₹0</div></div>
+      </div>
+      <div class="col-12 col-md-3">
+        <div class="metric"><div class="label">Average Days</div><div id="mAvgDays" class="value">0</div></div>
+      </div>
+    </div>
+
+    <div class="card card-soft p-3 mb-3">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h5 class="m-0 fw-bold">Client-wise Summary</h5>
+        <div class="text-small" id="generatedAt"></div>
+      </div>
+      <div class="table-responsive" style="max-height: 55vh;">
+        <table class="table table-hover align-middle" id="summaryTable">
+          <thead>
+            <tr>
+              <th style="width: 70px;">Sr</th>
+              <th style="width: 50px;">Include Penalty</th>
+              <th>Name</th>
+              <th style="width: 120px;">Type</th>
+              <th style="width: 120px;">Due</th>
+              <th style="width: 120px;">Recovered</th>
+              <th style="width: 110px;" class="text-end">Days</th>
+              <th style="width: 150px;" class="text-end">Recovered (₹)</th>
+              <th style="width: 160px;" class="text-end">Penalty (calc)</th>
+              <th style="width: 220px;">Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td colspan="10" class="text-center text-muted p-4">Click Load to view recoveries</td></tr>
+          </tbody>
+          <tfoot>
+            <tr class="table-success fw-bold">
+              <td colspan="7" class="text-end">Totals</td>
+              <td class="text-end" id="tRecovered">₹0</td>
+              <td class="text-end" id="tPenalty">₹0</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    <div class="card card-soft p-3">
+      <h5 class="m-0 fw-bold mb-2">Detailed Recovery Information</h5>
+      <div class="table-responsive" style="max-height: 45vh;">
+        <table class="table table-sm table-striped align-middle" id="detailsTable">
+          <thead>
+            <tr>
+              <th style="width: 70px;">Sr</th>
+              <th>Name</th>
+              <th style="width: 120px;">Type</th>
+              <th style="width: 120px;">Due</th>
+              <th style="width: 120px;">Recovered</th>
+              <th style="width: 110px;" class="text-end">Days</th>
+              <th style="width: 150px;" class="text-end">Recovered (₹)</th>
+              <th style="width: 160px;" class="text-end">Penalty (calc)</th>
+              <th style="width: 220px;">Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td colspan="9" class="text-center text-muted p-4">No data</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let __recoveryRows = [];
+    let __clientPenaltyStatus = {}; // Track penalty inclusion status per client
+
+    function fmtMoney(n) { return '₹' + Number(n||0).toLocaleString(undefined,{maximumFractionDigits:2}); }
+    function escapeHtml(s) { return String(s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+    function escapeAttr(s) { return String(s||'').replaceAll('"', '&quot;').replaceAll("'", '&#39;'); }
+
+    function setGeneratedAt() {
+      const el = document.getElementById('generatedAt');
+      if (!el) return;
+      const now = new Date();
+      el.textContent = `Generated at ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`;
+    }
+
+    async function loadRecoveryReport() {
+      const start = document.getElementById('startDate')?.value || '';
+      const end = document.getElementById('endDate')?.value || '';
+      try {
+        const resp = await fetch(`/api/recovery/report?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}&_=${Date.now()}`);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const data = await resp.json();
+        if (!data || data.success === false) throw new Error(data?.error || data?.message || 'Failed');
+        __recoveryRows = Array.isArray(data.rows) ? data.rows : [];
+        renderRecoveries();
+        setGeneratedAt();
+      } catch (e) {
+        const tbody = document.querySelector('#recoveriesTable tbody');
+        if (tbody) tbody.innerHTML = `<tr><td colspan="9" class="text-center text-danger p-4">${escapeHtml(e.message || 'Failed to load')}</td></tr>`;
+        __recoveryRows = [];
+        updateMetrics();
+      }
+    }
+
+    function getPerDayPenalty() {
+      const v = Number(document.getElementById('perDayPenalty')?.value || 0);
+      return Number.isFinite(v) ? v : 0;
+    }
+
+    function recalcAndRender() { renderRecoveries(); }
+
+    function renderRecoveries() {
+      if (!__recoveryRows.length) {
+        const summaryBody = document.querySelector('#summaryTable tbody');
+        const detailsBody = document.querySelector('#detailsTable tbody');
+        if (summaryBody) summaryBody.innerHTML = '<tr><td colspan="10" class="text-center text-muted p-4">No data</td></tr>';
+        if (detailsBody) detailsBody.innerHTML = '<tr><td colspan="9" class="text-center text-muted p-4">No data</td></tr>';
+        updateMetrics();
+        return;
+      }
+
+      const perDay = getPerDayPenalty();
+      
+      // Group by client for summary
+      const clientGroups = {};
+      __recoveryRows.forEach((r, idx) => {
+        const clientKey = (r.name || '').trim();
+        if (!clientGroups[clientKey]) {
+          clientGroups[clientKey] = {
+            name: r.name || '',
+            type: r.repayment_type || '',
+            firstDue: r.due_date || '',
+            firstRecovered: r.recovery_date || '',
+            totalRecovered: 0,
+            totalDays: 0,
+            totalPenalty: 0,
+            notes: r.notes || '',
+            rows: []
+          };
+        }
+        const pen = Math.max(0, Math.floor((Number(r.days_diff||0) * perDay)));
+        clientGroups[clientKey].totalRecovered += Number(r.recovered_amount || 0);
+        clientGroups[clientKey].totalDays += Number(r.days_diff || 0);
+        clientGroups[clientKey].totalPenalty += pen;
+        clientGroups[clientKey].rows.push({...r, penalty: pen, idx: idx + 1});
+      });
+
+      // Initialize penalty status if not exists
+      Object.keys(clientGroups).forEach(clientKey => {
+        if (!(clientKey in __clientPenaltyStatus)) {
+          __clientPenaltyStatus[clientKey] = true; // Default: include penalty
+        }
+      });
+
+      // Render summary table
+      const summaryBody = document.querySelector('#summaryTable tbody');
+      if (summaryBody) {
+        let summaryHtml = '';
+        Object.values(clientGroups).forEach((client, idx) => {
+          const clientKey = client.name;
+          const includePenalty = __clientPenaltyStatus[clientKey];
+          const effectivePenalty = includePenalty ? client.totalPenalty : 0;
+          
+          summaryHtml += `
+            <tr data-client="${escapeAttr(clientKey)}">
+              <td>${idx + 1}</td>
+              <td class="text-center">
+                <input type="checkbox" 
+                       ${includePenalty ? 'checked' : ''} 
+                       onchange="toggleClientPenalty('${escapeAttr(clientKey)}', this.checked)"
+                       title="Include penalty calculation">
+              </td>
+              <td><strong>${escapeHtml(client.name)}</strong></td>
+              <td>${escapeHtml(client.type)}</td>
+              <td>${escapeHtml(client.firstDue)}</td>
+              <td>${escapeHtml(client.firstRecovered)}</td>
+              <td class="text-end">${client.totalDays}</td>
+              <td class="text-end money">${fmtMoney(client.totalRecovered)}</td>
+              <td class="text-end money" data-penalty="${effectivePenalty}">${fmtMoney(effectivePenalty)}</td>
+              <td><div style="max-width:200px; white-space:pre-wrap;">${escapeHtml(client.notes)}</div></td>
+            </tr>`;
+        });
+        summaryBody.innerHTML = summaryHtml;
+      }
+
+      // Render details table
+      const detailsBody = document.querySelector('#detailsTable tbody');
+      if (detailsBody) {
+        const detailsHtml = __recoveryRows.map((r, idx) => {
+          const pen = Math.max(0, Math.floor((Number(r.days_diff||0) * perDay)));
+          return `
+            <tr data-id="${escapeHtml(r.id)}">
+              <td>${idx + 1}</td>
+              <td>${escapeHtml(r.name || '')}</td>
+              <td>${escapeHtml(r.repayment_type || '')}</td>
+              <td>${escapeHtml(r.due_date || '')}</td>
+              <td>${escapeHtml(r.recovery_date || '')}</td>
+              <td class="text-end">${Number(r.days_diff || 0)}</td>
+              <td class="text-end money">${fmtMoney(r.recovered_amount)}</td>
+              <td class="text-end money">${fmtMoney(pen)}</td>
+              <td><div style="max-width:360px; white-space:pre-wrap;">${escapeHtml(r.notes || '')}</div></td>
+            </tr>`;
+        }).join('');
+        detailsBody.innerHTML = detailsHtml;
+      }
+
+      updateMetrics();
+    }
+
+    function toggleClientPenalty(clientKey, includePenalty) {
+      __clientPenaltyStatus[clientKey] = includePenalty;
+      
+      // Update the penalty display for this client
+      const clientRow = document.querySelector(`tr[data-client="${escapeAttr(clientKey)}"]`);
+      if (clientRow) {
+        const penaltyCell = clientRow.querySelector('[data-penalty]');
+        if (penaltyCell) {
+          const originalPenalty = Number(penaltyCell.dataset.penalty || 0);
+          const effectivePenalty = includePenalty ? originalPenalty : 0;
+          penaltyCell.textContent = fmtMoney(effectivePenalty);
+        }
+      }
+      
+      updateMetrics();
+    }
+
+    function updateMetrics() {
+      const rec = document.getElementById('mRecords');
+      const recovered = document.getElementById('mRecovered');
+      const penalty = document.getElementById('mPenalty');
+      const avg = document.getElementById('mAvgDays');
+      const tRecovered = document.getElementById('tRecovered');
+      const tPenalty = document.getElementById('tPenalty');
+
+      const perDay = getPerDayPenalty();
+      const rows = __recoveryRows || [];
+      const cnt = rows.length;
+      let sRecovered = 0; let sPenalty = 0; let sDays = 0;
+      
+      // Group by client to apply penalty status
+      const clientGroups = {};
+      rows.forEach(r => {
+        const clientKey = (r.name || '').trim();
+        if (!clientGroups[clientKey]) {
+          clientGroups[clientKey] = { recovered: 0, days: 0, penalty: 0 };
+        }
+        clientGroups[clientKey].recovered += Number(r.recovered_amount || 0);
+        clientGroups[clientKey].days += Number(r.days_diff || 0);
+        const p = Math.max(0, Math.floor((Number(r.days_diff||0) * perDay)));
+        clientGroups[clientKey].penalty += p;
+      });
+      
+      // Apply penalty status
+      Object.keys(clientGroups).forEach(clientKey => {
+        sRecovered += clientGroups[clientKey].recovered;
+        sDays += clientGroups[clientKey].days;
+        if (__clientPenaltyStatus[clientKey] !== false) {
+          sPenalty += clientGroups[clientKey].penalty;
+        }
+      });
+
+      if (rec) rec.textContent = String(cnt);
+      if (recovered) recovered.textContent = fmtMoney(sRecovered);
+      if (penalty) penalty.textContent = fmtMoney(sPenalty);
+      if (avg) avg.textContent = String(cnt ? Math.round((sDays / cnt) * 10) / 10 : 0);
+      if (tRecovered) tRecovered.textContent = fmtMoney(sRecovered);
+      if (tPenalty) tPenalty.textContent = fmtMoney(sPenalty);
+    }
+
+    // Auto-load on first open with default dates
+    document.addEventListener('DOMContentLoaded', () => {
+      loadRecoveryReport();
+    });
+  </script>
+</body>
+</html>

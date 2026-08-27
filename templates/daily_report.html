@@ -1,0 +1,3282 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Daily Collection Report - Swift Financials</title>
+    {% include "_pwa_head.html" %}
+
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- html2canvas is required for image sharing in shareToMobile() -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #0d6efd;
+            --success-color: #198754;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --dark-color: #212529;
+            --light-bg: #f8f9fa;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 13px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 15px;
+        }
+
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .report-header {
+            background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 25%, #5b21b6 50%, #4c1d95 75%, #3730a3 100%);
+            color: white;
+            padding: 0;
+            text-align: left;
+            position: relative;
+            border-radius: 0;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(124, 58, 237, 0.3);
+        }
+
+        .report-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 50%, rgba(255,255,255,0.05) 100%);
+            pointer-events: none;
+        }
+
+        .report-header::after {
+            content: '';
+            position: absolute;
+            top: -30%;
+            right: -30%;
+            width: 150%;
+            height: 150%;
+            background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
+        .report-header h2 {
+            margin: 0;
+            font-size: 1.8rem;
+            font-weight: 600;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            position: relative;
+            z-index: 1;
+            letter-spacing: -0.2px;
+        }
+
+        .report-header h2 i {
+            margin-right: 10px;
+            font-size: 1.5rem;
+            color: #e9d5ff;
+        }
+
+        .company-tagline {
+            font-size: 0.85rem;
+            opacity: 0.8;
+            margin-top: 4px;
+            position: relative;
+            z-index: 1;
+            font-weight: 400;
+            letter-spacing: 0.2px;
+            color: #cbd5e1;
+        }
+
+        .header-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+            position: relative;
+            z-index: 1;
+            padding: 28px 32px;
+        }
+
+        .header-left {
+            min-width: 0;
+        }
+
+        .header-right {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            align-items: flex-end;
+            text-align: right;
+            min-width: 0;
+        }
+
+        .header-meta {
+            font-size: 11px;
+            opacity: 0.85;
+            padding: 10px 16px;
+            border: 1px solid rgba(255,255,255,0.15);
+            background: rgba(255,255,255,0.08);
+            border-radius: 8px;
+            backdrop-filter: blur(8px);
+            font-weight: 500;
+            letter-spacing: 0.3px;
+            color: #e2e8f0;
+        }
+
+        .summary-compact {
+            background: rgba(255, 255, 255, 0.12);
+            padding: 20px 28px;
+            position: relative;
+            z-index: 1;
+            display: none;
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+        }
+
+        .summary-compact-row {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            font-size: 13px;
+        }
+
+        .summary-compact-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 80px;
+        }
+
+        .summary-compact-value {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        .summary-compact-label {
+            font-size: 10px;
+            opacity: 0.9;
+            text-align: center;
+        }
+
+        .summary-compact-grand {
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            border-radius: 6px;
+            padding: 6px 10px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .content-wrapper {
+            padding: 25px;
+        }
+
+        .controls-section {
+            background: linear-gradient(to bottom, #ffffff, #f8fafc);
+            border-radius: 12px;
+            padding: 24px 28px;
+            margin-bottom: 20px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+            position: relative;
+        }
+
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 24px;
+            align-items: end;
+        }
+
+        .controls-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .controls-actions .btn {
+            border-radius: 8px;
+            font-weight: 500;
+            padding: 10px 16px;
+            transition: all 0.2s ease;
+            border: 1px solid;
+            font-size: 0.875rem;
+            min-height: 40px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .controls-actions .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .controls-actions .btn-primary {
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 50%, #4338ca 100%);
+            border-color: #6366f1;
+            color: white;
+        }
+
+        .controls-actions .btn-primary:hover {
+            background: linear-gradient(135deg, #4f46e5 0%, #4338ca 50%, #3730a3 100%);
+            border-color: #4f46e5;
+        }
+
+        .controls-actions .btn-outline-secondary {
+            background: linear-gradient(135deg, #64748b 0%, #475569 50%, #334155 100%);
+            border-color: #64748b;
+            color: white;
+        }
+
+        .controls-actions .btn-outline-secondary:hover {
+            background: linear-gradient(135deg, #475569 0%, #334155 50%, #1e293b 100%);
+            border-color: #475569;
+            color: white;
+        }
+
+        .controls-actions .btn-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
+            border-color: #10b981;
+            color: white;
+        }
+
+        .controls-actions .btn-success:hover {
+            background: linear-gradient(135deg, #059669 0%, #047857 50%, #065f46 100%);
+            border-color: #059669;
+        }
+
+        .controls-actions .btn-outline-success {
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 50%, #15803d 100%);
+            border-color: #22c55e;
+            color: white;
+        }
+
+        .controls-actions .btn-outline-success:hover {
+            background: linear-gradient(135deg, #16a34a 0%, #15803d 50%, #166534 100%);
+            border-color: #16a34a;
+            color: white;
+        }
+
+        .controls-actions .btn-outline-info {
+            background: linear-gradient(135deg, #06b6d4 0%, #0891b2 50%, #0e7490 100%);
+            border-color: #06b6d4;
+            color: white;
+        }
+
+        .controls-actions .btn-outline-info:hover {
+            background: linear-gradient(135deg, #0891b2 0%, #0e7490 50%, #155e75 100%);
+            border-color: #0891b2;
+            color: white;
+        }
+
+        .controls-section .form-label {
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 8px;
+            font-size: 0.875rem;
+            letter-spacing: 0.1px;
+        }
+
+        .controls-section .form-label i {
+            margin-right: 8px;
+            color: #3b82f6;
+        }
+
+        .controls-section .form-control {
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+            background: #ffffff;
+        }
+
+        .controls-section .form-control:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            outline: none;
+        }
+
+        .search-box {
+            position: relative;
+            margin: 0 0 20px 0;
+        }
+
+        .search-input {
+            border-radius: 25px;
+            padding: 12px 45px 12px 20px;
+            border: 2px solid #e9ecef;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .search-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+            transform: translateY(-1px);
+        }
+
+        .search-icon {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c757d;
+        }
+
+        @media (max-width: 992px) {
+            .header-top {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 16px;
+                padding: 24px 28px;
+            }
+            .header-right {
+                align-items: flex-start;
+                text-align: left;
+            }
+            .controls-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            .controls-actions {
+                justify-content: flex-start;
+            }
+            .controls-actions .btn {
+                font-size: 0.8rem;
+                padding: 8px 12px;
+                min-height: 36px;
+            }
+        }
+
+        .section-header {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            color: #1e293b;
+            padding: 16px 24px;
+            margin: 25px 0 20px 0;
+            font-weight: 600;
+            text-align: center;
+            font-size: 1.1rem;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+        }
+
+        .section-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%);
+        }
+
+        .section-header i {
+            margin-right: 8px;
+            font-size: 1.2rem;
+            color: #3b82f6;
+        }
+
+        .multi-column {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr); /* Use 3 columns for better readability */
+            gap: 12px 14px; /* tighter vertical and horizontal gap to reduce whitespace */
+            margin-bottom: 14px;
+            align-items: start;
+            grid-auto-flow: row dense; /* pack items to use empty space when possible */
+        }
+
+        /* Portrait export: render Daily section as tight tables (Excel-like) */
+        .export-portrait-table .section-header {
+            margin-top: 6px;
+            margin-bottom: 6px;
+            padding: 10px;
+        }
+
+        .export-portrait-table {
+            padding-right: 10px; /* prevent last table from being clipped on the PDF right edge */
+            box-sizing: border-box;
+        }
+
+        .export-portrait-table .daily-wide-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+            margin-bottom: 6px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .export-portrait-table .daily-wide-table th,
+        .export-portrait-table .daily-wide-table td {
+            border: 1px solid #cfd4da;
+            padding: 1px 2px;
+            font-size: 8px;
+            line-height: 1.1;
+            vertical-align: middle;
+        }
+
+        .export-portrait-table .daily-wide-table thead th {
+            background: #f1f3f5;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .export-portrait-table .portrait-page-break {
+            break-before: page;
+            page-break-before: always;
+        }
+
+        .export-portrait-table .daily-wide-table .col-no {
+            width: 18px;
+            text-align: center;
+        }
+
+        .export-portrait-table .daily-wide-table .col-amt {
+            width: 36px;
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .export-portrait-table .daily-wide-table .col-name {
+            width: auto;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .export-portrait-table .daily-wide-table td.new-client {
+            background: #fff3cd;
+        }
+
+        .export-portrait-table .daily-wide-table td.closed-loan {
+            background: #f8d7da;
+        }
+
+        @media (min-width: 1200px) {
+            .multi-column {
+                grid-template-columns: repeat(3, 1fr); /* Keep 3 columns on wide screens */
+            }
+        }
+
+        .two-box-layout {
+            display: grid;
+            grid-template-columns: var(--weekly-fr, 1fr) var(--ten-fr, 1fr);
+            gap: 14px;               /* tighter spacing between weekly/ten-days boxes */
+            margin-bottom: 14px;      /* reduce extra space under the row */
+        }
+
+        /* When Ten Days has no items, render Weekly full-width */
+        .two-box-layout.one-col {
+            grid-template-columns: 1fr;
+        }
+
+        .column-box {
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            overflow: hidden;
+            background: white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            break-inside: avoid;           /* keep a full column on same page */
+            page-break-inside: avoid;      /* PDF engines */
+        }
+
+        .column-box:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+        }
+
+        .two-box .column-box {
+            border: 3px solid var(--primary-color);
+            background: #f8f9ff;
+        }
+
+        .column-header {
+            background: linear-gradient(135deg, var(--light-bg) 0%, #e9ecef 100%);
+            border-bottom: 3px solid var(--dark-color);
+            padding: 6px;            /* tighter header */
+            font-weight: 600;
+            font-size: 11px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .two-box .column-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #0a58ca 100%);
+            color: white;
+            font-weight: 700;
+            text-align: center;
+            font-size: 13px;
+            padding: 12px;
+            border-bottom: none;
+        }
+
+        .column-header .sr-label,
+        .column-header .amt-label {
+            width: 70px;
+            text-align: right;
+            font-weight: 700;
+        }
+
+        .column-header .name-label {
+            flex: 1;
+            text-align: center;
+            font-weight: 700;
+        }
+
+        .client-row {
+            display: flex;
+            padding: 4px 6px;        /* tighter row */
+            border-bottom: 1px solid #f1f3f4;
+            font-size: 10px;
+            align-items: center;
+            justify-content: space-between;
+            transition: background-color 0.2s ease;
+        }
+
+        .client-row:hover {
+            background-color: #f8f9fa !important;
+        }
+
+        .client-row:nth-child(even) {
+            background: #fafbfc;
+        }
+
+        .client-serial {
+            width: 45px;
+            text-align: center;
+            font-weight: 700;
+            color: var(--primary-color);
+            font-size: 10px;
+        }
+
+        .client-name {
+            flex: 1;
+            text-align: left;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            padding: 0 6px;
+            font-size: 10px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none !important;
+            color: inherit !important;
+        }
+
+        .client-name:hover {
+            background: rgba(13, 110, 253, 0.1);
+            border-radius: 3px;
+            transform: scale(1.02);
+            color: var(--primary-color) !important;
+        }
+
+        .client-name.loading {
+            opacity: 0.7;
+            pointer-events: none;
+            background: rgba(255, 193, 7, 0.1);
+            color: #856404 !important;
+        }
+
+        .client-amount {
+            width: 70px;
+            text-align: right;
+            font-weight: 700;
+            color: var(--success-color);
+            font-size: 10px;
+            font-variant-numeric: tabular-nums; /* align digits vertically */
+        }
+
+        .client-row.new-client {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%) !important;
+            border-left: 3px solid var(--warning-color);
+            color: #856404 !important;
+            font-weight: 600;
+        }
+
+        .client-row.new-client .client-serial,
+        .client-row.new-client .client-amount {
+            background: var(--warning-color);
+            color: #000;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-weight: 700;
+        }
+
+        .client-row.new-client .client-name {
+            font-weight: 700;
+            color: #856404 !important;
+        }
+
+        .client-row.closed-loan {
+            background: linear-gradient(135deg, #f8d7da 0%, #f5b7b1 100%) !important;
+            border-left: 3px solid var(--danger-color);
+            color: #721c24 !important;
+            font-weight: 600;
+        }
+
+        .client-row.closed-loan .client-serial,
+        .client-row.closed-loan .client-amount {
+            background: var(--danger-color);
+            color: white;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-weight: 700;
+        }
+
+        .client-row.closed-loan .client-name {
+            font-weight: 700;
+            color: #721c24 !important;
+        }
+
+        .column-subtotal {
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+            color: white;
+            font-weight: 700;
+            border-top: 2px solid var(--dark-color);
+            padding: 8px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+        }
+
+        .two-box .column-subtotal {
+            background: linear-gradient(135deg, var(--success-color) 0%, #146c43 100%);
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .type-total {
+            background: linear-gradient(135deg, var(--success-color) 0%, #146c43 100%);
+            color: white;
+            padding: 10px 16px;
+            text-align: center;
+            font-weight: 700;
+            margin: 10px 0 12px 0;
+            border-radius: 10px;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 8px rgba(25, 135, 84, 0.3);
+        }
+
+        .combined-total {
+            background: linear-gradient(135deg, var(--danger-color) 0%, #b02a37 100%);
+            color: white;
+            padding: 12px 16px;
+            text-align: center;
+            font-weight: 700;
+            margin: 12px 0 16px 0;
+            border-radius: 10px;
+            font-size: 1.2rem;
+            border: 2px solid #721c24;
+            box-shadow: 0 6px 12px rgba(220, 53, 69, 0.4);
+        }
+
+        .summary-section {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 25px;
+            border-radius: 12px;
+            margin: 16px 0; /* reduce vertical whitespace */
+            border: 2px solid #dee2e6;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+        }
+
+        .summary-section h5 {
+            color: var(--dark-color);
+            font-weight: 700;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 1.4rem;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 2px solid #dee2e6;
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .summary-row:last-child {
+            border-bottom: none;
+            font-weight: 700;
+            font-size: 16px;
+            color: var(--danger-color);
+        }
+
+        .grand-total {
+            background: linear-gradient(135deg, var(--danger-color) 0%, #b02a37 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-top: 25px;
+            box-shadow: 0 8px 16px rgba(220, 53, 69, 0.4);
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 20px 0;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .legend-box {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            border: 3px solid #000;
+        }
+
+        .btn {
+            font-weight: 600;
+            border-radius: 8px;
+            padding: 8px 16px;
+            transition: all 0.2s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .pdf-generating {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            color: white;
+            font-size: 18px;
+            backdrop-filter: blur(5px);
+        }
+
+        .loading-content {
+            text-align: center;
+            background: rgba(255,255,255,0.1);
+            padding: 30px;
+            border-radius: 15px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .pdf-page-break {
+            page-break-before: always !important;
+            break-before: page !important;
+            display: block !important;
+            height: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        .html2pdf__page-break {
+            page-break-before: always !important;
+            break-before: page !important;
+        }
+
+        .ledger-table {
+            font-size: 11px;
+            width: 100%;
+        }
+
+        .ledger-table th {
+            background: #343a40;
+            color: white;
+            font-weight: 600;
+            padding: 10px 6px;
+            text-align: center;
+            white-space: nowrap;
+            font-size: 10px;
+        }
+
+        .ledger-table td {
+            padding: 6px 4px;
+            border-bottom: 1px solid #dee2e6;
+            text-align: center;
+            font-size: 10px;
+        }
+
+        .ledger-table tbody tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        .balance-positive {
+            color: #198754;
+            font-weight: 600;
+        }
+
+        .balance-negative {
+            color: #dc3545;
+            font-weight: 600;
+        }
+
+        .network-error {
+            background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+            border: 2px solid #ffc107;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+
+        .retry-btn {
+            background: #ffc107;
+            color: #000;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        @media print {
+            .no-print { display: none !important; }
+            .report-header { display: none !important; }
+            .summary-compact { display: none !important; }
+            body { 
+                font-size: 9px !important;
+                background: white !important;
+                padding: 0 !important;
+            }
+            .main-container {
+                box-shadow: none;
+                border-radius: 0;
+                background: white !important;
+            }
+            .multi-column {
+                grid-template-columns: repeat(6, 1fr) !important;
+                gap: 8px !important;
+            }
+            .client-row {
+                padding: 3px 5px !important;
+                font-size: 8px !important;
+            }
+            .column-header {
+                padding: 5px !important;
+                font-size: 9px !important;
+            }
+            .client-row.new-client {
+                background: #fff3cd !important;
+                color: #856404 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .client-row.closed-loan {
+                background: #f8d7da !important;
+                color: #721c24 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+        }
+
+        @page {
+            size: A4 portrait;
+            margin: 0.5cm;
+        }
+
+        @media (max-width: 768px) {
+            .two-box-layout {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .legend {
+                flex-direction: column;
+                align-items: center;
+                gap: 10px;
+            }
+
+            .summary-compact-row {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .ledger-table th,
+            .ledger-table td {
+                padding: 4px 2px;
+                font-size: 8px;
+            }
+        }
+
+        /* Portrait export compact wrapper (export-only; keeps visual style, scales slightly) */
+        .export-portrait-compact {
+            width: 1080px; /* Slightly wider virtual canvas to keep names readable */
+            background: #ffffff !important;
+            transform: scale(0.85); /* ~15% smaller to reduce page count further */
+            transform-origin: top left;
+        }
+    </style>
+</head>
+<body>
+    <!-- Toast container for transient messages -->
+    <div id="toastContainer" style="position: fixed; bottom: 1rem; right: 1rem; z-index: 1080;"></div>
+    <div class="main-container">
+        <div class="report-header">
+            <div class="header-top">
+                <div class="header-left">
+                    <h2><i class="bi bi-graph-up"></i> Daily Collection Report</h2>
+                    <p class="company-tagline mb-0">Swift Financials - Professional Loan Management</p>
+                </div>
+                <div class="header-right">
+                    <div class="header-meta" id="reportDateTime">Report Date &amp; Time</div>
+                    <div class="mt-2 small" id="snapshotStatus" style="font-size: 11px; opacity: 0.9;"></div>
+                </div>
+            </div>
+            
+            <div class="summary-compact" id="summaryCompact">
+                <div class="summary-compact-row">
+                    <div class="summary-compact-item">
+                        <div class="summary-compact-value" id="compactDaily">₹0</div>
+                        <div class="summary-compact-label">Daily</div>
+                    </div>
+                    <div class="summary-compact-item">
+                        <div class="summary-compact-value" id="compactWeekly">₹0</div>
+                        <div class="summary-compact-label">Weekly</div>
+                    </div>
+                    <div class="summary-compact-item" id="compactTenDaysContainer" style="display: none;">
+                        <div class="summary-compact-value" id="compactTenDays">₹0</div>
+                        <div class="summary-compact-label">Ten Days</div>
+                    </div>
+                    <div class="summary-compact-item summary-compact-grand">
+                        <div class="summary-compact-value" id="compactGrandTotal">₹0</div>
+                        <div class="summary-compact-label">Grand Total</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-wrapper">
+            <div class="legend no-print">
+                <div class="legend-item">
+                    <div class="legend-box" style="background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%); border-color: #ffc107;"></div>
+                    <span><i class="bi bi-star-fill text-warning"></i> New Client (Added Yesterday)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-box" style="background: linear-gradient(135deg, #f8d7da 0%, #f5b7b1 100%); border-color: #dc3545;"></div>
+                    <span><i class="bi bi-check-circle-fill text-danger"></i> Completed Loan (Closed Yesterday)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-box" style="background: rgba(13, 110, 253, 0.1); border-color: #0d6efd;"></div>
+                    <span><i class="bi bi-cursor-fill text-primary"></i> Click Client Name to View Ledger</span>
+                </div>
+            </div>
+
+            <div class="controls-section no-print">
+                <div class="controls-grid">
+                    <div>
+                        <label class="form-label fw-bold mb-1">
+                            <i class="bi bi-calendar3"></i> Select Report Date
+                        </label>
+                        <input type="date" id="reportDate" class="form-control">
+                    </div>
+                    <div class="controls-actions">
+                        <button class="btn btn-primary" onclick="generateReport()">
+                            <i class="bi bi-arrow-clockwise"></i> Generate Report
+                        </button>
+                        <button class="btn btn-success" onclick="exportPDFPortrait()" id="pdfPortraitBtn">
+                            <i class="bi bi-download"></i> Download Report
+                        </button>
+                        <button class="btn btn-outline-secondary" onclick="printFinalReport()">
+                            <i class="bi bi-printer"></i> Print
+                        </button>
+                        <button class="btn btn-outline-success" onclick="exportExcel()">
+                            <i class="bi bi-file-earmark-excel"></i> Export Excel
+                        </button>
+                        <button class="btn btn-outline-info" onclick="sendWhatsApp()">
+                            <i class="bi bi-whatsapp"></i> Send WhatsApp
+                        </button>
+                        <button class="btn btn-success" onclick="sharePDFToWhatsApp()" id="mobilePDFShareBtn">
+                            <i class="bi bi-phone"></i> Mobile Share
+                        </button>
+                        <button class="btn btn-outline-warning" onclick="deleteSnapshotAndRegenerate()" id="snapshotDeleteBtn" title="Delete saved daily report data for this date and regenerate fresh">
+                            <i class="bi bi-trash3"></i> Delete Saved &amp; Regenerate
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="search-box no-print">
+                <input type="text" class="form-control search-input" id="dailySearchInput" placeholder="Search clients by name..." oninput="filterDailyClients()" autocomplete="off">
+                <i class="bi bi-search search-icon" aria-hidden="true"></i>
+            </div>
+
+            <div id="reportContent">
+                <div class="text-center text-muted py-5">
+                    <i class="bi bi-file-text" style="font-size: 3rem; opacity: 0.3;"></i>
+                    <p class="mt-3">Select a date and click "Generate Report" to view collection data.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="ledgerModal" tabindex="-1" aria-labelledby="ledgerModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="ledgerModalLabel">
+                        <i class="bi bi-journal-text"></i> Client Ledger
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="ledgerContent">
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary mb-3"></div>
+                            <p><strong>Loading ledger data...</strong></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-info" onclick="refreshLedger()" id="refreshLedgerBtn">
+                        <i class="bi bi-arrow-clockwise"></i> Refresh
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="shareToMobile()" id="mobileShareBtn">
+                        <i class="bi bi-share"></i> Share
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="pdfLoading" class="pdf-generating" style="display: none;">
+        <div class="loading-content">
+            <div class="spinner-border text-light mb-3" style="width: 3rem; height: 3rem;"></div>
+            <div class="fs-5 mb-2">Generating PDF...</div>
+            <div class="text-light opacity-75">Exporting collection data only...</div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Minimal toast helper for this page (used by mobile share functions)
+        function showToast(message, type = 'info', duration = 3000) {
+            try {
+                const container = document.getElementById('toastContainer');
+                if (!container) return alert(message);
+                const toast = document.createElement('div');
+                const bg = type === 'success' ? 'bg-success text-white' : type === 'warning' ? 'bg-warning' : type === 'error' || type === 'danger' ? 'bg-danger text-white' : 'bg-secondary text-white';
+                toast.className = `toast align-items-center ${bg}`;
+                toast.style.display = 'block';
+                toast.style.opacity = '0.95';
+                toast.style.marginTop = '0.5rem';
+                toast.innerHTML = `<div class="d-flex"><div class="toast-body">${message}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" aria-label="Close"></button></div>`;
+                container.appendChild(toast);
+                const closeBtn = toast.querySelector('.btn-close');
+                closeBtn.addEventListener('click', () => toast.remove());
+                setTimeout(() => { if (toast.parentNode) toast.remove(); }, duration);
+            } catch (_) {
+                // Fallback
+                alert(message);
+            }
+        }
+        const ledgerCache = new Map();
+        const CACHE_EXPIRY = 5 * 60 * 1000;
+        let currentLedgerClient = null;
+        let currentLedgerCustomer = null;
+        let currentLedgerData = null;
+        let currentClientFilter = '';
+
+        function escapeHtml(text) {
+            if (text === null || text === undefined) return '';
+            const div = document.createElement('div');
+            div.textContent = String(text);
+            return div.innerHTML;
+        }
+
+        function getLedgerAsOnDisplay() {
+            const reportDate = document.getElementById('reportDate')?.value;
+            if (!reportDate) return new Date().toLocaleDateString('en-GB');
+            const parsed = new Date(`${reportDate}T00:00:00`);
+            if (!Number.isNaN(parsed.getTime())) return parsed.toLocaleDateString('en-GB');
+            return reportDate;
+        }
+
+        function filterDailyClients() {
+            const input = document.getElementById('dailySearchInput');
+            currentClientFilter = (input?.value || '').trim().toLowerCase();
+            applyDailyClientFilter();
+        }
+
+        function applyDailyClientFilter() {
+            const rows = document.querySelectorAll('#reportContent .client-row');
+            rows.forEach(row => {
+                const nameEl = row.querySelector('.client-name');
+                const raw = (nameEl?.getAttribute('data-original-text') || nameEl?.textContent || '').toString().toLowerCase();
+                const show = !currentClientFilter || raw.includes(currentClientFilter);
+                row.style.display = show ? '' : 'none';
+            });
+        }
+
+        function withFinalReportLayout(run) {
+            const reportContent = document.getElementById('reportContent');
+            const data = window.lastReportData;
+            if (!reportContent || !data) {
+                showToast('Please generate the report first.', 'warning');
+                return Promise.resolve(null);
+            }
+
+            const originalHtml = reportContent.innerHTML;
+            const hadClass = reportContent.classList.contains('export-portrait-table');
+            reportContent.classList.add('export-portrait-table');
+            reportContent.innerHTML = renderReportPortraitTable(data);
+
+            const restore = () => {
+                reportContent.innerHTML = originalHtml;
+                if (!hadClass) reportContent.classList.remove('export-portrait-table');
+            };
+
+            try {
+                const result = run(restore);
+                return Promise.resolve(result).finally(() => {
+                    // Some flows (print) restore via afterprint. Only restore here if still in export layout.
+                    if (reportContent.classList.contains('export-portrait-table')) {
+                        restore();
+                    }
+                });
+            } catch (e) {
+                restore();
+                return Promise.reject(e);
+            }
+        }
+
+        async function withScrollToTop(run) {
+            const x = window.scrollX;
+            const y = window.scrollY;
+            window.scrollTo(0, 0);
+            await new Promise(resolve => setTimeout(resolve, 50));
+            try {
+                return await run();
+            } finally {
+                window.scrollTo(x, y);
+            }
+        }
+
+        function getPortraitPdfOptions(reportDate) {
+            const isMobile = window.innerWidth < 768;
+            const canvasScale = isMobile ? 1.2 : 1.7;
+            const canvasDpi = isMobile ? 144 : 192;
+
+            return {
+                margin: [4, 6, 6, 4],
+                filename: `Daily_Collection_Report_${reportDate}_Portrait.pdf`,
+                image: { type: 'jpeg', quality: 0.92 },
+                html2canvas: {
+                    scale: canvasScale,
+                    dpi: canvasDpi,
+                    scrollX: 0,
+                    scrollY: 0,
+                    useCORS: true,
+                    allowTaint: true,
+                    backgroundColor: '#ffffff',
+                    logging: false,
+                    letterRendering: true
+                },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                pagebreak: {
+                    mode: ['css', 'legacy'],
+                    before: ['.pdf-page-break', '.html2pdf__page-break', '.portrait-page-break'],
+                    avoid: ['.column-box', '.client-row']
+                }
+            };
+        }
+
+        function downloadBlob(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            setTimeout(() => URL.revokeObjectURL(url), 30_000);
+        }
+
+        async function buildPortraitPdfBlobMobileSliced(reportDate) {
+            const reportContent = document.getElementById('reportContent');
+            if (!reportContent) throw new Error('Report content not found');
+
+            const jsPDFCtor = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+            if (!jsPDFCtor) throw new Error('PDF library not available');
+
+            const wrapper = document.createElement('div');
+            wrapper.style.position = 'absolute';
+            wrapper.style.left = '-9999px';
+            wrapper.style.top = '0';
+            wrapper.style.background = '#ffffff';
+            wrapper.style.padding = '0';
+            wrapper.style.width = '1080px';
+
+            const clone = reportContent.cloneNode(true);
+            wrapper.appendChild(clone);
+            document.body.appendChild(wrapper);
+
+            try {
+                const pdf = new jsPDFCtor({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+
+                const marginTop = 4;
+                const marginLeft = 6;
+                const marginBottom = 6;
+                const marginRight = 4;
+                const pageWidthMm = 210 - marginLeft - marginRight;
+                const pageHeightMm = 297 - marginTop - marginBottom;
+
+                const el = wrapper;
+                const contentWidthPx = Math.max(el.scrollWidth, 1);
+                const contentHeightPx = Math.max(el.scrollHeight, 1);
+
+                // Max slice height (px) that fits into one A4 page at the chosen scale.
+                const maxSliceHeightPx = Math.floor((pageHeightMm * contentWidthPx) / pageWidthMm);
+                const sliceHeightPx = Math.max(600, Math.min(maxSliceHeightPx, 2200));
+
+                let pageIndex = 0;
+                for (let y = 0; y < contentHeightPx; y += sliceHeightPx) {
+                    const height = Math.min(sliceHeightPx, contentHeightPx - y);
+                    const canvas = await html2canvas(el, {
+                        backgroundColor: '#ffffff',
+                        scale: 1,
+                        useCORS: true,
+                        allowTaint: true,
+                        scrollX: 0,
+                        scrollY: 0,
+                        x: 0,
+                        y,
+                        width: contentWidthPx,
+                        height,
+                        windowWidth: contentWidthPx,
+                        windowHeight: height
+                    });
+
+                    const imgData = canvas.toDataURL('image/jpeg', 0.92);
+                    const imgHeightMm = (canvas.height * pageWidthMm) / canvas.width;
+
+                    if (pageIndex > 0) pdf.addPage();
+                    pdf.addImage(imgData, 'JPEG', marginLeft, marginTop, pageWidthMm, imgHeightMm);
+                    pageIndex += 1;
+                }
+
+                return pdf.output('blob');
+            } finally {
+                if (wrapper.parentNode) wrapper.parentNode.removeChild(wrapper);
+            }
+        }
+
+        async function buildPortraitPdfBlob(reportDate) {
+            const isMobile = window.innerWidth < 768;
+            if (isMobile) {
+                try {
+                    return await withFinalReportLayout(() =>
+                        withScrollToTop(() => buildPortraitPdfBlobMobileSliced(reportDate))
+                    );
+                } catch (e) {
+                    console.warn('Mobile sliced PDF failed; falling back to html2pdf:', e);
+                }
+            }
+
+            const opt = getPortraitPdfOptions(reportDate);
+            return await withFinalReportLayout(() =>
+                withScrollToTop(() => html2pdf().set(opt).from(document.getElementById('reportContent')).toPdf().output('blob'))
+            );
+        }
+
+        async function printFinalReport() {
+            const reportContent = document.getElementById('reportContent');
+            if (!window.lastReportData || !reportContent) {
+                showToast('Please generate the report first.', 'warning');
+                return;
+            }
+
+            const reportDate = document.getElementById('reportDate')?.value || '';
+            if (!reportDate) {
+                showToast('Please select a date first.', 'warning');
+                return;
+            }
+
+            showToast('Preparing print preview...', 'info', 5000);
+
+            try {
+                const blob = await buildPortraitPdfBlob(reportDate);
+
+                if (!blob) return;
+
+                const url = URL.createObjectURL(blob);
+                const w = window.open(url, '_blank');
+                if (!w) {
+                    showToast('Pop-up blocked. Allow pop-ups to print.', 'warning');
+                    return;
+                }
+
+                w.addEventListener('load', () => {
+                    try {
+                        w.focus();
+                        w.print();
+                    } catch (_) {
+                        // ignore
+                    }
+                });
+
+                setTimeout(() => URL.revokeObjectURL(url), 60_000);
+
+            } catch (error) {
+                console.error('Print generation failed:', error);
+                showToast(`Failed to prepare print preview. ${error?.message || ''}`.trim(), 'danger');
+            }
+        }
+
+        function clearExpiredCache() {
+            const now = Date.now();
+            let clearedCount = 0;
+            for (const [key, value] of ledgerCache.entries()) {
+                if (now - value.timestamp > CACHE_EXPIRY) {
+                    ledgerCache.delete(key);
+                    clearedCount++;
+                }
+            }
+            if (clearedCount > 0) {
+                console.log(`✅ Cleared ${clearedCount} expired cache entries`);
+            }
+        }
+
+        setInterval(clearExpiredCache, 2 * 60 * 1000);
+
+        window.addEventListener('beforeunload', function() {
+            ledgerCache.clear();
+            console.log('✅ Cache cleared on page unload');
+        });
+
+        function setTodayAsDefault() {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            const todayString = `${year}-${month}-${day}`;
+            
+            const dateInput = document.getElementById('reportDate');
+            if (dateInput) {
+                dateInput.value = todayString;
+            }
+        }
+
+        async function generateReport() {
+            const reportDate = document.getElementById('reportDate').value;
+            if (!reportDate) {
+                alert('Please select a report date');
+                return;
+            }
+
+            const formattedDate = new Date(reportDate).toLocaleDateString('en-IN', {
+                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+            });
+            const currentTime = new Date().toLocaleString('en-IN');
+            document.getElementById('reportDateTime').textContent = 
+                `${formattedDate} | Generated: ${currentTime}`;
+
+            const snapshotStatusEl = document.getElementById('snapshotStatus');
+            if (snapshotStatusEl) {
+                snapshotStatusEl.textContent = '';
+            }
+
+            document.getElementById('summaryCompact').style.display = 'none';
+
+            document.getElementById('reportContent').innerHTML = 
+                '<div class="text-center py-5"><div class="spinner-border text-primary"></div><p class="mt-3 text-muted">Loading collection data...</p></div>';
+
+            try {
+                const response = await fetch(`/daily-report/data?date=${reportDate}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                // Cache last dataset for exports
+                window.lastReportData = data;
+
+                const snapshotStatusEl = document.getElementById('snapshotStatus');
+                const isSnapshot = !!data.is_snapshot;
+                const genAt = data.snapshot_generated_at || '';
+                if (snapshotStatusEl) {
+                    if (isSnapshot) {
+                        snapshotStatusEl.innerHTML = `<span class="badge bg-success me-1">Saved</span> Using saved daily report for this date${genAt ? ` (saved at ${genAt})` : ''}`;
+                    } else {
+                        snapshotStatusEl.innerHTML = `<span class="badge bg-secondary me-1">Fresh</span> Freshly computed daily report (now saved for future)`;
+                    }
+                }
+
+                renderReport(data);
+                updateCompactSummary(data);
+                
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                document.getElementById('reportContent').innerHTML = 
+                    `<div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle"></i> 
+                        <strong>Error:</strong> ${error.message}
+                        <br><small>Please check your connection and try again.</small>
+                    </div>`;
+            }
+        }
+
+        async function deleteSnapshotAndRegenerate() {
+            const dateInput = document.getElementById('reportDate');
+            if (!dateInput || !dateInput.value) {
+                alert('Please select a date first.');
+                return;
+            }
+
+            const reportDate = dateInput.value;
+            if (!confirm(`Delete saved daily report data for ${reportDate} and regenerate fresh?`)) {
+                return;
+            }
+
+            try {
+                const url = `/daily-report/snapshot?date=${encodeURIComponent(reportDate)}`;
+                const resp = await fetch(url, { method: 'DELETE' });
+                if (!resp.ok) {
+                    throw new Error(`Delete failed (status ${resp.status})`);
+                }
+                const result = await resp.json();
+                if (!result.success) {
+                    throw new Error(result.error || 'Unknown error while deleting snapshot');
+                }
+
+                showToast('Saved daily report data deleted. Generating fresh report...', 'info');
+                await generateReport();
+            } catch (err) {
+                console.error('Snapshot delete failed:', err);
+                showToast(`Could not delete saved data: ${err.message}`, 'danger');
+            }
+        }
+
+        function updateCompactSummary(data) {
+            const metrics = window.normalizedReportMetrics;
+            const dailyTotal = metrics ? metrics.dailyTotal : (data.daily_total || 0);
+            const weeklyTotal = metrics ? metrics.weeklyTotal : (data.weekly_total || 0);
+            const tenDaysTotal = metrics ? metrics.tenDaysTotal : (data.ten_days_total || 0);
+            const monthlyTotal = metrics ? metrics.monthlyTotal : (data.monthly_total || 0);
+            const tenDaysCount = metrics ? metrics.tenDaysCount : ((data.ten_days && data.ten_days.length) || 0);
+            const monthlyCount = metrics ? metrics.monthlyCount : ((data.monthly && data.monthly.length) || 0);
+            const grandTotal = dailyTotal + weeklyTotal + tenDaysTotal + monthlyTotal;
+
+            document.getElementById('compactDaily').textContent = `₹${dailyTotal.toLocaleString()}`;
+            document.getElementById('compactWeekly').textContent = `₹${weeklyTotal.toLocaleString()}`;
+            document.getElementById('compactTenDays').textContent = `₹${tenDaysTotal.toLocaleString()}`;
+            if (!document.getElementById('compactMonthly')) {
+                const row = document.querySelector('.summary-compact-row');
+                if (row) {
+                    const div = document.createElement('div');
+                    div.className = 'summary-compact-item';
+                    div.innerHTML = `<div class="summary-compact-value" id="compactMonthly">₹0</div><div class="summary-compact-label">Monthly</div>`;
+                    row.insertBefore(div, row.lastElementChild);
+                }
+            }
+            const compactMonthly = document.getElementById('compactMonthly');
+            if (compactMonthly) compactMonthly.textContent = `₹${monthlyTotal.toLocaleString()}`;
+            document.getElementById('compactGrandTotal').textContent = `₹${grandTotal.toLocaleString()}`;
+
+            const tenDaysContainer = document.getElementById('compactTenDaysContainer');
+            if (tenDaysTotal > 0 || tenDaysCount > 0) {
+                tenDaysContainer.style.display = 'flex';
+            } else {
+                tenDaysContainer.style.display = 'none';
+            }
+
+            const summaryCompact = document.getElementById('summaryCompact');
+            summaryCompact.style.display = 'block';
+            summaryCompact.style.opacity = '0';
+            setTimeout(() => {
+                summaryCompact.style.transition = 'opacity 0.5s ease';
+                summaryCompact.style.opacity = '1';
+            }, 100);
+        }
+
+        function renderReport(data) {
+            let html = '';
+            let grandTotal = 0;
+            window.normalizedReportMetrics = null;
+
+            if (data.daily && data.daily.length > 0) {
+                html += `<div class="section-header">
+                    <i class="bi bi-calendar-day"></i> DAILY INSTALLMENTS (${data.daily.length} clients)
+                </div>`;
+                html += renderMultiColumnSection(data.daily);
+                html += `<div class="type-total">
+                    <i class="bi bi-cash-stack"></i> DAILY TOTAL: ₹${data.daily_total.toLocaleString()}
+                </div>`;
+                grandTotal += data.daily_total;
+            }
+
+            const normalizedWeekly = Array.isArray(data.weekly) ? data.weekly.map(normalizeInstallmentSchedule) : [];
+            const normalizedTenDaysRaw = Array.isArray(data.ten_days) ? data.ten_days.map(normalizeInstallmentSchedule) : [];
+            const filteredTenDays = normalizedTenDaysRaw.filter(entry => {
+                const advanceBlocks = Number(entry?.advance_blocks || 0);
+                const totalInst = 10;
+                if (advanceBlocks >= totalInst) {
+                    return false;
+                }
+                return true;
+            });
+            const normalizedMonthly = Array.isArray(data.monthly) ? data.monthly.slice() : [];
+
+            const combinedWeekly = normalizedWeekly;
+            const combinedTenDays = filteredTenDays;
+            const adjustedWeeklyAmount = combinedWeekly.reduce((sum, entry) => sum + (entry.total_amount || 0), 0);
+            const adjustedTenAmount = combinedTenDays.reduce((sum, entry) => sum + (entry.total_amount || 0), 0);
+            const adjustedMonthlyAmount = normalizedMonthly.reduce((sum, entry) => sum + (entry.total_amount || 0), 0);
+            const weeklyClientCount = combinedWeekly.filter(entry => !entry || !entry.is_sub_row).length;
+            const combinedCount = weeklyClientCount + combinedTenDays.length;
+
+            if (combinedCount > 0) {
+                // No forced page break; continue right after daily total to avoid large gaps
+                
+                const combinedTotal = adjustedWeeklyAmount + adjustedTenAmount;
+                
+                html += `<div class="section-header">
+                    <i class="bi bi-calendar-week"></i> WEEKLY & TEN DAYS INSTALLMENTS (${combinedCount} clients)
+                </div>`;
+                html += renderTwoBoxSection(combinedWeekly, combinedTenDays, 
+                                          adjustedWeeklyAmount, adjustedTenAmount);
+                html += `<div class="combined-total">
+                    <i class="bi bi-calculator"></i> COMBINED TOTAL: ₹${combinedTotal.toLocaleString()}
+                </div>`;
+                grandTotal += combinedTotal;
+            }
+
+            if (normalizedMonthly.length > 0) {
+                html += `<div class="section-header">
+                    <i class="bi bi-calendar2-month"></i> MONTHLY INSTALLMENTS (${normalizedMonthly.length} clients)
+                </div>`;
+                html += renderMultiColumnSection(normalizedMonthly);
+                html += `<div class="type-total">
+                    <i class="bi bi-cash-stack"></i> MONTHLY TOTAL: ₹${adjustedMonthlyAmount.toLocaleString()}
+                </div>`;
+                grandTotal += adjustedMonthlyAmount;
+            }
+
+            const metrics = {
+                dailyTotal: data.daily_total || 0,
+                weeklyTotal: adjustedWeeklyAmount,
+                tenDaysTotal: adjustedTenAmount,
+                monthlyTotal: adjustedMonthlyAmount,
+                dailyCount: data.daily ? data.daily.length : 0,
+                weeklyCount: weeklyClientCount,
+                tenDaysCount: combinedTenDays.length,
+                monthlyCount: normalizedMonthly.length
+            };
+            window.normalizedReportMetrics = metrics;
+
+            if (grandTotal > 0) {
+                const dailyTotal = metrics.dailyTotal;
+                const weeklyTotal = metrics.weeklyTotal;
+                const tenDaysTotal = metrics.tenDaysTotal;
+                const monthlyTotal = metrics.monthlyTotal;
+                const totalClients = metrics.dailyCount + metrics.weeklyCount + metrics.tenDaysCount + metrics.monthlyCount;
+
+                html += `
+                    <div class="summary-section">
+                        <h5><i class="bi bi-clipboard-data"></i> COMPREHENSIVE COLLECTION SUMMARY</h5>
+                        <div class="summary-row">
+                            <span><i class="bi bi-calendar-day text-primary"></i> <strong>Daily Installments (${metrics.dailyCount} clients):</strong></span>
+                            <span><strong>₹${dailyTotal.toLocaleString()}</strong></span>
+                        </div>
+                        <div class="summary-row">
+                            <span><i class="bi bi-calendar-week text-info"></i> <strong>Weekly Installments (${metrics.weeklyCount} clients):</strong></span>
+                            <span><strong>₹${weeklyTotal.toLocaleString()}</strong></span>
+                        </div>
+                        <div class="summary-row">
+                            <span><i class="bi bi-calendar-range text-warning"></i> <strong>Ten Days Installments (${metrics.tenDaysCount} clients):</strong></span>
+                            <span><strong>₹${tenDaysTotal.toLocaleString()}</strong></span>
+                        </div>
+                        <div class="summary-row">
+                            <span><i class="bi bi-calendar2-month text-success"></i> <strong>Monthly Installments (${metrics.monthlyCount} clients):</strong></span>
+                            <span><strong>₹${monthlyTotal.toLocaleString()}</strong></span>
+                        </div>
+                        <hr style="border: 2px solid #dee2e6; margin: 15px 0;">
+                        <div class="summary-row">
+                            <span><i class="bi bi-people-fill text-success"></i> <strong>Total Active Clients:</strong></span>
+                            <span><strong>${totalClients} clients</strong></span>
+                        </div>
+                        <div class="summary-row">
+                            <span><i class="bi bi-currency-rupee text-danger"></i> <strong>GRAND TOTAL COLLECTION:</strong></span>
+                            <span><strong>₹${grandTotal.toLocaleString()}</strong></span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            html += `<div class="grand-total">
+                <i class="bi bi-trophy-fill"></i> GRAND TOTAL COLLECTION: ₹${grandTotal.toLocaleString()}
+            </div>`;
+
+            if (grandTotal === 0) {
+                html = `<div class="alert alert-info text-center">
+                    <i class="bi bi-info-circle fs-1 text-muted"></i>
+                    <h5 class="mt-3">No Collections Found</h5>
+                    <p class="mb-0">No collection records found for the selected date.</p>
+                </div>`;
+            }
+
+            document.getElementById('reportContent').innerHTML = html;
+            applyDailyClientFilter();
+        }
+
+        function normalizeInstallmentSchedule(entry) {
+            if (!entry || !entry.first_installment_date) {
+                return entry;
+            }
+
+            // Clone entry to avoid mutating original
+            const clone = { ...entry };
+            const type = (clone.repayment_type || clone.type || '').toUpperCase();
+            const loanAmount = Number(clone.loan_amount || clone.total_amount || 0) || 0;
+            let installmentAmount = Number(clone.installment_amount || clone.expected_installment || 0) || 0;
+            const advanceAmount = Number(clone.advance_amount || 0) || 0;
+
+            if (type === 'TEN_DAYS') {
+                const totalInstallments = 10;
+                if (installmentAmount <= 0 && loanAmount > 0) {
+                    installmentAmount = Math.round(loanAmount / totalInstallments);
+                }
+
+                if (installmentAmount > 0 && advanceAmount > 0) {
+                    const advanceBlocks = Math.floor(advanceAmount / installmentAmount);
+                    clone.advance_blocks = advanceBlocks;
+                    clone.installment_amount = installmentAmount;
+                }
+
+                // Adjust last installment for rounding differences
+                if (installmentAmount > 0 && loanAmount > 0) {
+                    const expectedTotal = installmentAmount * totalInstallments;
+                    const remainder = loanAmount - expectedTotal;
+                    clone.ten_days_remainder = remainder;
+                }
+            }
+
+            return clone;
+        }
+
+        function renderMultiColumnSection(clients) {
+            const sortedClients = clients.sort((a, b) => 
+                a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+            );
+            
+            const CLIENTS_PER_COLUMN = window.CLIENTS_PER_COLUMN_OVERRIDE || 60;
+            const totalColumns = Math.ceil(sortedClients.length / CLIENTS_PER_COLUMN);
+            
+            let html = '<div class="multi-column">';
+            
+            for (let col = 0; col < totalColumns; col++) {
+                const startIndex = col * CLIENTS_PER_COLUMN;
+                const endIndex = Math.min(startIndex + CLIENTS_PER_COLUMN, sortedClients.length);
+                const columnClients = sortedClients.slice(startIndex, endIndex);
+                
+                html += `
+                    <div class="column-box">
+                        <div class="column-header">
+                            <div class="sr-label">No.</div>
+                            <div class="name-label">Client Name</div>
+                            <div class="amt-label">Amount</div>
+                        </div>
+                `;
+
+                columnClients.forEach((client, index) => {
+                    const normalized = normalizeInstallmentSchedule(client);
+                    const serialNo = startIndex + index + 1;
+
+                    let highlightClass = '';
+                    if (normalized?.is_new_client) {
+                        highlightClass = 'new-client';
+                    } else if (normalized?.is_closed_loan) {
+                        highlightClass = 'closed-loan';
+                    }
+
+                    const phone = (normalized?.phone || '').toString();
+
+                    html += `
+                        <div class="client-row ${highlightClass}">
+                            <div class="client-serial">${serialNo}</div>
+                            <div class="client-name" 
+                                 title="Click to view ${normalized.name}'s ledger" 
+                                 onclick="showLedger('${phone.replace(/'/g, "\\'")}', '${normalized.name.replace(/'/g, "\\'")}', event)"
+                                 data-original-text="${normalized.name}">
+                                 ${normalized.name}
+                            </div>
+                            <div class="client-amount">₹${(normalized.total_amount || 0).toLocaleString()}</div>
+                        </div>
+                    `;
+                });
+                
+                // Removed per request: no per-column subtotals
+                html += `
+                    </div>
+                `;
+            }
+            
+            html += '</div>';
+            return html;
+        }
+
+        function renderDailyWideTable(clients, groupsPerRow = 4, firstPageRows = 80) {
+            const sortedClients = clients.sort((a, b) =>
+                a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+            );
+
+            const totalClients = sortedClients.length;
+            const rowsPerCol = Math.ceil(totalClients / groupsPerRow);
+            const totalRows = rowsPerCol;
+
+            let headerCells = '';
+            for (let g = 0; g < groupsPerRow; g++) {
+                headerCells += `
+                    <th class="col-no">No.</th>
+                    <th class="col-name">Client Name</th>
+                    <th class="col-amt">Amount</th>
+                `;
+            }
+
+            let html = `
+                <table class="daily-wide-table">
+                    <thead>
+                        <tr>${headerCells}</tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            // Force a clean page break after serial 80
+            const breakAfterSerial = firstPageRows;
+            const breakRowIndex = ((breakAfterSerial - 1) >= 0 && (breakAfterSerial - 1) < totalClients)
+                ? ((breakAfterSerial - 1) % rowsPerCol)
+                : -1;
+
+            for (let row = 0; row < totalRows; row++) {
+                let rowHtml = '<tr>';
+
+                for (let g = 0; g < groupsPerRow; g++) {
+                    // Column-wise fill: 1..N down first column, then next column
+                    const idx = (g * rowsPerCol) + row;
+                    const client = sortedClients[idx];
+
+                    if (!client) {
+                        rowHtml += `
+                            <td class="col-no"></td>
+                            <td class="col-name"></td>
+                            <td class="col-amt"></td>
+                        `;
+                        continue;
+                    }
+
+                    const serialNo = idx + 1;
+                    let highlightClass = '';
+                    if (client.is_new_client) {
+                        highlightClass = 'new-client';
+                    } else if (client.is_closed_loan) {
+                        highlightClass = 'closed-loan';
+                    }
+
+                    const safeName = (client.name || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                    const amountText = (client.total_amount || 0).toLocaleString();
+
+                    rowHtml += `
+                        <td class="col-no ${highlightClass}">${serialNo}</td>
+                        <td class="col-name ${highlightClass}">${safeName}</td>
+                        <td class="col-amt ${highlightClass}">${amountText}</td>
+                    `;
+                }
+
+                rowHtml += '</tr>';
+                html += rowHtml;
+
+                if (breakRowIndex !== -1 && row === breakRowIndex) {
+                    html += `<tr class="portrait-page-break"><td colspan="${groupsPerRow * 3}"></td></tr>`;
+                }
+            }
+
+            html += `
+                    </tbody>
+                </table>
+            `;
+            return html;
+        }
+        
+        function renderReportPortraitTable(data) {
+    let html = '';
+    let grandTotal = 0;
+
+    // ── PDF HEADER ─────────────────────────────────────────────────
+    const _rptDate = document.getElementById('reportDate')?.value || '';
+    let _rptDateFormatted = 'N/A';
+    let _rptDayName = '';
+    if (_rptDate) {
+        const _d = new Date(_rptDate + 'T00:00:00');
+        if (!isNaN(_d.getTime())) {
+            _rptDateFormatted = _d.toLocaleDateString('en-IN', {
+                day: '2-digit', month: 'long', year: 'numeric'
+            });
+            _rptDayName = _d.toLocaleDateString('en-IN', { weekday: 'long' });
+        }
+    }
+    const _genTime = new Date().toLocaleString('en-IN', {
+        day: '2-digit', month: 'short', year: 'numeric',
+        hour: '2-digit', minute: '2-digit', hour12: true
+    });
+    html += `<div style="
+        background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 40%, #4c1d95 100%);
+        color: #fff;
+        padding: 14px 20px 12px 20px;
+        margin-bottom: 10px;
+        border-radius: 6px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        page-break-inside: avoid;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    ">
+        <div>
+            <div style="font-size:15px; font-weight:700; letter-spacing:0.3px;">
+                &#9632; Daily Collection Report &mdash; LUDHIANA
+            </div>
+            <div style="font-size:11px; opacity:0.85; margin-top:3px; font-weight:500;">
+                A AND A LUDHIANA
+            </div>
+        </div>
+        <div style="text-align:right;">
+            <div style="font-size:14px; font-weight:700;">
+                ${_rptDayName}, ${_rptDateFormatted}
+            </div>
+            <div style="font-size:10px; opacity:0.8; margin-top:3px;">
+                Generated: ${_genTime}
+            </div>
+        </div>
+    </div>`;
+    // ───────────────────────────────────────────────────────────────
+
+    if (data.daily && data.daily.length > 0) {
+        
+                        
+                html += `<div class="section-header">
+                    <i class="bi bi-calendar-day"></i> DAILY INSTALLMENTS (${data.daily.length} clients)
+                </div>`;
+                html += renderDailyWideTable(data.daily, 4, 78);
+                html += `<div class="type-total">
+                    <i class="bi bi-cash-stack"></i> DAILY TOTAL: ₹${(data.daily_total || 0).toLocaleString()}
+                </div>`;
+                grandTotal += (data.daily_total || 0);
+            }
+
+            if ((data.weekly && data.weekly.length > 0) || (data.ten_days && data.ten_days.length > 0)) {
+                const weeklyCount = data.weekly ? data.weekly.length : 0;
+                const tenDaysCount = data.ten_days ? data.ten_days.length : 0;
+                const combinedCount = weeklyCount + tenDaysCount;
+                const combinedTotal = (data.weekly_total || 0) + (data.ten_days_total || 0);
+
+                html += `<div class="section-header">
+                    <i class="bi bi-calendar-week"></i> WEEKLY & TEN DAYS INSTALLMENTS (${combinedCount} clients)
+                </div>`;
+                html += renderTwoBoxSection(data.weekly || [], data.ten_days || [], data.weekly_total || 0, data.ten_days_total || 0);
+                html += `<div class="combined-total">
+                    <i class="bi bi-calculator"></i> COMBINED TOTAL: ₹${combinedTotal.toLocaleString()}
+                </div>`;
+
+                grandTotal += combinedTotal;
+            }
+
+            html += `<div class="grand-total">
+                <i class="bi bi-trophy-fill"></i> GRAND TOTAL COLLECTION: ₹${grandTotal.toLocaleString()}
+            </div>`;
+
+            if (grandTotal === 0) {
+                html = `<div class="alert alert-info text-center">
+                    <i class="bi bi-info-circle fs-1 text-muted"></i>
+                    <h5 class="mt-3">No Collections Found</h5>
+                    <p class="mb-0">No collection records found for the selected date.</p>
+                </div>`;
+            }
+
+            return html;
+        }
+
+        function renderTwoBoxSection(weeklyClients, tenDaysClients, weeklyTotal, tenDaysTotal) {
+            const sortedWeekly = weeklyClients.sort((a, b) => 
+                a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+            );
+            const sortedTenDays = tenDaysClients.sort((a, b) => 
+                a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+            );
+
+            const oneCol = (sortedWeekly.length > 0 && sortedTenDays.length === 0) || (sortedTenDays.length > 0 && sortedWeekly.length === 0);
+
+            // Proportional width split based on counts (avoid extremes)
+            const wCount = sortedWeekly.length;
+            const tCount = sortedTenDays.length;
+            const total = wCount + tCount;
+            let weeklyFr = 1;
+            let tenFr = 1;
+            if (!oneCol && total > 0) {
+                const weeklyRatio = wCount / total;
+                const clampedWeekly = Math.max(0.35, Math.min(0.65, weeklyRatio));
+                weeklyFr = (clampedWeekly * 100).toFixed(0);
+                tenFr = ((1 - clampedWeekly) * 100).toFixed(0);
+            }
+
+            let html = `<div class="two-box-layout two-box${oneCol ? ' one-col' : ''}" style="--weekly-fr:${weeklyFr}fr; --ten-fr:${tenFr}fr;">`;
+            
+            const weeklyCount = sortedWeekly.filter(c => !c || !c.is_sub_row).length;
+
+            html += `
+                <div class="column-box">
+                    <div class="column-header">
+                        <i class="bi bi-calendar-week"></i> WEEKLY INSTALLMENTS (${weeklyCount} clients)
+                    </div>
+            `;
+            
+            if (sortedWeekly.length > 0) {
+                html += `
+                    <div style="display: flex; justify-content: space-between; padding: 8px; background: #e3f2fd; font-weight: 700; font-size: 11px; border-bottom: 2px solid #1976d2;">
+                        <div style="width: 45px; text-align: center;">No.</div>
+                        <div style="flex: 1; text-align: center;">Client Name</div>
+                        <div style="width: 70px; text-align: center;">Amount</div>
+                    </div>
+                `;
+                
+                let weeklySerial = 0;
+                let lastWeeklyName = '';
+                sortedWeekly.forEach((client, index) => {
+                    const normalized = normalizeInstallmentSchedule(client);
+                    let highlightClass = '';
+                    if (normalized?.is_new_client) {
+                        highlightClass = 'new-client';
+                    } else if (normalized?.is_closed_loan) {
+                        highlightClass = 'closed-loan';
+                    }
+
+                    if (normalized?.is_sub_row) {
+                        const subLabel = normalized.sub_label || '2 Days Balance';
+                        const currentName = (normalized?.name || '').toString();
+                        if (!weeklySerial || (lastWeeklyName || '').toLowerCase() !== currentName.toLowerCase()) {
+                            weeklySerial += 1;
+                            lastWeeklyName = currentName;
+                        }
+                        html += `
+                            <div class="client-row" style="background:#f8f9fa;">
+                                <div class="client-serial">${weeklySerial}</div>
+                                <div class="client-name" style="cursor: default;" data-original-text="${escapeHtml(normalized.name)}">
+                                    &nbsp;&nbsp;&nbsp;${escapeHtml(normalized.name)} - ${escapeHtml(subLabel)}
+                                </div>
+                                <div class="client-amount">₹${(normalized.total_amount || 0).toLocaleString()}</div>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    weeklySerial += 1;
+                    lastWeeklyName = (normalized?.name || '').toString();
+                    const phone = (normalized.phone || '').toString();
+                    
+                    html += `
+                        <div class="client-row ${highlightClass}">
+                            <div class="client-serial">${weeklySerial}</div>
+                            <div class="client-name" 
+                                 title="Click to view ${normalized.name}'s ledger" 
+                                 onclick="showLedger('${phone.replace(/'/g, "\\'")}', '${normalized.name.replace(/'/g, "\\'")}', event)"
+                                 data-original-text="${normalized.name}">
+                                 ${normalized.name}
+                            </div>
+                            <div class="client-amount">₹${(normalized.total_amount || 0).toLocaleString()}</div>
+                        </div>
+                    `;
+                });
+
+                html += `
+                    <div style="display: flex; justify-content: space-between; padding: 8px; background: #d1e7dd; font-weight: 800; font-size: 12px; border-top: 2px solid #0f5132;">
+                        <div style="width: 45px;"></div>
+                        <div style="flex: 1; text-align: right;">TOTAL</div>
+                        <div style="width: 60px; text-align: right; font-variant-numeric: tabular-nums;">₹${(weeklyTotal || 0).toLocaleString()}</div>
+                    </div>
+                `;
+            } else {
+                html += '<div style="padding: 20px; text-align: center; color: #6c757d;"><p class="mb-0">No weekly collections</p></div>';
+            }
+            
+            html += `
+                </div>
+            `;
+            
+            if (sortedTenDays.length > 0) {
+                html += `
+                    <div class="column-box">
+                        <div class="column-header">
+                            <i class="bi bi-calendar-range"></i> TEN DAYS INSTALLMENTS (${sortedTenDays.length} clients)
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 8px; background: #e3f2fd; font-weight: 700; font-size: 11px; border-bottom: 2px solid #1976d2;">
+                            <div style="width: 45px; text-align: center;">No.</div>
+                            <div style="flex: 1; text-align: center;">Client Name</div>
+                            <div style="width: 60px; text-align: center;">Amount</div>
+                        </div>
+                `;
+                sortedTenDays.forEach((client, index) => {
+                    const normalized = normalizeInstallmentSchedule(client);
+                    let highlightClass = '';
+                    if (normalized?.is_new_client) {
+                        highlightClass = 'new-client';
+                    } else if (normalized?.is_closed_loan) {
+                        highlightClass = 'closed-loan';
+                    }
+                    const displayAmount = (normalized.total_amount || 0).toLocaleString();
+                    const phone = (normalized.phone || '').toString();
+                    html += `
+                        <div class="client-row ${highlightClass}">
+                            <div class="client-serial">${index + 1}</div>
+                            <div class="client-name" 
+                                 title="Click to view ${normalized.name}'s ledger" 
+                                 onclick="showLedger('${phone.replace(/'/g, "\\'")}', '${normalized.name.replace(/'/g, "\\'")}', event)"
+                                 data-original-text="${normalized.name}">
+                                 ${normalized.name}
+                            </div>
+                            <div class="client-amount">₹${displayAmount}</div>
+                        </div>
+                    `;
+                });
+
+                html += `
+                    <div style="display: flex; justify-content: space-between; padding: 8px; background: #d1e7dd; font-weight: 800; font-size: 12px; border-top: 2px solid #0f5132;">
+                        <div style="width: 45px;"></div>
+                        <div style="flex: 1; text-align: right;">TOTAL</div>
+                        <div style="width: 60px; text-align: right; font-variant-numeric: tabular-nums;">₹${(tenDaysTotal || 0).toLocaleString()}</div>
+                    </div>
+                `;
+                html += `</div>`;
+            }
+            
+            html += '</div>';
+            return html;
+        }
+
+        async function showLedger(clientPhone, clientName, event) {
+            const phone = (clientPhone || '').toString().trim();
+            const displayName = (clientName || '').toString().trim() || phone;
+            currentLedgerClient = phone || displayName;
+            const clickedElement = event.target;
+            const originalText = clickedElement.getAttribute('data-original-text') || displayName;
+            
+            clickedElement.classList.add('loading');
+            clickedElement.innerHTML = '<i class="bi bi-hourglass-split"></i> Loading...';
+            clickedElement.style.pointerEvents = 'none';
+            
+            document.getElementById('ledgerModalLabel').innerHTML = 
+                `<i class="bi bi-journal-text"></i> Ledger - ${displayName}`;
+            
+            const modal = new bootstrap.Modal(document.getElementById('ledgerModal'));
+            modal.show();
+            
+            document.getElementById('ledgerContent').innerHTML = `
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary mb-3"></div>
+                    <p><strong>Loading ${displayName}'s ledger...</strong></p>
+                </div>
+            `;
+            
+            try {
+                let ledgerData;
+                
+                const cacheKey = (phone || displayName).toLowerCase();
+                const cached = ledgerCache.get(cacheKey);
+                const now = Date.now();
+                
+                if (cached && (now - cached.timestamp) < CACHE_EXPIRY) {
+                    console.log('✅ Using cached ledger data for:', clientName);
+                    ledgerData = cached.data;
+                } else {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => {
+                        controller.abort();
+                    }, 10000);
+                    
+                    try {
+                        const reportDate = document.getElementById('reportDate')?.value;
+                        const asOn = reportDate ? `&as_on_date=${encodeURIComponent(reportDate)}` : '';
+                        const url = phone
+                            ? `/ledger?phone=${encodeURIComponent(phone)}${asOn}`
+                            : `/api/complete-client-ledger?name=${encodeURIComponent(displayName)}`;
+
+                        const response = await fetch(url, {
+                            signal: controller.signal
+                        });
+                        
+                        clearTimeout(timeoutId);
+                        
+                        if (!response.ok) {
+                            throw new Error(`Server error: ${response.status}`);
+                        }
+                        
+                        ledgerData = await response.json();
+                        
+                        ledgerCache.set(cacheKey, {
+                            data: ledgerData,
+                            timestamp: now
+                        });
+                        
+                        console.log('✅ Cached new ledger data for:', clientName);
+                        
+                    } catch (fetchError) {
+                        clearTimeout(timeoutId);
+                        
+                        if (fetchError.name === 'AbortError') {
+                            throw new Error('Request timed out after 10 seconds. Please try again.');
+                        }
+                        throw fetchError;
+                    }
+                }
+                
+                const customer = {
+                    name: ledgerData?.client_info?.name || displayName,
+                    phone: ledgerData?.client_info?.phone || phone || ledgerData?.meta?.phone || ''
+                };
+                renderLedgerContent(ledgerData, customer);
+                
+            } catch (error) {
+                console.error('Error fetching ledger:', error);
+                
+                let errorMessage = error.message;
+                let retryButton = '';
+                
+                if (error.message.includes('timed out')) {
+                    errorMessage = 'Connection timed out. The server is taking too long to respond.';
+                    retryButton = `<button class="retry-btn" onclick="showLedger('${clientName.replace(/'/g, "\\'")}', {target: document.querySelector('[data-original-text=\\"${originalText}\\"]')})">
+                        <i class="bi bi-arrow-clockwise"></i> Try Again
+                    </button>`;
+                } else if (error.message.includes('Failed to fetch')) {
+                    errorMessage = 'Network connection failed. Please check your internet connection.';
+                    retryButton = `<button class="retry-btn" onclick="showLedger('${clientName.replace(/'/g, "\\'")}', {target: document.querySelector('[data-original-text=\\"${originalText}\\"]')})">
+                        <i class="bi bi-wifi"></i> Retry Connection
+                    </button>`;
+                }
+                
+                document.getElementById('ledgerContent').innerHTML = `
+                    <div class="network-error">
+                        <i class="bi bi-exclamation-triangle fs-4"></i>
+                        <h6><strong>Unable to load ledger</strong></h6>
+                        <p>${errorMessage}</p>
+                        ${retryButton}
+                        <div class="mt-2">
+                            <small><strong>Tip:</strong> Try refreshing the page or check your network connection.</small>
+                        </div>
+                    </div>
+                `;
+            } finally {
+                setTimeout(() => {
+                    clickedElement.classList.remove('loading');
+                    clickedElement.innerHTML = originalText;
+                    clickedElement.style.pointerEvents = 'auto';
+                }, 1000);
+            }
+        }
+
+        function renderLedgerContent(ledgerResponse, customer) {
+            const ledgerContentEl = document.getElementById('ledgerContent');
+            if (!ledgerContentEl) return;
+
+            if (!ledgerResponse || !Array.isArray(ledgerResponse.rows)) {
+                ledgerContentEl.innerHTML = '<div class="alert alert-warning">No ledger data found for this client.</div>';
+                currentLedgerCustomer = null;
+                currentLedgerData = null;
+                return;
+            }
+
+            const safeNumber = (value, fallback = 0) => {
+                const num = Number(value);
+                return Number.isFinite(num) ? num : fallback;
+            };
+
+            const rows = ledgerResponse.rows || [];
+            const totals = ledgerResponse.totals || {};
+            const computedTotals = rows.reduce((acc, loan) => {
+                const isClosed = (loan.status || '').toUpperCase() === 'CLOSED';
+                acc.loan_amount += safeNumber(loan.amount || loan.loan_amount);
+                acc.installment_amount += safeNumber(loan.installment_amount);
+                acc.advance_amount += safeNumber(loan.advance_amount);
+                acc.processing_fees += safeNumber(loan.processing_fees);
+                acc.pending_installments += isClosed ? 0 : safeNumber(loan.pending_installments);
+                acc.balance_amount += isClosed ? 0 : safeNumber(loan.balance_amount);
+                return acc;
+            }, {
+                loan_amount: 0,
+                installment_amount: 0,
+                advance_amount: 0,
+                processing_fees: 0,
+                pending_installments: 0,
+                balance_amount: 0
+            });
+
+            const mergedTotals = {
+                loan_amount: safeNumber(totals.loan_amount, computedTotals.loan_amount),
+                installment_amount: safeNumber(totals.installment_amount, computedTotals.installment_amount),
+                advance_amount: safeNumber(totals.advance_amount, computedTotals.advance_amount),
+                processing_fees: safeNumber(totals.processing_fees, computedTotals.processing_fees),
+                pending_installments: safeNumber(totals.pending_installments, computedTotals.pending_installments),
+                balance_amount: safeNumber(totals.balance_amount, computedTotals.balance_amount)
+            };
+
+            const summaryBalance = mergedTotals.balance_amount;
+            const totalLoans = rows.length;
+            const openLoans = rows.filter(loan => (loan.status || '').toUpperCase() !== 'CLOSED').length;
+            const asOfDisplay = getLedgerAsOnDisplay();
+
+            const dayLookup = {
+                'MON': 'Monday', 'MONDAY': 'Monday',
+                'TUE': 'Tuesday', 'TUESDAY': 'Tuesday',
+                'WED': 'Wednesday', 'WEDNESDAY': 'Wednesday',
+                'THU': 'Thursday', 'THUR': 'Thursday', 'THURSDAY': 'Thursday',
+                'FRI': 'Friday', 'FRIDAY': 'Friday',
+                'SAT': 'Saturday', 'SATURDAY': 'Saturday',
+                'SUN': 'Sunday', 'SUNDAY': 'Sunday'
+            };
+
+            const tableRows = rows.map((row, index) => {
+                const status = (row.status || 'OPEN').toUpperCase();
+                const isClosed = status === 'CLOSED';
+                const balance = isClosed ? 0 : safeNumber(row.balance_amount);
+                const pending = isClosed ? 0 : safeNumber(row.pending_installments);
+                const statusClass = isClosed ? 'badge bg-success' : 'badge bg-warning text-dark';
+                const serial = row.id || index + 1;
+                const rawType = (row.repayment_type || row.type || 'DAILY').toUpperCase();
+                let typeLabel = '';
+                if (rawType === 'WEEKLY') {
+                    const dayName = (row.day_name || row.week_day || '').toUpperCase();
+                    typeLabel = dayLookup[dayName] || 'Weekly';
+                }
+                const typeBadgeHtml = typeLabel
+                    ? `<span class="badge bg-secondary">${escapeHtml(typeLabel)}</span>`
+                    : '';
+                const closedClass = isClosed ? 'ledger-row-closed' : '';
+                return `
+                    <tr class="${closedClass}">
+                        <td>${serial}</td>
+                        <td>${escapeHtml(row.loan_date || '')}</td>
+                        <td>${escapeHtml(row.loan_end_date || '')}</td>
+                        <td>₹${safeNumber(row.amount || row.loan_amount).toLocaleString()}</td>
+                        <td>₹${safeNumber(row.installment_amount).toLocaleString()}</td>
+                        <td>₹${safeNumber(row.advance_amount).toLocaleString()}</td>
+                        <td data-loan-type="${escapeHtml(rawType)}" data-day-name="${escapeHtml(row.day_name || row.week_day || '')}">${typeBadgeHtml}</td>
+                        <td>${pending}</td>
+                        <td class="${balance > 0 ? 'text-danger fw-bold' : ''}">₹${balance.toLocaleString()}</td>
+                        <td><span class="${statusClass}">${escapeHtml(row.status || 'OPEN')}</span></td>
+                    </tr>`;
+            }).join('') || '<tr><td colspan="10" class="text-center">No loan activity found.</td></tr>';
+
+            const ledgerStyles = `
+                <style>
+                    .ledger-surface {
+                        background: linear-gradient(145deg, #f6f8fb, #ebeff6);
+                        border-radius: 18px;
+                        padding: 1.25rem;
+                        box-shadow: 0 18px 35px rgba(44, 62, 80, 0.12);
+                        border: 1px solid rgba(44, 62, 80, 0.06);
+                        margin-bottom: 1rem;
+                    }
+                    .ledger-table-card {
+                        background: #ffffff;
+                        border-radius: 14px;
+                        box-shadow: 0 14px 25px rgba(44, 62, 80, 0.1);
+                        border: 1px solid rgba(44, 62, 80, 0.06);
+                        overflow: hidden;
+                    }
+                    .ledger-table-card thead {
+                        background: #111827;
+                        color: #ffffff;
+                        position: sticky;
+                        top: 0;
+                        z-index: 10;
+                    }
+                    .ledger-table-card thead th {
+                        padding: 0.55rem 0.35rem;
+                        text-transform: uppercase;
+                        letter-spacing: 0.08em;
+                        border: 1px solid rgba(255, 255, 255, 0.12);
+                        font-size: 0.72rem;
+                        white-space: nowrap;
+                    }
+                    .summary-cards {
+                        margin-top: 1rem;
+                        display: grid;
+                        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+                        gap: 0.75rem;
+                    }
+                    .summary-cards .card {
+                        border: 1px solid rgba(44, 62, 80, 0.06);
+                        box-shadow: 0 10px 18px rgba(44, 62, 80, 0.08);
+                        border-radius: 14px;
+                    }
+                    .ledger-row-closed td { background: #d9f5e6 !important; }
+                </style>`;
+
+            const customerName = customer?.name || '';
+            const customerPhone = customer?.phone || '';
+            const innerHtml = `
+                ${ledgerStyles}
+                <div class="ledger-surface">
+                    <div class="mb-3">
+                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                            <div>
+                                <h4 class="text-primary mb-1">${escapeHtml(customerName)}</h4>
+                                <div class="text-muted">${customerPhone ? `\ud83d\udcde ${escapeHtml(customerPhone)}` : ''}</div>
+                                <div class="text-muted">As on: <strong>${escapeHtml(asOfDisplay)}</strong></div>
+                            </div>
+                            <div class="text-end">
+                                <div class="text-muted">Outstanding Balance</div>
+                                <h5 class="mb-0 text-danger">₹${summaryBalance.toLocaleString()}</h5>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="summary-cards">
+                        <div class="card card-body text-center">
+                            <div class="text-muted small">Total Loans</div>
+                            <div class="fw-bold">${totalLoans}</div>
+                        </div>
+                        <div class="card card-body text-center">
+                            <div class="text-muted small">Open Loans</div>
+                            <div class="fw-bold text-warning">${openLoans}</div>
+                        </div>
+                        <div class="card card-body text-center">
+                            <div class="text-muted small">Total Sanctioned</div>
+                            <div class="fw-bold">₹${mergedTotals.loan_amount.toLocaleString()}</div>
+                        </div>
+                        <div class="card card-body text-center">
+                            <div class="text-muted small">Pending Installments</div>
+                            <div class="fw-bold">${mergedTotals.pending_installments}</div>
+                        </div>
+                    </div>
+                    <div class="ledger-action-buttons mt-3" style="display:flex; flex-wrap:nowrap; gap:0.75rem; overflow-x:auto; padding-bottom:0.35rem;">
+                        <button class="btn btn-outline-success btn-sm" onclick="shareLedgerScreenshot()"><i class="bi bi-whatsapp"></i> WhatsApp Image</button>
+                        <button class="btn btn-outline-primary btn-sm" onclick="printLedgerModalContent()"><i class="bi bi-printer"></i> Print</button>
+                        <button class="btn btn-outline-danger btn-sm" onclick="downloadLedgerPdf()"><i class="bi bi-filetype-pdf"></i> PDF</button>
+                        <button class="btn btn-outline-info btn-sm" onclick="shareLedgerPdfViaWhatsApp()"><i class="bi bi-share"></i> WhatsApp PDF</button>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="openScheduleFromModal()"><i class="bi bi-calendar3"></i> Schedule</button>
+                        <button class="btn btn-outline-success btn-sm" onclick="shareLedgerScreenshot()"><i class="bi bi-share"></i> Share (Image)</button>
+                    </div>
+                    <div class="ledger-table-card mt-3">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-striped mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Sr No</th>
+                                        <th>Loan Date</th>
+                                        <th>End Date</th>
+                                        <th>Amount</th>
+                                        <th>Installment</th>
+                                        <th>Advance</th>
+                                        <th>Type</th>
+                                        <th>Pending</th>
+                                        <th>Balance</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>${tableRows}</tbody>
+                                <tfoot>
+                                    <tr class="table-info">
+                                        <th>Totals</th>
+                                        <th></th>
+                                        <th></th>
+                                        <th>₹${mergedTotals.loan_amount.toLocaleString()}</th>
+                                        <th>₹${mergedTotals.installment_amount.toLocaleString()}</th>
+                                        <th>₹${mergedTotals.advance_amount.toLocaleString()}</th>
+                                        <th></th>
+                                        <th>${mergedTotals.pending_installments}</th>
+                                        <th>₹${summaryBalance.toLocaleString()}</th>
+                                        <th>Open: ${openLoans} / ${totalLoans}</th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>`;
+
+            ledgerContentEl.innerHTML = innerHtml;
+            currentLedgerCustomer = customer;
+            currentLedgerData = { customer, rows, totals: mergedTotals, meta: ledgerResponse.meta };
+        }
+
+        function ensureLedgerContext() {
+            if (!currentLedgerCustomer || !currentLedgerData) {
+                showToast('Open a client ledger first.', 'warning');
+                return false;
+            }
+            return true;
+        }
+
+        function printLedgerModalContent() {
+            if (!ensureLedgerContext()) return;
+            const content = document.getElementById('ledgerContent')?.innerHTML;
+            if (!content) {
+                showToast('Nothing to print.', 'warning');
+                return;
+            }
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`<!DOCTYPE html><html><head><title>Ledger - ${escapeHtml(currentLedgerCustomer.name || '')}</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"></head><body>${content}</body></html>`);
+            printWindow.document.close();
+            printWindow.onload = () => {
+                printWindow.print();
+                printWindow.close();
+            };
+        }
+
+        function buildLedgerPdfUrl() {
+            const phone = currentLedgerCustomer?.phone;
+            if (!phone) return null;
+            const reportDate = document.getElementById('reportDate')?.value;
+            const asOnParam = reportDate ? reportDate : '';
+            return `/export/pdf?phone=${encodeURIComponent(phone)}${asOnParam ? `&as_on_date=${encodeURIComponent(asOnParam)}` : ''}&_=${Date.now()}`;
+        }
+
+        function downloadLedgerPdf() {
+            if (!ensureLedgerContext()) return;
+            const pdfUrl = buildLedgerPdfUrl();
+            if (!pdfUrl) {
+                showToast('Unable to create PDF link.', 'danger');
+                return;
+            }
+            window.open(pdfUrl, '_blank');
+        }
+
+        function openWhatsAppWithMessage(message) {
+            const waUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+            window.open(waUrl, '_blank');
+        }
+
+        async function shareLedgerScreenshot() {
+            if (!ensureLedgerContext()) return;
+            const modalBody = document.getElementById('ledgerContent');
+            if (!modalBody) {
+                showToast('Ledger content not found.', 'danger');
+                return;
+            }
+
+            showToast('Preparing ledger image...', 'info');
+
+            const cloneWrapper = document.createElement('div');
+            cloneWrapper.style.position = 'absolute';
+            cloneWrapper.style.left = '-9999px';
+            cloneWrapper.style.top = '0';
+            cloneWrapper.style.background = '#ffffff';
+            cloneWrapper.style.padding = '20px';
+            cloneWrapper.style.width = '1200px';
+
+            const clone = modalBody.cloneNode(true);
+            clone.style.background = '#ffffff';
+            cloneWrapper.appendChild(clone);
+            document.body.appendChild(cloneWrapper);
+
+            try {
+                const canvas = await html2canvas(cloneWrapper, {
+                    backgroundColor: '#ffffff',
+                    scale: 2,
+                    useCORS: true,
+                    allowTaint: true
+                });
+
+                const blob = await new Promise((resolve, reject) => {
+                    canvas.toBlob((b) => {
+                        if (b) resolve(b);
+                        else reject(new Error('Unable to capture image.'));
+                    }, 'image/png', 0.95);
+                });
+
+                const phone = currentLedgerCustomer.phone || 'client';
+                const fileName = `ledger_${phone}.png`;
+                const shareLabel = currentLedgerCustomer.name || phone || 'Client Ledger';
+
+                const file = new File([blob], fileName, { type: 'image/png' });
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    await navigator.share({ title: shareLabel, text: shareLabel, files: [file] });
+                    showToast('Shared successfully.', 'success');
+                    return;
+                }
+
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = fileName;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+                openWhatsAppWithMessage(`Ledger for ${shareLabel}`);
+                showToast('Image downloaded. WhatsApp opened.', 'success');
+
+            } catch (error) {
+                console.error('Screenshot capture failed:', error);
+                showToast('Failed to capture screenshot.', 'danger');
+            } finally {
+                if (cloneWrapper && cloneWrapper.parentNode) {
+                    cloneWrapper.parentNode.removeChild(cloneWrapper);
+                }
+            }
+        }
+
+        async function shareLedgerPdfViaWhatsApp() {
+            if (!ensureLedgerContext()) return;
+            const pdfUrl = buildLedgerPdfUrl();
+            if (!pdfUrl) {
+                showToast('Unable to create PDF link.', 'danger');
+                return;
+            }
+            try {
+                if (navigator.canShare) {
+                    const response = await fetch(pdfUrl);
+                    const blob = await response.blob();
+                    const fileName = `ledger_${currentLedgerCustomer.phone}.pdf`;
+                    const file = new File([blob], fileName, { type: 'application/pdf' });
+                    if (navigator.canShare({ files: [file] })) {
+                        await navigator.share({
+                            files: [file],
+                            title: `Ledger - ${currentLedgerCustomer.name || currentLedgerCustomer.phone}`,
+                            text: `Ledger for ${currentLedgerCustomer.name || currentLedgerCustomer.phone}`
+                        });
+                        return;
+                    }
+                }
+                throw new Error('File sharing not supported');
+            } catch (error) {
+                console.error('WhatsApp PDF share failed:', error);
+                const pdfFullUrl = `${window.location.origin}${pdfUrl}`;
+                openWhatsAppWithMessage(`Ledger PDF for ${currentLedgerCustomer.name || currentLedgerCustomer.phone}: ${pdfFullUrl}`);
+                showToast('Opened WhatsApp with PDF link.', 'info');
+            }
+        }
+
+        function openScheduleFromModal() {
+            if (!ensureLedgerContext()) return;
+            showSchedule(currentLedgerCustomer);
+        }
+
+        function parseCurrencyValue(text) {
+            if (!text) return 0;
+            return parseInt(String(text).replace(/[^0-9-]/g, ''), 10) || 0;
+        }
+
+        function parseDate(dateStr) {
+            if (!dateStr) return null;
+            const parts = String(dateStr).split('-').map(Number);
+            if (parts.length !== 3) return null;
+            const [day, month, year] = parts;
+            if (!day || !month || !year) return null;
+            const dt = new Date(year, month - 1, day);
+            dt.setHours(0, 0, 0, 0);
+            return dt;
+        }
+
+        function formatDate(dateObj) {
+            if (!(dateObj instanceof Date)) return '';
+            const day = String(dateObj.getDate()).padStart(2, '0');
+            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const year = dateObj.getFullYear();
+            return `${day}-${month}-${year}`;
+        }
+
+        function generateInstallments(loanDateStr, loanAmount, installmentAmount, type, status, advanceAmount) {
+            const installments = [];
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const loanDate = parseDate(loanDateStr);
+            if (!loanDate) return installments;
+
+            let totalInstallments = 0;
+            let intervalDays = 1;
+            let advanceBlocks = 0;
+
+            if ((type === 'WEEKLY' || type === 'TEN_DAYS') && advanceAmount && installmentAmount) {
+                advanceBlocks = Math.floor(advanceAmount / installmentAmount);
+            }
+
+            if (type === 'DAILY') {
+                totalInstallments = 100;
+                intervalDays = 1;
+            } else if (type === 'WEEKLY') {
+                totalInstallments = 15;
+                intervalDays = 7;
+            } else if (type === 'TEN_DAYS') {
+                totalInstallments = 10;
+                intervalDays = 10;
+            } else {
+                totalInstallments = 1;
+                intervalDays = 1;
+            }
+
+            for (let i = 1; i <= totalInstallments; i++) {
+                const installmentDate = new Date(loanDate);
+                let currentAmount = installmentAmount;
+
+                if (type === 'WEEKLY' && i === 15) {
+                    const first14Total = installmentAmount * 14;
+                    currentAmount = loanAmount - first14Total;
+                    installmentDate.setDate(loanDate.getDate() + (14 * intervalDays) + 2);
+                } else {
+                    installmentDate.setDate(loanDate.getDate() + (i * intervalDays));
+                }
+
+                installmentDate.setHours(0, 0, 0, 0);
+
+                let isReceived = installmentDate <= today;
+                if (!isReceived && advanceBlocks > 0 && i <= advanceBlocks) {
+                    isReceived = true;
+                }
+
+                installments.push({
+                    number: i,
+                    date: formatDate(installmentDate),
+                    amount: currentAmount,
+                    status: isReceived ? 'Received' : 'Pending'
+                });
+            }
+
+            return installments;
+        }
+
+        function showSchedule(clientOverride) {
+            const client = clientOverride || currentLedgerCustomer;
+            if (!client) {
+                showToast('No client selected', 'warning');
+                return;
+            }
+
+            const loans = [];
+
+            const tableBody = document.querySelector('#ledgerContent tbody');
+            if (tableBody) {
+                tableBody.querySelectorAll('tr').forEach((row, index) => {
+                    const cells = row.querySelectorAll('td');
+                    if (cells.length >= 10) {
+                        loans.push({
+                            loanId: parseInt(cells[0].textContent.trim(), 10) || index + 1,
+                            loanDate: cells[1].textContent.trim(),
+                            loanAmount: parseCurrencyValue(cells[3].textContent),
+                            installmentAmount: parseCurrencyValue(cells[4].textContent),
+                            advanceAmount: parseCurrencyValue(cells[5].textContent),
+                            type: cells[6].dataset?.loanType || cells[6].textContent.trim() || 'DAILY',
+                            day_name: cells[6].dataset?.dayName || '',
+                            status: cells[9].textContent.trim()
+                        });
+                    }
+                });
+            }
+
+            if (loans.length === 0 && currentLedgerData?.rows?.length) {
+                currentLedgerData.rows.forEach((row, index) => {
+                    loans.push({
+                        loanId: row.id || index + 1,
+                        loanDate: row.loan_date || row.loanDate || 'N/A',
+                        loanAmount: row.amount || row.loan_amount || 0,
+                        installmentAmount: row.installment_amount || row.installmentAmount || 0,
+                        advanceAmount: row.advance_amount || row.advanceAmount || 0,
+                        type: (row.repayment_type || row.type || 'DAILY').toUpperCase(),
+                        day_name: row.day_name || row.week_day || '',
+                        status: row.status || 'OPEN'
+                    });
+                });
+            }
+
+            if (loans.length === 0) {
+                showToast('No loans found for this client', 'warning');
+                return;
+            }
+
+            if (loans.length === 1) {
+                const scheduleHtml = generateScheduleHtml(client, [loans[0]]);
+                openScheduleWindow(scheduleHtml);
+            } else {
+                showLoanSelectionPopup(client, loans);
+            }
+        }
+
+        function showLoanSelectionPopup(client, loans) {
+            setTimeout(() => {
+                const existingModal = document.getElementById('loanSelectionModal');
+                if (existingModal) existingModal.remove();
+
+                const modalHtml = `
+                    <div class="modal fade" id="loanSelectionModal" tabindex="-1" aria-labelledby="loanSelectionModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="loanSelectionModalLabel"><i class="bi bi-calendar3 me-2"></i>Select Loan Case</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p class="text-muted mb-3">Choose which loan case to view the installment schedule for:</p>
+                                    <div class="list-group">
+                                        ${loans.map(loan => `
+                                            <button type="button" class="list-group-item list-group-item-action loan-select-btn"
+                                                data-loan-id="${loan.loanId}"
+                                                data-loan-date="${loan.loanDate}"
+                                                data-loan-amount="${loan.loanAmount}"
+                                                data-installment-amount="${loan.installmentAmount}"
+                                                data-loan-type="${loan.type}"
+                                                data-loan-status="${loan.status}"
+                                                data-advance-amount="${loan.advanceAmount || 0}">
+                                                <div class="d-flex w-100 justify-content-between">
+                                                    <h6 class="mb-1">Loan Case #${loan.loanId}</h6>
+                                                    <span class="badge ${loan.status === 'CLOSED' ? 'bg-success' : 'bg-secondary'}">${loan.status}</span>
+                                                </div>
+                                                <div class="d-flex w-100 justify-content-between">
+                                                    <small class="text-muted">Date: ${loan.loanDate}</small>
+                                                    <small class="text-muted">Type: ${loan.type}</small>
+                                                </div>
+                                                <div class="mt-2">
+                                                    <strong>Amount: ₹${(loan.loanAmount || 0).toLocaleString()}</strong> |
+                                                    <strong>Installment: ₹${(loan.installmentAmount || 0).toLocaleString()}</strong>
+                                                </div>
+                                            </button>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" onclick="closeLoanSelectionModal()">Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+
+                document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+                try {
+                    if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                        const modal = new bootstrap.Modal(document.getElementById('loanSelectionModal'));
+                        modal.show();
+                    } else {
+                        showCustomModal();
+                    }
+                } catch (err) {
+                    showCustomModal();
+                }
+
+                document.querySelectorAll('.loan-select-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const loan = {
+                            loanId: parseInt(this.getAttribute('data-loan-id'), 10),
+                            loanDate: this.getAttribute('data-loan-date'),
+                            loanAmount: parseInt(this.getAttribute('data-loan-amount'), 10) || 0,
+                            installmentAmount: parseInt(this.getAttribute('data-installment-amount'), 10) || 0,
+                            type: this.getAttribute('data-loan-type'),
+                            status: this.getAttribute('data-loan-status'),
+                            advanceAmount: parseInt(this.getAttribute('data-advance-amount'), 10) || 0
+                        };
+                        closeLoanSelectionModal();
+                        const scheduleHtml = generateScheduleHtml(client, [loan]);
+                        openScheduleWindow(scheduleHtml);
+                    });
+                });
+
+                window.closeLoanSelectionModal = function() {
+                    const modal = document.getElementById('loanSelectionModal');
+                    if (modal) {
+                        modal.remove();
+                        const backdrop = document.querySelector('.modal-backdrop');
+                        if (backdrop) backdrop.remove();
+                        document.body.style.overflow = '';
+                        document.body.classList.remove('modal-open');
+                    }
+                };
+
+                const closeBtn = document.querySelector('#loanSelectionModal .btn-close');
+                if (closeBtn) closeBtn.addEventListener('click', closeLoanSelectionModal);
+
+                function showCustomModal() {
+                    const modal = document.getElementById('loanSelectionModal');
+                    modal.style.display = 'block';
+                    modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+                    modal.classList.add('show');
+                }
+
+                document.getElementById('loanSelectionModal').addEventListener('click', function(e) {
+                    if (e.target === this) {
+                        closeLoanSelectionModal();
+                    }
+                });
+            }, 100);
+        }
+
+        function openScheduleWindow(scheduleHtml) {
+            const newWindow = window.open('', '_blank', 'width=1200,height=800');
+            newWindow.document.write(scheduleHtml);
+            newWindow.document.close();
+            showToast('Schedule opened in new tab', 'success');
+        }
+
+        function generateScheduleHtml(client, selectedLoans) {
+            let scheduleHtml = `
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="utf-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Installment Schedule - ${client.name || 'Client'}</title>
+                    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+                    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.css" rel="stylesheet">
+                    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"><\/script>
+                    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"><\/script>
+                    <style>
+                        body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; }
+                        .container { max-width: 1400px; margin: 0 auto; }
+                        .header { background: #fff; border-radius: 12px; padding: 2rem; box-shadow: 0 8px 16px rgba(0,0,0,0.2); margin-bottom: 2rem; text-align: center; }
+                        .action-buttons { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-top: 1.5rem; }
+                        .loan-card { background: #fff; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 2rem; overflow: hidden; }
+                        .loan-header { background: linear-gradient(135deg, #2c3e50, #3498db); color: #fff; padding: 1.5rem; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+                        .summary-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 1rem; }
+                        .summary-card { background: #ecf0f1; padding: 1rem; border-radius: 8px; text-align: center; }
+                        .installment-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+                        .installment-table th { background: #ecf0f1; padding: 0.75rem; text-align: center; border: 1px solid #bdc3c7; }
+                        .installment-table td { padding: 0.5rem; text-align: center; border: 1px solid #bdc3c7; }
+                        .status-received { background: #d4edda; color: #155724; font-weight: 600; }
+                        .status-pending { background: #fff3cd; color: #856404; }
+                        .status-advance { background: #d1ecf1; color: #0c5460; font-weight: 600; }
+                        .installment-container { max-height: none; overflow-y: visible; padding: 0 1rem 1.5rem; }
+                        @media print { body { background: #fff; } .action-buttons { display: none; } .loan-card { break-inside: avoid; } }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <div class="header">
+                            <h1><i class="bi bi-calendar3"></i> Installment Schedule</h1>
+                            <p><strong>${client.name || 'Client'}</strong> | Phone: ${client.phone || 'N/A'}</p>
+                            <div class="action-buttons">
+                                <a href="javascript:window.close();" class="btn btn-primary"><i class="bi bi-arrow-left"></i> Back to Ledger</a>
+                                <button class="btn btn-success" onclick="window.print()"><i class="bi bi-printer"></i> Print Schedule</button>
+                            </div>
+                        </div>`;
+
+            selectedLoans.forEach(loan => {
+                const installments = generateInstallments(
+                    loan.loanDate,
+                    loan.loanAmount,
+                    loan.installmentAmount,
+                    loan.type,
+                    loan.status,
+                    loan.advanceAmount || 0
+                );
+
+                const totalInstallments = installments.length;
+                const totalAmount = installments.reduce((sum, row) => sum + (Number(row.amount) || 0), 0);
+                const receivedRows = installments.filter(row => String(row.status || '').toLowerCase().includes('received') || String(row.status || '').toLowerCase().includes('advance'));
+                const receivedCount = receivedRows.length;
+                const pendingCount = Math.max(0, totalInstallments - receivedCount);
+                const receivedAmount = receivedRows.reduce((sum, row) => sum + (Number(row.amount) || 0), 0);
+                const pendingAmount = Math.max(0, totalAmount - receivedAmount);
+
+                scheduleHtml += `
+                    <div class="loan-card">
+                        <div class="loan-header">
+                            <div class="loan-info">
+                                <h3>Loan Case #${loan.loanId}</h3>
+                                <p>Start Date: ${loan.loanDate}</p>
+                                <p>Type: ${loan.type} | Amount: ₹${(loan.loanAmount || 0).toLocaleString()}</p>
+                            </div>
+                            <div class="loan-totals">
+                                <div><strong>Total Installments:</strong> ${totalInstallments}</div>
+                                <div><strong>Received:</strong> ${receivedCount}</div>
+                                <div><strong>Pending:</strong> ${pendingCount}</div>
+                            </div>
+                        </div>
+                        <div class="summary-cards">
+                            <div class="summary-card"><div class="value">₹${totalAmount.toLocaleString()}</div><div class="label">Total Amount</div></div>
+                            <div class="summary-card"><div class="value">₹${receivedAmount.toLocaleString()}</div><div class="label">Received Amount</div></div>
+                            <div class="summary-card"><div class="value">₹${pendingAmount.toLocaleString()}</div><div class="label">Pending Amount</div></div>
+                        </div>
+                        <div class="installment-container">
+                            <table class="installment-table">
+                                <thead>
+                                    <tr>
+                                        <th>Installment No.</th>
+                                        <th>Date</th>
+                                        <th>Amount</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${installments.map(inst => {
+                                        const statusText = String(inst.status || 'Pending');
+                                        const statusKey = statusText.toLowerCase();
+                                        const statusClass = statusKey.includes('advance') ? 'status-advance' : (statusKey.includes('received') ? 'status-received' : 'status-pending');
+                                        return `<tr class="${statusClass}"><td>${inst.number}</td><td>${inst.date}</td><td>₹${(Number(inst.amount) || 0).toLocaleString()}</td><td>${statusText}</td></tr>`;
+                                    }).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>`;
+            });
+
+            scheduleHtml += `</div></body></html>`;
+            return scheduleHtml;
+        }
+
+        async function refreshLedger() {
+            if (!currentLedgerClient) return;
+            
+            const cacheKey = currentLedgerClient.toLowerCase();
+            ledgerCache.delete(cacheKey);
+            
+            const refreshBtn = document.getElementById('refreshLedgerBtn');
+            const originalText = refreshBtn.innerHTML;
+            
+            refreshBtn.disabled = true;
+            refreshBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Refreshing...';
+            
+            const dummyEvent = {
+                target: { 
+                    classList: { add: () => {}, remove: () => {} },
+                    getAttribute: () => currentLedgerClient,
+                    style: {},
+                    innerHTML: currentLedgerClient
+                }
+            };
+            
+            await showLedger(currentLedgerClient, currentLedgerClient, dummyEvent);
+            
+            setTimeout(() => {
+                refreshBtn.disabled = false;
+                refreshBtn.innerHTML = originalText;
+            }, 1000);
+        }
+
+        async function exportPDF() {
+            const reportDate = document.getElementById('reportDate').value;
+            const reportContent = document.getElementById('reportContent');
+            
+            if (!reportDate || reportContent.innerHTML.includes('Select a date')) {
+                return;
+            }
+
+            document.getElementById('pdfLoading').style.display = 'flex';
+            const pdfBtn = document.getElementById('pdfBtn');
+            const originalText = pdfBtn.innerHTML;
+            pdfBtn.disabled = true;
+            pdfBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Generating...';
+
+            try {
+                await new Promise(resolve => setTimeout(resolve, 800));
+
+                const element = reportContent;
+
+                const opt = {
+                    margin: [5, 5, 5, 5],
+                    filename: `Daily_Collection_Report_${reportDate}.pdf`,
+                    image: { 
+                        type: 'jpeg', 
+                        quality: 0.92
+                    },
+                    html2canvas: { 
+                        scale: 1.2,
+                        useCORS: true,
+                        allowTaint: true,
+                        backgroundColor: '#ffffff',
+                        logging: false,
+                        letterRendering: true
+                    },
+                    jsPDF: { 
+                        unit: 'mm', 
+                        format: 'a4', 
+                        orientation: 'landscape'
+                    },
+                    pagebreak: { 
+                        mode: ['css', 'legacy'],
+                        before: ['.pdf-page-break', '.html2pdf__page-break'],
+                        avoid: ['.column-box', '.client-row']
+                    }
+                };
+
+                await html2pdf()
+                    .set(opt)
+                    .from(element)
+                    .save();
+
+            } catch (error) {
+                console.error('PDF generation error:', error);
+            } finally {
+                document.getElementById('pdfLoading').style.display = 'none';
+                pdfBtn.disabled = false;
+                pdfBtn.innerHTML = originalText;
+            }
+        }
+
+        function exportExcel() {
+            const reportDate = document.getElementById('reportDate').value;
+            if (!reportDate || document.getElementById('reportContent').innerHTML.includes('Select a date')) {
+                return;
+            }
+            window.open(`/daily-report/export/excel?date=${reportDate}`, '_blank');
+        }
+
+        async function exportPDFPortrait() {
+            const reportDate = document.getElementById('reportDate').value;
+            const reportContent = document.getElementById('reportContent');
+            if (!reportDate || reportContent.innerHTML.includes('Select a date')) {
+                showToast('Please generate the report first.', 'warning');
+                return;
+            }
+
+            const btn = document.getElementById('pdfPortraitBtn');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Preparing...';
+
+            showToast('Preparing Portrait PDF...', 'info');
+
+            try {
+                await new Promise(resolve => setTimeout(resolve, 100));
+
+                const blob = await buildPortraitPdfBlob(reportDate);
+                if (!blob) return;
+                downloadBlob(blob, `Daily_Collection_Report_${reportDate}_Portrait.pdf`);
+                showToast('Portrait PDF downloaded', 'success');
+
+            } catch (error) {
+                console.error('Portrait PDF generation error:', error);
+                showToast(`Failed to generate Portrait PDF. ${error?.message || ''}`.trim(), 'danger');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }
+
+        async function sharePDFToWhatsApp() {
+            const reportDate = document.getElementById('reportDate').value;
+            const reportHasData = !document.getElementById('reportContent').innerHTML.includes('Select a date');
+            if (!reportDate || !reportHasData) {
+                showToast('Please generate today’s report first.', 'warning');
+                return;
+            }
+
+            const btn = document.getElementById('mobilePDFShareBtn');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Preparing...';
+
+            try {
+                showToast('Preparing PDF for WhatsApp...', 'info', 5000);
+
+                const blob = await buildPortraitPdfBlob(reportDate);
+
+                const fileName = `Daily_Report_${reportDate}.pdf`;
+                const file = new File([blob], fileName, { type: 'application/pdf' });
+
+                if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                    await navigator.share({
+                        files: [file],
+                        title: `Daily Report ${reportDate}`,
+                        text: `Daily Collection Report for ${new Date(reportDate).toDateString()}`
+                    });
+                    showToast('Shared to WhatsApp.', 'success');
+                } else {
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = fileName;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+
+                    const message = `Daily Collection Report for ${new Date(reportDate).toDateString()}.
+PDF downloaded—please attach it in WhatsApp.`;
+                    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+                    showToast('PDF downloaded. WhatsApp opened.', 'info');
+                }
+
+            } catch (error) {
+                console.error('Mobile PDF share failed:', error);
+                showToast(error?.message ? `Unable to share PDF. ${error.message}` : 'Unable to share PDF.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }
+
+        async function sendWhatsApp() {
+            // Use the same PDF share pipeline so WhatsApp can receive the actual PDF attachment.
+            return sharePDFToWhatsApp();
+        }
+
+        async function shareToMobile() {
+            // Grab the ledger modal body correctly (original selector was missing in DOM)
+            const modalBody = document.querySelector('#ledgerModal .modal-body') || document.getElementById('ledgerContent');
+            if (!modalBody) {
+                showToast('Ledger content not found', 'warning');
+                return;
+            }
+
+            showToast('Preparing ledger for sharing...', 'info');
+            
+            // Create temporary wrapper for screenshot
+            const tempWrapper = document.createElement('div');
+            tempWrapper.style.position = 'absolute';
+            tempWrapper.style.left = '-9999px';
+            tempWrapper.style.top = '0';
+            tempWrapper.style.backgroundColor = '#ffffff';
+            tempWrapper.style.padding = '20px';
+            tempWrapper.style.width = '1200px';
+            
+            // Clone the modal content
+            const clone = modalBody.cloneNode(true);
+            tempWrapper.appendChild(clone);
+            document.body.appendChild(tempWrapper);
+            
+            try {
+                // Capture screenshot
+                const canvas = await html2canvas(tempWrapper, {
+                    backgroundColor: '#ffffff',
+                    scale: 2,
+                    useCORS: true,
+                    allowTaint: true
+                });
+                
+                // Convert to blob
+                canvas.toBlob(async function(blob) {
+                    if (!blob) {
+                        showToast('Failed to create image', 'error');
+                        return;
+                    }
+                    
+                    const clientName = document.getElementById('ledgerModalLabel').textContent.trim() || 'Ledger';
+                    const fileName = `${clientName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.png`;
+                    
+                    try {
+                        // Check if Web Share API is supported
+                        if (navigator.share) {
+                            const file = new File([blob], fileName, { type: 'image/png' });
+                            
+                            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                                await navigator.share({
+                                    files: [file],
+                                    title: clientName,
+                                    text: ''
+                                });
+                                showToast('Shared successfully!', 'success');
+                                return;
+                            }
+                        }
+                        
+                        // Fallback: Download and open WhatsApp
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = fileName;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        URL.revokeObjectURL(url);
+                        
+                        // Open WhatsApp with the client's name
+                        const phone = document.querySelector('#ledgerModal [data-phone]')?.dataset.phone || '';
+                        if (phone) {
+                            window.open(`https://wa.me/${phone}`, '_blank');
+                        } else {
+                            window.open('https://web.whatsapp.com/', '_blank');
+                        }
+                        
+                        showToast('Image downloaded, opening WhatsApp...', 'info');
+                        
+                    } catch (shareError) {
+                        console.error('Sharing failed:', shareError);
+                        showToast('Sharing not supported, downloaded image', 'warning');
+                    }
+                    
+                }, 'image/png', 0.95);
+                
+            } catch (error) {
+                console.error('Screenshot failed:', error);
+                showToast('Failed to capture screenshot', 'error');
+            } finally {
+                // Clean up
+                if (tempWrapper.parentNode) {
+                    tempWrapper.parentNode.removeChild(tempWrapper);
+                }
+            }
+        }
+
+        // Show/hide mobile share buttons based on device support
+        function updateMobileShareButtons() {
+            const mobileBtn = document.getElementById('mobileShareBtn');
+            const mobilePDFBtn = document.getElementById('mobilePDFShareBtn');
+            
+            // Show on mobile devices or if Web Share API is supported
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            const showShareButtons = isMobile || navigator.share;
+            
+            if (mobileBtn) {
+                mobileBtn.style.display = showShareButtons ? 'inline-block' : 'none';
+            }
+            if (mobilePDFBtn) {
+                mobilePDFBtn.style.display = showShareButtons ? 'inline-block' : 'none';
+            }
+        }
+
+        // Initialize when modal is shown
+        const ledgerModal = document.getElementById('ledgerModal');
+        if (ledgerModal) {
+            ledgerModal.addEventListener('shown.bs.modal', function() {
+                updateMobileShareButtons();
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            setTodayAsDefault();
+            setTimeout(generateReport, 500);
+            updateMobileShareButtons();
+        });
+
+        window.addEventListener('load', function() {
+            if (!document.getElementById('reportDate').value) {
+                setTodayAsDefault();
+            }
+            updateMobileShareButtons();
+        });
+    </script>
+    {% include "_pwa_scripts.html" %}
+
+</body>
+</html>
+
+

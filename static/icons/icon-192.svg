@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#581c87"/>
+      <stop offset="1" stop-color="#0a0a0c"/>
+    </linearGradient>
+    <linearGradient id="t" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#000000"/>
+      <stop offset="1" stop-color="#000000"/>
+    </linearGradient>
+    <filter id="s" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#000000" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+  <rect width="192" height="192" rx="44" fill="url(#g)"/>
+  <circle cx="58" cy="56" r="74" fill="#a855f7" opacity="0.10"/>
+  <circle cx="160" cy="162" r="96" fill="#581c87" opacity="0.10"/>
+  <g filter="url(#s)">
+    <rect x="24" y="32" width="144" height="128" rx="32" fill="#ffffff" opacity="0.10" stroke="#ffffff" stroke-opacity="0.18"/>
+  </g>
+  <text x="96" y="106" font-family="Monotype Corsiva, cursive" font-size="58" font-style="italic" font-weight="800" letter-spacing="1.5" text-anchor="middle" fill="#ffffff">
+    <animate attributeName="font-size" values="58;62;58" dur="2s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="1;0.85;1" dur="2s" repeatCount="indefinite"/>
+    A <tspan font-family="Georgia, serif" font-size="42" fill="#ffffff">&amp;</tspan> A
+  </text>
+</svg>

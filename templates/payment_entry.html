@@ -1,0 +1,2671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Entry System</title>
+    {% include "_pwa_head.html" %}
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .main-header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 20px 30px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px);
+            border-bottom: 3px solid rgba(255,255,255,0.2);
+        }
+        
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .header-title h1 {
+            margin: 0;
+            font-size: 32px;
+            font-weight: 700;
+            background: linear-gradient(45deg, #fff, #e3f2fd);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .date-control {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(255,255,255,0.15);
+            padding: 15px 20px;
+            border-radius: 25px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .date-control label {
+            font-weight: 600;
+            font-size: 16px;
+            color: #e3f2fd;
+        }
+        
+        .date-control input {
+            background: rgba(255,255,255,0.9);
+            border: none;
+            padding: 10px 15px;
+            border-radius: 15px;
+            font-weight: 600;
+            color: #1e3c72;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .status-badge {
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-weight: 700;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .status-submitted { 
+            background: linear-gradient(135deg, #4caf50, #45a049); 
+            color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+        
+        .status-pending { 
+            background: linear-gradient(135deg, #ff9800, #f57c00); 
+            color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+        
+        .summary-dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .summary-card {
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 20px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .summary-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #4caf50, #2196f3, #ff9800, #f44336);
+            border-radius: 20px 20px 0 0;
+        }
+        
+        .summary-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            background: rgba(255,255,255,0.25);
+        }
+        
+        .summary-card .icon {
+            font-size: 28px;
+            margin-bottom: 10px;
+            opacity: 0.9;
+        }
+        
+        .summary-card .label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #e3f2fd;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .summary-card .amount {
+            font-size: 24px;
+            font-weight: 900;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .summary-card.grand-total {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: 2px solid rgba(255,255,255,0.3);
+            transform: scale(1.05);
+        }
+        
+        .summary-card.grand-total .amount {
+            font-size: 28px;
+            color: #fff;
+        }
+        
+        .action-buttons-header {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .btn-action {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-action:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+        
+        .btn-submit {
+            background: linear-gradient(135deg, #4caf50, #45a049);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+        
+        .btn-edit {
+            background: linear-gradient(135deg, #2196f3, #1976d2);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+        
+        .btn-delete {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+        
+        .btn-load {
+            background: linear-gradient(135deg, #ff9800, #f57c00);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+        
+        .btn-export {
+            background: linear-gradient(135deg, #9c27b0, #7b1fa2);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+
+        .btn-penalty {
+            background: linear-gradient(135deg, #ff6f00, #e65100);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+
+        .btn-profitloss {
+            background: linear-gradient(135deg, #00c853, #009624);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+        
+        .btn-outstanding {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+        
+        .btn-print {
+            background: linear-gradient(135deg, #607d8b, #455a64);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+        
+        .content-container {
+            margin: 30px;
+            background: rgba(255,255,255,0.95);
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+        
+        .freeze-indicator {
+            background: linear-gradient(135deg, #4caf50, #45a049);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin: 15px;
+            text-align: center;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(76,175,80,0.3);
+        }
+        
+        .short-report { 
+            background: white; 
+            border-left: 5px solid #f44336; 
+            margin: 25px; 
+            padding: 25px; 
+            border-radius: 15px; 
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1); 
+        }
+        
+        .short-report h3 { 
+            color: #f44336; 
+            margin: 0; 
+            font-size: 22px; 
+            font-weight: 700;
+        }
+        .short-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+        .short-action-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 12px;
+            border-radius: 18px;
+            border: none;
+            background: linear-gradient(135deg, #2196f3, #1976d2);
+            color: white;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+        .short-action-btn.secondary { background: linear-gradient(135deg, #6c757d, #495057); }
+        .short-action-btn.danger { background: linear-gradient(135deg, #d32f2f, #c62828); }
+        .short-action-btn.success { background: linear-gradient(135deg, #43a047, #2e7d32); }
+        
+        .btn-toggle {
+            background: linear-gradient(135deg, #6c757d, #5a6268);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        }
+        
+        .short-total { 
+            font-size: 20px; 
+            font-weight: bold; 
+            color: #f44336; 
+            margin: 15px 0; 
+            padding: 20px; 
+            background: linear-gradient(135deg, #fff5f5, #ffebee); 
+            border-radius: 15px;
+            border: 2px solid #ffcdd2;
+            box-shadow: 0 3px 10px rgba(244,67,54,0.2);
+        }
+        
+        .short-list { 
+            max-height: 600px; 
+            overflow-y: auto; 
+            border: 2px solid #e0e0e0; 
+            border-radius: 15px; 
+            background: #fafafa;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 10px;
+            padding: 10px;
+        }
+        
+        .short-item { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 12px 14px; 
+            border: 1px solid #f1f3f4; 
+            transition: all 0.3s ease; 
+            cursor: pointer;
+            background: white;
+            border-radius: 12px;
+        }
+        
+        .short-item:hover { 
+            background: linear-gradient(135deg, #fff3e0, #ffe0b2); 
+            transform: translateY(-2px); 
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+        
+        .short-item.recovered { 
+            background: linear-gradient(135deg, #e8f5e8, #c8e6c9) !important; 
+            color: #2e7d32 !important; 
+            cursor: pointer !important;
+            transform: none !important;
+        }
+
+        .short-item.recovered:hover {
+            background: linear-gradient(135deg, #c8e6c9, #a5d6a7) !important;
+            transform: translateY(-2px) !important;
+        }
+        
+        /* ✅ RECOVERY MODAL STYLING */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            backdrop-filter: blur(5px);
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .modal-header h3 {
+            margin: 0;
+            color: #1976d2;
+            font-size: 24px;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+            padding: 5px;
+            border-radius: 50%;
+            transition: all 0.3s;
+        }
+        
+        .modal-close:hover {
+            background: #f5f5f5;
+            color: #f44336;
+        }
+        
+        .recovery-details {
+            background: linear-gradient(135deg, #e8f5e8, #c8e6c9);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            border-left: 5px solid #4caf50;
+        }
+        
+        .recovery-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .info-item {
+            background: rgba(255,255,255,0.8);
+            padding: 10px 15px;
+            border-radius: 10px;
+            border-left: 3px solid #2196f3;
+        }
+        
+        .info-label {
+            font-weight: 600;
+            color: #666;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+        
+        .info-value {
+            font-weight: 700;
+            color: #333;
+            font-size: 16px;
+            margin-top: 3px;
+        }
+        
+        .recovery-notes {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #ff9800;
+            margin-top: 15px;
+        }
+        
+        .modal-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: flex-end;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 2px solid #e0e0e0;
+        }
+        
+        .btn-modal {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .btn-print-modal {
+            background: linear-gradient(135deg, #2196f3, #1976d2);
+            color: white;
+        }
+        
+        .btn-close-modal {
+            background: linear-gradient(135deg, #6c757d, #495057);
+            color: white;
+        }
+        
+        .btn-modal:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .payment-section { 
+            background: white; 
+            margin: 25px; 
+            border-radius: 15px; 
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1); 
+            overflow: hidden; 
+            border: 1px solid #e0e0e0;
+        }
+        
+        .section-header { 
+            background: linear-gradient(135deg, #2196f3, #1976d2); 
+            color: white; 
+            padding: 20px; 
+            font-size: 18px; 
+            font-weight: 700; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+        }
+        
+        .multi-column {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px;
+        }
+        
+        .column-box {
+            border: 2px solid #e0e0e0;
+            border-radius: 15px;
+            font-size: 12px;
+            overflow: hidden;
+            background: white;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+        
+        .column-header {
+            background: linear-gradient(135deg, #f5f5f5, #eeeeee);
+            border-bottom: 2px solid #2196f3;
+            padding: 15px 10px;
+            font-weight: 700;
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #1976d2;
+        }
+        
+        .column-header .checkbox-label { width: 50px; text-align: center; }
+        .column-header .sr-label { width: 60px; text-align: center; }
+        .column-header .name-label { width: 150px; text-align: center; }
+        .column-header .amt-label { width: 90px; text-align: center; }
+        
+        .client-row {
+            display: flex;
+            padding: 12px 10px;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 13px;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.3s;
+        }
+        
+        .client-row:nth-child(even) { background: #fafafa; }
+        .client-row:hover { 
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb); 
+            transform: translateX(5px);
+        }
+        
+        .client-checkbox-container { width: 50px; text-align: center; }
+        .client-checkbox { transform: scale(1.3); cursor: pointer; }
+        .client-serial { width: 60px; text-align: center; font-weight: 700; color: #1976d2; }
+        .client-name { 
+            width: 150px; 
+            text-align: left; 
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+            padding: 0 8px; 
+            font-size: 13px;
+            font-weight: 600;
+            color: #333;
+        }
+        .client-amount { 
+            width: 90px; 
+            text-align: center; 
+            font-weight: 700; 
+            color: #4caf50; 
+            font-size: 14px;
+        }
+        
+        .client-row.paid { 
+            background: linear-gradient(135deg, #e8f5e8, #c8e6c9) !important; 
+            opacity: 0.8; 
+        }
+        
+        .column-subtotal {
+            background: linear-gradient(135deg, #424242, #616161) !important;
+            color: white !important;
+            font-weight: 700;
+            border-top: 3px solid #1976d2;
+            padding: 15px 10px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 15px;
+        }
+        
+        .type-total {
+            background: linear-gradient(135deg, #4caf50, #45a049);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-weight: 700;
+            margin: 20px 25px;
+            border-radius: 15px;
+            font-size: 20px;
+            box-shadow: 0 5px 15px rgba(76,175,80,0.3);
+        }
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            color: white;
+            font-size: 18px;
+            backdrop-filter: blur(5px);
+        }
+        
+        @media print {
+            body { 
+                background: white !important; 
+                font-size: 12px !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            
+            .main-header {
+                background: white !important;
+                color: black !important;
+                box-shadow: none !important;
+                border-bottom: 2px solid black !important;
+                page-break-inside: avoid;
+            }
+            
+            .action-buttons-header { display: none !important; }
+            .btn-toggle { display: none !important; }
+            .loading-overlay { display: none !important; }
+            .modal-overlay { display: none !important; }
+            .freeze-indicator { display: none !important; }
+            
+            .content-container { 
+                margin: 0 !important; 
+                box-shadow: none !important; 
+                background: white !important;
+            }
+        }
+    </style>
+</head>
+<body data-payments-already-submitted="{{ '1' if payments_already_submitted else '0' }}" data-target-date="{{ target_date }}">
+    <div class="main-header">
+        <div class="header-top">
+            <div class="header-title">
+                <i class="bi bi-wallet2" style="font-size: 40px;"></i>
+                <h1>Payment Entry System</h1>
+            </div>
+            
+            <div class="date-control">
+                <label for="reportDate">📅 Date:</label>
+                <input type="date" id="reportDate" value="{{ target_date }}" />
+            </div>
+            
+            <div class="status-display">
+                <span class="status-badge status-pending" id="statusBadge">
+                    {% if payments_already_submitted %}
+                        ✅ Submitted
+                    {% else %}
+                        ⏳ Pending
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+        
+        <div class="summary-dashboard">
+            <div class="summary-card">
+                <div class="icon">🔄</div>
+                <div class="label">Daily Total</div>
+                <div class="amount" id="header-daily-total">₹0</div>
+            </div>
+            <div class="summary-card">
+                <div class="icon">📅</div>
+                <div class="label">Weekly Total</div>
+                <div class="amount" id="header-weekly-total">₹0</div>
+            </div>
+            <div class="summary-card">
+                <div class="icon">📆</div>
+                <div class="label">10-Day Total</div>
+                <div class="amount" id="header-tendays-total">₹0</div>
+            </div>
+            <div class="summary-card">
+                <div class="icon">🗓️</div>
+                <div class="label">Monthly Total</div>
+                <div class="amount" id="header-monthly-total">₹0</div>
+            </div>
+            <div class="summary-card">
+                <div class="icon">❌</div>
+                <div class="label">Short Total</div>
+                <div class="amount" id="header-short-total">₹0</div>
+            </div>
+            <div class="summary-card">
+                <div class="icon">✅</div>
+                <div class="label">Recovered</div>
+                <div class="amount" id="header-recovered-total">₹0</div>
+            </div>
+            <div class="summary-card grand-total">
+                <div class="icon">🎯</div>
+                <div class="label">Grand Total</div>
+                <div class="amount" id="header-grand-total">₹0</div>
+            </div>
+        </div>
+        
+        <div class="action-buttons-header">
+            <button class="btn-action btn-load" onclick="loadPaymentData()">
+                <i class="bi bi-arrow-clockwise"></i>
+                <span>Load Data</span>
+            </button>
+            <button class="btn-action btn-penalty" onclick="window.open('/payment-entry/penalty', '_blank')">
+                <i class="bi bi-exclamation-triangle"></i>
+                <span>Penalty</span>
+            </button>
+            <button class="btn-action btn-penalty" onclick="window.open('/recovery/page', '_blank')">
+                <i class="bi bi-arrow-repeat"></i>
+                <span>Recovery</span>
+            </button>
+            <button class="btn-action btn-profitloss" onclick="window.open('/payment-entry/profit-loss', '_blank')">
+                <i class="bi bi-graph-up-arrow"></i>
+                <span>Profit &amp; Loss</span>
+            </button>
+            <button class="btn-action btn-outstanding" onclick="window.open('/payment-entry/outstanding', '_blank')">
+                <i class="bi bi-graph-up"></i>
+                <span>Outstanding</span>
+            </button>
+            <button class="btn-action btn-submit" onclick="submitPayments()" id="headerSubmitBtn">
+                <i class="bi bi-check-circle"></i>
+                <span>Submit</span>
+            </button>
+            <button class="btn-action btn-edit" onclick="editEntry()">
+                <i class="bi bi-pencil-square"></i>
+                <span>Edit</span>
+            </button>
+            <button class="btn-action btn-delete" onclick="deleteEntry()">
+                <i class="bi bi-trash"></i>
+                <span>Delete</span>
+            </button>
+            <button class="btn-action btn-print" onclick="printPage()">
+                <i class="bi bi-printer"></i>
+                <span>Print Page</span>
+            </button>
+            <button class="btn-action btn-export" onclick="exportPDF()">
+                <i class="bi bi-file-earmark-pdf"></i>
+                <span>PDF</span>
+            </button>
+            <button class="btn-action btn-export" onclick="downloadReportPDF()">
+                <i class="bi bi-download"></i>
+                <span>Download Report</span>
+            </button>
+            <button class="btn-action btn-export" onclick="exportExcel()">
+                <i class="bi bi-file-earmark-excel"></i>
+                <span>Excel</span>
+            </button>
+        </div>
+    </div>
+    
+    <div id="shortRecoveryModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>💰 Recover Short Payment</h3>
+                <button class="modal-close" onclick="closeShortRecoveryModal()">✕</button>
+            </div>
+
+            <div class="recovery-details" id="shortRecoveryDetails">
+                <div class="recovery-info">
+                    <div class="info-item">
+                        <div class="info-label">Client Name</div>
+                        <div class="info-value" id="shortRecoveryClientName"></div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Amount</div>
+                        <div class="info-value" id="shortRecoveryAmount"></div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Originally Due</div>
+                        <div class="info-value" id="shortRecoveryDueDate"></div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Days Overdue</div>
+                        <div class="info-value" id="shortRecoveryDaysOverdue"></div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Penalty / Day (₹)</div>
+                        <div class="info-value">
+                            <input type="number" id="shortRecoveryPenaltyPerDay" class="form-control" value="500" min="0" step="1" oninput="updateShortRecoveryDerivedFields()" />
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Penalty Amount</div>
+                        <div class="info-value" id="shortRecoveryPenaltyAmount">₹0</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Recovery Date</div>
+                        <div class="info-value">
+                            <input type="date" id="shortRecoveryDate" class="form-control" onchange="updateShortRecoveryDerivedFields()" oninput="updateShortRecoveryDerivedFields()" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="recovery-notes">
+                    <div style="font-weight: 600; color: #666; font-size: 14px; margin-bottom: 10px;">📝 Recovery Notes:</div>
+                    <textarea id="shortRecoveryNotes" class="form-control" rows="4"></textarea>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn-modal btn-print-modal" onclick="confirmShortRecovery()">
+                    <i class="bi bi-check-circle"></i> Recover
+                </button>
+                <button class="btn-modal btn-close-modal" onclick="closeShortRecoveryModal()">
+                    <i class="bi bi-x-circle"></i> Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="content-container">
+        <div class="short-report">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3>📊 Short Payment Report (Uncollected) - Sorted A-Z</h3>
+                <div class="short-actions">
+                    <button class="short-action-btn success" onclick="shareShortImage()"><i class="bi bi-whatsapp"></i> WhatsApp Image</button>
+                    <button class="short-action-btn secondary" onclick="printShortSection()"><i class="bi bi-printer"></i> Print</button>
+                    <button class="short-action-btn" onclick="downloadShortPdf()"><i class="bi bi-file-earmark-pdf"></i> PDF</button>
+                    <button class="short-action-btn" onclick="shareShortImage()"><i class="bi bi-share"></i> Share Image</button>
+                    <button class="short-action-btn secondary" onclick="scheduleShortFollowup()"><i class="bi bi-clock-history"></i> Schedule</button>
+                </div>
+                <button id="toggleShortReportBtn" class="btn-toggle" onclick="toggleShortReport()">
+                    🙈 Hide Report
+                </button>
+            </div>
+            
+            <div id="short-report-content">
+                <div class="short-total">
+                    Total Uncollected: ₹<span id="short-total-amount">0</span>
+                    | Count: <span id="short-total-count">0</span> clients
+                    | Recovered: ₹<span id="short-recovered-amount">0</span>
+                </div>
+                
+                <div id="short-list" class="short-list">
+                    <div style="text-align: center; padding: 30px; color: #6c757d;">
+                        Select a date and click "Load Data" to view short payments
+                    </div>
+                </div>
+                
+                <div style="margin-top: 20px; font-size: 14px; color: #6c757d; text-align: center; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                    💡 <strong>Click any row above to mark as recovered with notes and history</strong>
+                </div>
+            </div>
+        </div>
+
+        <div id="paymentSections">
+            <div style="text-align: center; padding: 50px; color: #6c757d; font-size: 18px;">
+                📅 Select a date and click "Load Data" to view payment collections
+            </div>
+        </div>
+    </div>
+
+    <!-- ✅ RECOVERY HISTORY MODAL -->
+    <div id="recoveryModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>💰 Recovery Details</h3>
+                <button class="modal-close" onclick="closeRecoveryModal()">✕</button>
+            </div>
+            
+            <div class="recovery-details" id="recoveryDetailsContent">
+                <!-- Dynamic content will be inserted here -->
+            </div>
+            
+            <div class="modal-actions">
+                <button class="btn-modal btn-print-modal" onclick="printRecoveryDetails()">
+                    <i class="bi bi-printer"></i> Print Details
+                </button>
+                <button class="btn-modal btn-close-modal" onclick="closeRecoveryModal()">
+                    <i class="bi bi-x-circle"></i> Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="text-center">
+            <div class="spinner-border text-light mb-3"></div>
+            <div>Loading payment data...</div>
+        </div>
+    </div>
+
+    <script>
+        const isAlreadySubmitted = document.body.dataset.paymentsAlreadySubmitted === '1';
+        let targetDate = document.body.dataset.targetDate || '';
+        function localTodayIso() {
+            const d = new Date();
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        }
+
+        const todayDate = localTodayIso();
+        let shortPayments = [];
+        let allPaymentData = {};
+        let totalRecoveredAmount = 0;
+        let recoveryHistory = [];
+        let currentSubmissionStatus = isAlreadySubmitted;
+
+        let globalTotals = {
+            daily: 0,
+            weekly: 0,
+            tenDays: 0,
+            monthly: 0,
+            short: 0,
+            recovered: 0,
+            grand: 0
+        };
+
+        try {
+            const urlDate = new URLSearchParams(window.location.search).get('date');
+            if (!urlDate) {
+                targetDate = todayDate;
+            }
+        } catch (_) {
+            // ignore
+        }
+
+        document.getElementById('reportDate').value = targetDate;
+
+        // ✅ CORRECTED FREEZE LOGIC - ONLY DATA, NOT BUTTONS
+        function freezeUIAfterSubmission() {
+            if (currentSubmissionStatus) {
+                // ✅ ONLY DISABLE INPUT DATA - NOT BUTTONS
+                document.querySelectorAll('input[type="checkbox"], input[type="date"], select, textarea').forEach(elem => {
+                    // Allow date change + allow short recovery modal fields
+                    if (elem.id !== 'reportDate' && elem.id !== 'shortRecoveryDate' && elem.id !== 'shortRecoveryNotes' && elem.id !== 'shortRecoveryPenaltyPerDay') {
+                        elem.disabled = true;
+                        elem.style.opacity = '0.6';
+                        elem.style.cursor = 'not-allowed';
+                    }
+                });
+                
+                // ✅ DISABLE ONLY SUBMIT BUTTON
+                const submitBtn = document.getElementById('headerSubmitBtn');
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.style.opacity = '0.6';
+                    submitBtn.style.cursor = 'not-allowed';
+                }
+                const submitBtn2 = document.getElementById('secondarySubmitBtn');
+                if (submitBtn2) {
+                    submitBtn2.disabled = true;
+                    submitBtn2.style.opacity = '0.6';
+                    submitBtn2.style.cursor = 'not-allowed';
+                }
+                
+                // ✅ KEEP EDIT, DELETE, PRINT BUTTONS ENABLED
+                // No action needed - they stay enabled by default
+                
+                // Add freeze indicator for data only
+                if (!document.querySelector('.freeze-indicator')) {
+                    const indicator = document.createElement('div');
+                    indicator.className = 'freeze-indicator';
+                    indicator.innerHTML = '🔒 DATA LOCKED AFTER SUBMISSION - Use EDIT to modify';
+                    document.querySelector('.content-container').prepend(indicator);
+                }
+                
+                console.log('✅ Data frozen - buttons remain active');
+            }
+        }
+
+        function printPage() {
+            printPaymentReport().catch((err) => {
+                console.error('Print failed:', err);
+                alert('Print failed: ' + (err?.message || err));
+            });
+        }
+
+        function applyFreezeState() {
+            const indicator = document.querySelector('.freeze-indicator');
+
+            if (currentSubmissionStatus) {
+                document.querySelectorAll('input[type="checkbox"], input[type="date"], select, textarea').forEach(elem => {
+                    if (elem.id !== 'reportDate' && elem.id !== 'shortRecoveryDate' && elem.id !== 'shortRecoveryNotes') {
+                        elem.disabled = true;
+                        elem.style.opacity = '0.6';
+                        elem.style.cursor = 'not-allowed';
+                    }
+                });
+
+                const submitBtn = document.getElementById('headerSubmitBtn');
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.style.opacity = '0.6';
+                    submitBtn.style.cursor = 'not-allowed';
+                }
+
+                if (!indicator) {
+                    const newIndicator = document.createElement('div');
+                    newIndicator.className = 'freeze-indicator';
+                    newIndicator.innerHTML = '🔒 DATA LOCKED AFTER SUBMISSION - Use EDIT to modify';
+                    document.querySelector('.content-container').prepend(newIndicator);
+                }
+
+                console.log('✅ Data frozen - buttons remain active');
+                return;
+            }
+
+            document.querySelectorAll('input[type="checkbox"], input[type="date"], select, textarea').forEach(elem => {
+                elem.disabled = false;
+                elem.style.opacity = '';
+                elem.style.cursor = '';
+            });
+
+            const submitBtn = document.getElementById('headerSubmitBtn');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.style.opacity = '';
+                submitBtn.style.cursor = '';
+            }
+            const submitBtn2 = document.getElementById('secondarySubmitBtn');
+            if (submitBtn2) {
+                submitBtn2.disabled = false;
+                submitBtn2.style.opacity = '';
+                submitBtn2.style.cursor = '';
+            }
+
+            if (indicator && indicator.parentNode) {
+                indicator.parentNode.removeChild(indicator);
+            }
+        }
+
+        function buildPaymentPdfTarget() {
+            const header = document.querySelector('.main-header');
+            const content = document.querySelector('.content-container');
+            if (!header || !content) return null;
+
+            const wrapper = document.createElement('div');
+            wrapper.style.background = '#ffffff';
+            wrapper.style.padding = '12px';
+            wrapper.style.width = '1200px';
+
+            const headerClone = header.cloneNode(true);
+            const contentClone = content.cloneNode(true);
+
+            const actionBar = headerClone.querySelector('.action-buttons-header');
+            if (actionBar) actionBar.remove();
+
+            const dateControl = headerClone.querySelector('.date-control');
+            if (dateControl) {
+                const input = dateControl.querySelector('input');
+                if (input) input.value = targetDate;
+            }
+
+            wrapper.appendChild(headerClone);
+            wrapper.appendChild(contentClone);
+            return wrapper;
+        }
+
+        function downloadBlob(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            setTimeout(() => URL.revokeObjectURL(url), 30_000);
+        }
+
+        async function buildPaymentPdfBlobMobileSliced({ orientation, element }) {
+            const jsPDFCtor = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+            if (!jsPDFCtor) throw new Error('PDF library not available');
+
+            if (typeof window.html2canvas !== 'function') {
+                throw new Error('Canvas library not available');
+            }
+
+            const pdf = new jsPDFCtor({ unit: 'mm', format: 'a4', orientation });
+
+            const marginTop = 6;
+            const marginLeft = 6;
+            const marginBottom = 6;
+            const marginRight = 6;
+
+            const pageW = (orientation === 'landscape') ? 297 : 210;
+            const pageH = (orientation === 'landscape') ? 210 : 297;
+
+            const pageWidthMm = pageW - marginLeft - marginRight;
+            const pageHeightMm = pageH - marginTop - marginBottom;
+
+            const el = element;
+            const contentWidthPx = Math.max(el.scrollWidth, 1);
+            const contentHeightPx = Math.max(el.scrollHeight, 1);
+
+            const maxSliceHeightPx = Math.floor((pageHeightMm * contentWidthPx) / pageWidthMm);
+            const sliceHeightPx = Math.max(600, Math.min(maxSliceHeightPx, 2200));
+
+            let pageIndex = 0;
+            for (let y = 0; y < contentHeightPx; y += sliceHeightPx) {
+                const height = Math.min(sliceHeightPx, contentHeightPx - y);
+                const canvas = await html2canvas(el, {
+                    backgroundColor: '#ffffff',
+                    scale: 1,
+                    useCORS: true,
+                    allowTaint: true,
+                    scrollX: 0,
+                    scrollY: 0,
+                    x: 0,
+                    y,
+                    width: contentWidthPx,
+                    height,
+                    windowWidth: contentWidthPx,
+                    windowHeight: height
+                });
+
+                const imgData = canvas.toDataURL('image/jpeg', 0.92);
+                const imgHeightMm = (canvas.height * pageWidthMm) / canvas.width;
+
+                if (pageIndex > 0) pdf.addPage();
+                pdf.addImage(imgData, 'JPEG', marginLeft, marginTop, pageWidthMm, imgHeightMm);
+                pageIndex += 1;
+            }
+
+            const ab = pdf.output('arraybuffer');
+            return new Blob([ab], { type: 'application/pdf' });
+        }
+
+
+        async function buildPaymentPdfBlob({ orientation, filename }) {
+            if (typeof window.html2pdf !== 'function') {
+                throw new Error('PDF library not available');
+            }
+
+            const reportDate = document.getElementById('reportDate')?.value;
+            if (!reportDate) {
+                throw new Error('Please select a report date first.');
+            }
+
+            const target = buildPaymentPdfTarget();
+            if (!target) {
+                throw new Error('Unable to prepare report for PDF.');
+            }
+
+            target.style.position = 'fixed';
+            target.style.left = '0';
+            target.style.top = '0';
+            target.style.width = '1200px';
+            target.style.maxWidth = '1200px';
+            target.style.zIndex = '9999999';
+            target.style.pointerEvents = 'none';
+            target.style.background = '#ffffff';
+            target.style.overflow = 'visible';
+
+            const overlay = document.getElementById('loadingOverlay');
+            const prevOverlayDisplay = overlay ? overlay.style.display : '';
+            if (overlay) overlay.style.display = 'flex';
+
+            const prevScrollY = window.scrollY;
+            try {
+                window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+                document.body.appendChild(target);
+                await new Promise(requestAnimationFrame);
+
+                try {
+                    return await buildPaymentPdfBlobMobileSliced({ orientation, element: target });
+                } catch (e) {
+                    console.warn('Sliced PDF failed; falling back to html2pdf:', e);
+                }
+
+                const opt = {
+                    margin: [6, 6, 6, 6],
+                    filename,
+                    image: { type: 'jpeg', quality: 0.92 },
+                    html2canvas: {
+                        scale: 1.6,
+                        useCORS: true,
+                        allowTaint: true,
+                        backgroundColor: '#ffffff',
+                        logging: false,
+                        scrollX: 0,
+                        scrollY: 0,
+                        windowWidth: 1200
+                    },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation },
+                    pagebreak: { mode: ['css', 'legacy'] }
+                };
+
+                const ab = await html2pdf().set(opt).from(target).toPdf().output('arraybuffer');
+                return new Blob([ab], { type: 'application/pdf' });
+            } finally {
+                if (target && target.parentNode) target.parentNode.removeChild(target);
+                if (overlay) overlay.style.display = prevOverlayDisplay;
+                window.scrollTo({ top: prevScrollY, left: 0, behavior: 'auto' });
+            }
+        }
+
+        async function sharePaymentPdfBlob({ blob, fileName, title, text }) {
+            const file = new File([blob], fileName, { type: 'application/pdf' });
+            if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({ files: [file], title, text });
+                return true;
+            }
+            return false;
+        }
+
+        async function exportPDFWithOrientation(orientation, fileSuffix) {
+            const reportDate = document.getElementById('reportDate')?.value;
+            if (!reportDate) {
+                alert('Please select a report date first.');
+                return;
+            }
+            try {
+                const fileName = `Payment_Entry_${reportDate}${fileSuffix}.pdf`;
+                const blob = await buildPaymentPdfBlob({ orientation, filename: fileName });
+                downloadBlob(blob, fileName);
+            } catch (err) {
+                console.error('Payment PDF export failed:', err);
+                alert('PDF export failed: ' + (err?.message || err));
+            }
+        }
+
+        async function saveToServer() {
+            const data = {
+                date: targetDate,
+                shortPayments: shortPayments,
+                recoveryHistory: recoveryHistory.filter(r => r.date === targetDate),
+                totalRecoveredAmount: totalRecoveredAmount,
+                globalTotals: globalTotals,
+                timestamp: new Date().toISOString()
+            };
+            
+            try {
+                const response = await fetch('/api/save-payment-data', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                if (response.ok) {
+                    console.log('✅ Data saved to server for', targetDate);
+                } else {
+                    console.error('❌ Server save failed:', response.statusText);
+                    localStorage.setItem(`payment_backup_${targetDate}`, JSON.stringify(data));
+                }
+            } catch (error) {
+                console.error('❌ Server save error:', error);
+                localStorage.setItem(`payment_backup_${targetDate}`, JSON.stringify(data));
+            }
+        }
+
+        async function loadFromServer() {
+            try {
+                const response = await fetch(`/api/get-payment-data?date=${targetDate}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    shortPayments = data.shortPayments || [];
+                    recoveryHistory = (data.recoveryHistory || []).filter(r => r && r.date === targetDate);
+                    totalRecoveredAmount = data.totalRecoveredAmount || 0;
+                    globalTotals = data.globalTotals || {daily: 0, weekly: 0, tenDays: 0, short: 0, recovered: 0, grand: 0};
+                    
+                    renderShortPayments();
+                    updateHeaderSummary();
+                    
+                    console.log('✅ Data loaded from server for', targetDate);
+                    return true;
+                } else {
+                    const backup = localStorage.getItem(`payment_backup_${targetDate}`);
+                    if (backup) {
+                        const data = JSON.parse(backup);
+                        shortPayments = data.shortPayments || [];
+                        recoveryHistory = (data.recoveryHistory || []).filter(r => r && r.date === targetDate);
+                        totalRecoveredAmount = data.totalRecoveredAmount || 0;
+                        globalTotals = data.globalTotals || {daily: 0, weekly: 0, tenDays: 0, short: 0, recovered: 0, grand: 0};
+                        
+                        renderShortPayments();
+                        updateHeaderSummary();
+                        
+                        console.log('✅ Data loaded from localStorage backup for', targetDate);
+                        return true;
+                    }
+                }
+            } catch (error) {
+                console.error('❌ Server load error:', error);
+                
+                const backup = localStorage.getItem(`payment_backup_${targetDate}`);
+                if (backup) {
+                    const data = JSON.parse(backup);
+                    shortPayments = data.shortPayments || [];
+                    recoveryHistory = (data.recoveryHistory || []).filter(r => r && r.date === targetDate);
+                    totalRecoveredAmount = data.totalRecoveredAmount || 0;
+                    globalTotals = data.globalTotals || {daily: 0, weekly: 0, tenDays: 0, short: 0, recovered: 0, grand: 0};
+                    
+                    renderShortPayments();
+                    updateHeaderSummary();
+                    
+                    console.log('✅ Data loaded from localStorage backup for', targetDate);
+                    return true;
+                }
+            }
+            
+            return false;
+        }
+
+        function updateHeaderSummary() {
+            let dailyTotal = 0;
+            let weeklyTotal = 0;
+            let tenDaysTotal = 0;
+            let monthlyTotal = 0;
+            
+            document.querySelectorAll('.payment-checkbox[data-type="daily"]:checked').forEach(cb => {
+                dailyTotal += parseFloat(cb.dataset.amount || 0);
+            });
+            
+            document.querySelectorAll('.payment-checkbox[data-type="weekly"]:checked').forEach(cb => {
+                weeklyTotal += parseFloat(cb.dataset.amount || 0);
+            });
+            
+            document.querySelectorAll('.payment-checkbox[data-type="ten_days"]:checked').forEach(cb => {
+                tenDaysTotal += parseFloat(cb.dataset.amount || 0);
+            });
+            document.querySelectorAll('.payment-checkbox[data-type="monthly"]:checked').forEach(cb => {
+                monthlyTotal += parseFloat(cb.dataset.amount || 0);
+            });
+
+            const shortTotal = shortPayments.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+            const grandTotal = dailyTotal + weeklyTotal + tenDaysTotal + monthlyTotal + totalRecoveredAmount;
+
+            globalTotals = {
+                daily: dailyTotal,
+                weekly: weeklyTotal,
+                tenDays: tenDaysTotal,
+                monthly: monthlyTotal,
+                short: shortTotal,
+                recovered: totalRecoveredAmount,
+                grand: grandTotal
+            };
+
+            document.getElementById('header-daily-total').textContent = `₹${dailyTotal.toLocaleString()}`;
+            document.getElementById('header-weekly-total').textContent = `₹${weeklyTotal.toLocaleString()}`;
+            document.getElementById('header-tendays-total').textContent = `₹${tenDaysTotal.toLocaleString()}`;
+            document.getElementById('header-monthly-total').textContent = `₹${monthlyTotal.toLocaleString()}`;
+            document.getElementById('header-short-total').textContent = `₹${shortTotal.toLocaleString()}`;
+            document.getElementById('header-recovered-total').textContent = `₹${totalRecoveredAmount.toLocaleString()}`;
+            document.getElementById('header-grand-total').textContent = `₹${grandTotal.toLocaleString()}`;
+
+            if (!currentSubmissionStatus) {
+                saveToServer();
+            }
+        }
+
+        function toggleShortReport() {
+            const reportContent = document.getElementById('short-report-content');
+            const toggleBtn = document.getElementById('toggleShortReportBtn');
+            
+            if (reportContent.style.display === 'none') {
+                reportContent.style.display = 'block';
+                toggleBtn.innerHTML = '🙈 Hide Report';
+            } else {
+                reportContent.style.display = 'none';
+                toggleBtn.innerHTML = '👁️ Show Report';
+            }
+        }
+
+        async function loadPaymentData() {
+            const reportDate = document.getElementById('reportDate').value;
+            if (!reportDate) {
+                alert('Please select a report date');
+                return;
+            }
+
+            targetDate = reportDate;
+
+            currentSubmissionStatus = false;
+            const statusBadgePriming = document.getElementById('statusBadge');
+            if (statusBadgePriming) {
+                statusBadgePriming.innerHTML = '⏳ Pending';
+                statusBadgePriming.className = 'status-badge status-pending';
+            }
+            applyFreezeState();
+
+            try {
+                const stateResp = await fetch(`/api/payment-entry/day-state?date=${encodeURIComponent(targetDate)}&_=${Date.now()}`);
+                if (stateResp.ok) {
+                    const state = await stateResp.json();
+                    if (state && state.success) {
+                        currentSubmissionStatus = !!state.submitted;
+                        totalRecoveredAmount = Number(state.totalRecoveredAmount || 0);
+                        recoveryHistory = Array.isArray(state.recoveryHistory) ? state.recoveryHistory : [];
+                        shortPayments = Array.isArray(state.pendingShortPayments) ? state.pendingShortPayments : [];
+
+                        const statusBadge = document.getElementById('statusBadge');
+                        if (statusBadge) {
+                            if (currentSubmissionStatus) {
+                                statusBadge.innerHTML = '✅ Submitted';
+                                statusBadge.className = 'status-badge status-submitted';
+                            } else {
+                                statusBadge.innerHTML = '⏳ Pending';
+                                statusBadge.className = 'status-badge status-pending';
+                            }
+                        }
+
+                        renderShortPayments();
+                        updateHeaderSummary();
+                        applyFreezeState();
+                    }
+                }
+            } catch (e) {
+                console.error('Day-state fetch failed:', e);
+                currentSubmissionStatus = false;
+                applyFreezeState();
+            }
+
+            if (!currentSubmissionStatus) {
+                await loadFromServer();
+            }
+            
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            document.getElementById('paymentSections').innerHTML = '<div class="text-center p-3"><div class="spinner-border"></div> Loading...</div>';
+
+            try {
+                const response = await fetch(`/api/payment-entry/due-data?date=${encodeURIComponent(reportDate)}&_=${Date.now()}`);
+                const contentType = (response.headers.get('content-type') || '').toLowerCase();
+
+                let data = null;
+                if (contentType.includes('application/json')) {
+                    data = await response.json();
+                } else {
+                    const text = await response.text();
+                    const snippet = (text || '').slice(0, 400);
+                    throw new Error(`Non-JSON response (HTTP ${response.status}). ${snippet}`);
+                }
+
+                if (!response.ok || !data || data.success === false) {
+                    throw new Error(data?.error || data?.message || `HTTP ${response.status}`);
+                }
+                
+                allPaymentData = data;
+                renderPaymentSections(data);
+                if (!currentSubmissionStatus) {
+                    updateShortPayments();
+                }
+                updateHeaderSummary();
+                
+            } catch (error) {
+                console.error('Error loading payment data:', error);
+                document.getElementById('paymentSections').innerHTML = 
+                    '<div class="alert alert-danger m-3">Error loading data: ' + error.message + '</div>';
+            } finally {
+                document.getElementById('loadingOverlay').style.display = 'none';
+            }
+        }
+
+        function renderPaymentSections(data) {
+            let html = '';
+
+            if (data.daily && data.daily.length > 0) {
+                html += `
+                    <div class="payment-section">
+                        <div class="section-header">
+                            <span>🔄 DAILY INSTALLMENTS (${data.daily.length} clients) - Sorted A-Z</span>
+                            <span>Subtotal: ₹<span id="daily-subtotal">${(data.daily_total || 0).toLocaleString()}</span></span>
+                            <label class="form-check-label" style="font-weight:600;">
+                                <input type="checkbox" class="form-check-input" onchange="toggleSection('daily', this.checked)" checked> Select All
+                            </label>
+                        </div>
+                        ${renderMultiColumnSection(data.daily, 'daily')}
+                        <div class="type-total">DAILY TOTAL: ₹${(data.daily_total || 0).toLocaleString()}</div>
+                    </div>
+                `;
+            }
+
+            if ((data.weekly && data.weekly.length > 0) || (data.ten_days && data.ten_days.length > 0)) {
+                const weeklyCount = data.weekly ? data.weekly.length : 0;
+                const tenDaysCount = data.ten_days ? data.ten_days.length : 0;
+                const combinedCount = weeklyCount + tenDaysCount;
+                const combinedTotal = (data.weekly_total || 0) + (data.ten_days_total || 0);
+                
+                html += `
+                    <div class="payment-section">
+                        <div class="section-header">
+                            <span>📅 WEEKLY & TEN DAYS INSTALLMENTS (${combinedCount} clients) - Sorted A-Z</span>
+                            <span>Subtotal: ₹<span id="combined-subtotal">${combinedTotal.toLocaleString()}</span></span>
+                            <div style="display:flex; gap:10px; align-items:center; font-weight:600;">
+                                <label class="form-check-label">
+                                    <input type="checkbox" class="form-check-input" onchange="toggleSection('weekly', this.checked)" checked> Select Weekly
+                                </label>
+                                <label class="form-check-label">
+                                    <input type="checkbox" class="form-check-input" onchange="toggleSection('ten_days', this.checked)" checked> Select Ten Days
+                                </label>
+                            </div>
+                        </div>
+                        ${renderTwoBoxSection(data.weekly || [], data.ten_days || [], data.weekly_total || 0, data.ten_days_total || 0)}
+                        <div class="type-total">COMBINED TOTAL: ₹${combinedTotal.toLocaleString()}</div>
+                        <div class="type-total" style="text-align:center; margin: 20px 0; cursor: pointer;" onclick="submitPayments()" id="secondarySubmitBtn">
+                            <i class="bi bi-check-circle"></i>
+                            <span>Submit</span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (data.monthly && data.monthly.length > 0) {
+                html += `
+                    <div class="payment-section">
+                        <div class="section-header">
+                            <span>🗓️ MONTHLY INSTALLMENTS (${data.monthly.length} clients) - Sorted A-Z</span>
+                            <span>Subtotal: ₹<span id="monthly-subtotal">${(data.monthly_total || 0).toLocaleString()}</span></span>
+                            <label class="form-check-label" style="font-weight:600;">
+                                <input type="checkbox" class="form-check-input" onchange="toggleSection('monthly', this.checked)" checked> Select All
+                            </label>
+                        </div>
+                        ${renderMultiColumnSection(data.monthly, 'monthly')}
+                        <div class="type-total">MONTHLY TOTAL: ₹${(data.monthly_total || 0).toLocaleString()}</div>
+                    </div>
+                `;
+            }
+
+            if (html === '') {
+                html = '<div class="alert alert-info m-3">No payment collections found for the selected date.</div>';
+            }
+
+            document.getElementById('paymentSections').innerHTML = html;
+            
+            restoreCheckboxStates();
+        }
+
+        function restoreCheckboxStates() {
+            shortPayments.forEach(shortPayment => {
+                const checkbox = document.querySelector(
+                    `input[data-loan-id="${shortPayment.loan_id}"][data-type="${shortPayment.type}"]`
+                );
+                if (checkbox) {
+                    checkbox.checked = false;
+                }
+            });
+
+            recoveryHistory.forEach(recovery => {
+                if (recovery.date === targetDate) {
+                    const checkbox = document.querySelector(
+                        `input[data-loan-id="${recovery.loanId}"][data-type="${recovery.type}"]`
+                    );
+                    if (checkbox) {
+                        const row = checkbox.closest('.client-row');
+                        if (row) {
+                            row.classList.add('recovered');
+                            row.style.background = 'linear-gradient(135deg, #e8f5e8, #c8e6c9)';
+                            row.style.opacity = '0.8';
+                            checkbox.disabled = true;
+                            checkbox.checked = true;
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderMultiColumnSection(clients, type) {
+            const CLIENTS_PER_COLUMN = 50;
+            const totalColumns = Math.ceil(clients.length / CLIENTS_PER_COLUMN);
+            
+            let html = '<div class="multi-column">';
+            
+            for (let col = 0; col < totalColumns; col++) {
+                const startIndex = col * CLIENTS_PER_COLUMN;
+                const endIndex = Math.min(startIndex + CLIENTS_PER_COLUMN, clients.length);
+                const columnClients = clients.slice(startIndex, endIndex);
+                
+                html += `
+                    <div class="column-box">
+                        <div class="column-header">
+                            <div class="checkbox-label">
+                                <input type="checkbox" class="form-check-input" checked onchange="toggleColumn('${type}', ${col}, this.checked)" />
+                            </div>
+                            <div class="sr-label">Sr.No.</div>
+                            <div class="name-label">Name</div>
+                            <div class="amt-label">Amount</div>
+                        </div>
+                `;
+                
+                columnClients.forEach((client, index) => {
+                    const serialNo = startIndex + index + 1;
+                    
+                    html += `
+                        <div class="client-row" data-loan-id="${client.loan_id || serialNo}">
+                            <div class="client-checkbox-container">
+                                <input type="checkbox" class="client-checkbox payment-checkbox" 
+                                       data-type="${type}"
+                                       data-col="${col}"
+                                       data-amount="${client.total_amount}"
+                                       data-client-name="${client.name}"
+                                       data-loan-id="${client.loan_id || serialNo}"
+                                       onchange="handleCheckboxChange(this)"
+                                       checked />
+                            </div>
+                            <div class="client-serial">${serialNo}</div>
+                            <div class="client-name">${client.name}</div>
+                            <div class="client-amount">₹${client.total_amount.toLocaleString()}</div>
+                        </div>
+                    `;
+                });
+                
+                const columnTotal = columnClients.reduce((sum, c) => sum + c.total_amount, 0);
+                html += `
+                        <div class="column-subtotal">
+                            <span>Subtotal:</span>
+                            <span>₹${columnTotal.toLocaleString()}</span>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            html += '</div>';
+            return html;
+        }
+
+        function renderTwoBoxSection(weeklyClients, tenDaysClients, weeklyTotal, tenDaysTotal) {
+            let html = '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px;">';
+            
+            html += `
+                <div class="column-box" style="border: 3px solid #2196f3; background: #f3f8ff;">
+                    <div class="column-header" style="background: linear-gradient(135deg, #2196f3, #1976d2) !important; color: white !important; justify-content: center;">
+                        📅 WEEKLY INSTALLMENTS (${weeklyClients.length} clients)
+                    </div>
+            `;
+            
+            if (weeklyClients.length > 0) {
+                html += `
+                    <div style="display: flex; justify-content: space-between; padding: 10px; background: #e3f2fd; font-weight: bold; font-size: 13px;">
+                        <div style="width: 50px;">☑️</div>
+                        <div style="width: 60px; text-align: center;">Sr.No</div>
+                        <div style="width: 140px; text-align: center;">Name</div>
+                        <div style="width: 80px; text-align: center;">Amount</div>
+                    </div>
+                `;
+                
+                weeklyClients.forEach((client, index) => {
+                    html += `
+                        <div class="client-row">
+                            <div style="width: 50px; text-align: center;">
+                                <input type="checkbox" class="client-checkbox payment-checkbox" 
+                                       data-type="weekly"
+                                       data-amount="${client.total_amount}"
+                                       data-client-name="${client.name}"
+                                       data-loan-id="${client.loan_id || index}"
+                                       onchange="handleCheckboxChange(this)"
+                                       checked />
+                            </div>
+                            <div class="client-serial">${index + 1}</div>
+                            <div class="client-name" style="width: 140px;">${client.name}</div>
+                            <div class="client-amount" style="width: 80px;">₹${client.total_amount.toLocaleString()}</div>
+                        </div>
+                    `;
+                });
+            }
+            
+            html += `
+                    <div class="column-subtotal">
+                        <span>Weekly Total:</span>
+                        <span id="weekly-box-total">₹${weeklyTotal.toLocaleString()}</span>
+                    </div>
+                </div>
+            `;
+            
+            html += `
+                <div class="column-box" style="border: 3px solid #2196f3; background: #f3f8ff;">
+                    <div class="column-header" style="background: linear-gradient(135deg, #2196f3, #1976d2) !important; color: white !important; justify-content: center;">
+                        📆 TEN DAYS INSTALLMENTS (${tenDaysClients.length} clients)
+                    </div>
+            `;
+            
+            if (tenDaysClients.length > 0) {
+                html += `
+                    <div style="display: flex; justify-content: space-between; padding: 10px; background: #e3f2fd; font-weight: bold; font-size: 13px;">
+                        <div style="width: 50px;">☑️</div>
+                        <div style="width: 60px; text-align: center;">Sr.No</div>
+                        <div style="width: 140px; text-align: center;">Name</div>
+                        <div style="width: 80px; text-align: center;">Amount</div>
+                    </div>
+                `;
+                
+                tenDaysClients.forEach((client, index) => {
+                    html += `
+                        <div class="client-row">
+                            <div style="width: 50px; text-align: center;">
+                                <input type="checkbox" class="client-checkbox payment-checkbox" 
+                                       data-type="ten_days"
+                                       data-amount="${client.total_amount}"
+                                       data-client-name="${client.name}"
+                                       data-loan-id="${client.loan_id || index}"
+                                       onchange="handleCheckboxChange(this)"
+                                       checked />
+                            </div>
+                            <div class="client-serial">${index + 1}</div>
+                            <div class="client-name" style="width: 140px;">${client.name}</div>
+                            <div class="client-amount" style="width: 80px;">₹${client.total_amount.toLocaleString()}</div>
+                        </div>
+                    `;
+                });
+            }
+            
+            html += `
+                    <div class="column-subtotal">
+                        <span>Ten Days Total:</span>
+                        <span id="tendays-box-total">₹${tenDaysTotal.toLocaleString()}</span>
+                    </div>
+                </div>
+            `;
+            
+            html += '</div>';
+            return html;
+        }
+
+        function handleCheckboxChange(checkbox) {
+            updateShortPayments();
+            updateSubtotals();
+            updateHeaderSummary();
+        }
+
+        function toggleColumn(type, colIndex, isChecked) {
+            const boxes = document.querySelectorAll(`.payment-checkbox[data-type="${type}"][data-col="${colIndex}"]`);
+            boxes.forEach(cb => {
+                if (!cb.disabled) cb.checked = isChecked;
+            });
+            handleCheckboxChange(null);
+        }
+
+        function toggleSection(type, isChecked) {
+            const boxes = document.querySelectorAll(`.payment-checkbox[data-type="${type}"]`);
+            boxes.forEach(cb => {
+                if (!cb.disabled) {
+                    cb.checked = isChecked;
+                }
+            });
+            handleCheckboxChange(null);
+        }
+
+        function updateShortPayments() {
+            if (currentSubmissionStatus) {
+                return;
+            }
+
+            const uncheckedBoxes = document.querySelectorAll('.payment-checkbox.client-checkbox:not(:checked):not(:disabled)');
+            shortPayments = [];
+            
+            uncheckedBoxes.forEach((checkbox, index) => {
+                const rawLoanId = checkbox.dataset.loanId;
+                const loanIdNum = Number(rawLoanId);
+                if (!rawLoanId || !Number.isFinite(loanIdNum) || loanIdNum <= 0) {
+                    return;
+                }
+                shortPayments.push({
+                    sr: index + 1,
+                    loan_id: loanIdNum,
+                    name: checkbox.dataset.clientName,
+                    amount: parseFloat(checkbox.dataset.amount),
+                    type: checkbox.dataset.type,
+                    unpaid_since: targetDate
+                });
+            });
+
+            renderShortPayments();
+        }
+
+        function selectAllClients() {
+            document.querySelectorAll('.payment-checkbox.client-checkbox').forEach(cb => {
+                if (!cb.disabled) cb.checked = true;
+            });
+            handleCheckboxChange(null);
+        }
+
+        function unselectAllClients() {
+            document.querySelectorAll('.payment-checkbox.client-checkbox').forEach(cb => {
+                if (!cb.disabled) cb.checked = false;
+            });
+            handleCheckboxChange(null);
+        }
+
+        function renderShortPayments() {
+            const shortList = document.getElementById('short-list');
+            const totalAmount = shortPayments.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+            const totalCount = shortPayments.length;
+
+            document.getElementById('short-total-amount').textContent = totalAmount.toLocaleString();
+            document.getElementById('short-total-count').textContent = totalCount;
+            document.getElementById('short-recovered-amount').textContent = totalRecoveredAmount.toLocaleString();
+
+            if (shortPayments.length === 0 && recoveryHistory.filter(r => r.date === targetDate).length === 0) {
+                shortList.innerHTML = '<div style="text-align: center; padding: 30px; color: #4caf50; font-weight: bold; font-size: 16px;">✅ All payments collected!</div>';
+                return;
+            }
+
+            let html = '';
+            
+            // Show short payments (uncollected)
+            shortPayments.forEach(payment => {
+                html += `
+                    <div class="short-item" data-loan-id="${payment.loan_id}" onclick="recoverSingleShort(this, ${payment.loan_id})">
+                        <div style="flex: 1;">
+                            <div style="font-weight: 700; font-size: 16px; margin-bottom: 6px; color: #333;">
+                                ${payment.sr}. ${payment.name}
+                            </div>
+                            <div class="item-details" style="font-size: 13px; color: #666; padding: 4px 12px; background: #ffebee; border-radius: 15px; display: inline-block;">
+                                ${payment.type.toUpperCase()} - Unpaid since: ${payment.unpaid_since}
+                            </div>
+                        </div>
+                        <div style="font-weight: bold; color: #f44336; font-size: 18px; padding: 10px 18px; background: #fff5f5; border-radius: 25px; border: 2px solid #ffcdd2;">
+                            ₹${payment.amount.toLocaleString()}
+                        </div>
+                    </div>
+                `;
+            });
+
+            // Show recovered payments for this date
+            const dateRecoveries = recoveryHistory.filter(r => r.date === targetDate);
+            dateRecoveries.forEach((recovery, index) => {
+                html += `
+                    <div class="short-item recovered" onclick="showRecoveryDetails('${recovery.id}')">
+                        <div style="flex: 1;">
+                            <div style="font-weight: 700; font-size: 16px; margin-bottom: 6px; color: #2e7d32;">
+                                ✅ ${recovery.clientName}
+                            </div>
+                            <div style="font-size: 13px; color: #2e7d32; padding: 4px 12px; background: rgba(76,175,80,0.1); border-radius: 15px; display: inline-block;">
+                                RECOVERED - ${recovery.daysDiff} days overdue - Click for details
+                            </div>
+                        </div>
+                        <div style="font-weight: bold; color: #2e7d32; font-size: 16px; padding: 10px 18px; background: rgba(76,175,80,0.1); border-radius: 25px; border: 2px solid #4caf50;">
+                            ₹${recovery.amount.toLocaleString()}
+                        </div>
+                    </div>
+                `;
+            });
+
+            shortList.innerHTML = html;
+        }
+
+        // ===== Short Section Actions (capture-only) =====
+        function getShortSectionElement() {
+            return document.querySelector('.short-report');
+        }
+
+        async function shareShortImage() {
+            const section = getShortSectionElement();
+            if (!section || !window.html2canvas) {
+                alert('Capture not available.');
+                return;
+            }
+            const list = section.querySelector('#short-list');
+            const prevMaxHeight = list ? list.style.maxHeight : '';
+            const prevOverflow = list ? list.style.overflow : '';
+            if (list) {
+                list.style.maxHeight = 'none';
+                list.style.overflow = 'visible';
+            }
+            const canvas = await html2canvas(section, {scale: 2, backgroundColor: '#ffffff'});
+            if (list) {
+                list.style.maxHeight = prevMaxHeight;
+                list.style.overflow = prevOverflow;
+            }
+            canvas.toBlob(blob => {
+                if (!blob) return;
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Short_Report_${targetDate}.png`;
+                a.click();
+                setTimeout(() => URL.revokeObjectURL(url), 1500);
+            });
+        }
+
+        function printShortSection() {
+            const section = getShortSectionElement();
+            if (!section) return;
+            const w = window.open('', '_blank');
+            w.document.write(`
+                <html>
+                  <head>
+                    <title>Short Payment Report</title>
+                    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+                  </head>
+                  <body>${section.outerHTML}</body>
+                </html>
+            `);
+            w.document.close();
+            w.focus();
+            setTimeout(() => w.print(), 300);
+        }
+
+        async function downloadShortPdf() {
+            const section = getShortSectionElement();
+            if (!section || !window.html2pdf) {
+                alert('PDF not available.');
+                return;
+            }
+            const list = section.querySelector('#short-list');
+            const prevMaxHeight = list ? list.style.maxHeight : '';
+            const prevOverflow = list ? list.style.overflow : '';
+            if (list) {
+                list.style.maxHeight = 'none';
+                list.style.overflow = 'visible';
+            }
+            const opts = {
+                margin:       8,
+                filename:     `Short_Report_${targetDate}.pdf`,
+                image:        { type: 'jpeg', quality: 0.95 },
+                html2canvas:  { scale: 2, backgroundColor: '#ffffff' },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            await html2pdf().set(opts).from(section).save();
+            if (list) {
+                list.style.maxHeight = prevMaxHeight;
+                list.style.overflow = prevOverflow;
+            }
+        }
+
+        function scheduleShortFollowup() {
+            const note = prompt('Add follow-up note for short payments:');
+            if (note !== null) {
+                alert('Follow-up noted:\n' + note);
+            }
+        }
+
+        function isValidIsoDate(value) {
+            return /^\d{4}-\d{2}-\d{2}$/.test(String(value || '').trim());
+        }
+
+        function diffDaysIso(fromIso, toIso) {
+            if (!isValidIsoDate(fromIso) || !isValidIsoDate(toIso)) return 0;
+            const from = new Date(fromIso);
+            const to = new Date(toIso);
+            const ms = to.getTime() - from.getTime();
+            return Math.max(0, Math.floor(ms / (1000 * 60 * 60 * 24)));
+        }
+
+        let shortRecoveryContext = null;
+        let shortRecoveryAutoPrefix = '';
+        let shortRecoveryProgrammaticNotesUpdate = false;
+
+        function buildShortRecoveryPrefix({ dueDate, recoveryDate, daysDiff }) {
+            return `Recovered after ${daysDiff} days. Original due date: ${dueDate}. Recovery date: ${recoveryDate}`;
+        }
+
+        function updateShortRecoveryDerivedFields() {
+            if (!shortRecoveryContext) return;
+            const dueDate = shortRecoveryContext.dueDate;
+            const recoveryDate = document.getElementById('shortRecoveryDate')?.value || localTodayIso();
+            const daysDiff = diffDaysIso(dueDate, recoveryDate);
+
+            const daysEl = document.getElementById('shortRecoveryDaysOverdue');
+            if (daysEl) daysEl.textContent = `${daysDiff} days`;
+
+            const perDayEl = document.getElementById('shortRecoveryPenaltyPerDay');
+            const perDay = perDayEl ? (parseFloat(perDayEl.value || '500') || 0) : 0;
+            const penaltyAmt = Math.max(0, Math.floor(perDay * daysDiff));
+            const penEl = document.getElementById('shortRecoveryPenaltyAmount');
+            if (penEl) penEl.textContent = `₹${penaltyAmt.toLocaleString()}`;
+
+            const nextPrefix = buildShortRecoveryPrefix({ dueDate, recoveryDate, daysDiff });
+            const notesEl = document.getElementById('shortRecoveryNotes');
+            if (!notesEl) return;
+
+            const currentNotes = String(notesEl.value || '');
+            const prefixRegex = /^Recovered after[^\n]*/;
+
+            const normalized = currentNotes.replace(/\r\n/g, "\n");
+            const lines = normalized.split("\n");
+            const firstLine = lines.length ? (lines[0] || '') : '';
+
+            // Always keep the first line as the auto prefix (live updates on date change)
+            // Preserve user notes below the first line.
+            let userNotes = '';
+            if (lines.length > 1) {
+                userNotes = lines.slice(1).join("\n");
+            } else {
+                // If user removed prefix and typed their own single line, preserve it as notes.
+                if (firstLine && !prefixRegex.test(firstLine) && firstLine !== shortRecoveryAutoPrefix) {
+                    userNotes = firstLine;
+                }
+            }
+
+            let nextNotes = nextPrefix + "\n";
+            if (String(userNotes || '').trim()) {
+                nextNotes = nextPrefix + "\n" + String(userNotes).trimStart();
+            }
+
+            if (nextNotes !== currentNotes) {
+                shortRecoveryProgrammaticNotesUpdate = true;
+                notesEl.value = nextNotes;
+                shortRecoveryProgrammaticNotesUpdate = false;
+            }
+
+            shortRecoveryAutoPrefix = nextPrefix;
+        }
+
+        function openShortRecoveryModalByLoanId(loanId) {
+            const payment = shortPayments.find(p => Number(p.loan_id) === Number(loanId));
+            if (!payment) return;
+
+            const dueDate = (payment.unpaid_since || targetDate || '').trim();
+            const recoveryDate = localTodayIso();
+            const daysDiff = diffDaysIso(dueDate, recoveryDate);
+
+            shortRecoveryContext = {
+                loanId: Number(payment.loan_id),
+                clientName: String(payment.name || ''),
+                amount: Number(payment.amount || 0),
+                dueDate
+            };
+
+            const modal = document.getElementById('shortRecoveryModal');
+            if (!modal) return;
+
+            document.getElementById('shortRecoveryClientName').textContent = shortRecoveryContext.clientName;
+            document.getElementById('shortRecoveryAmount').textContent = `₹${shortRecoveryContext.amount.toLocaleString()}`;
+            document.getElementById('shortRecoveryDueDate').textContent = dueDate;
+
+            const dateEl = document.getElementById('shortRecoveryDate');
+            if (dateEl) {
+                dateEl.disabled = false;
+                dateEl.style.opacity = '';
+                dateEl.style.cursor = '';
+                dateEl.value = recoveryDate;
+            }
+
+            const perDayEl = document.getElementById('shortRecoveryPenaltyPerDay');
+            if (perDayEl) {
+                perDayEl.value = 500;
+                perDayEl.disabled = false;
+                perDayEl.style.opacity = '';
+                perDayEl.style.cursor = '';
+            }
+
+            const notesEl = document.getElementById('shortRecoveryNotes');
+            if (notesEl) {
+                notesEl.disabled = false;
+                notesEl.style.opacity = '';
+                notesEl.style.cursor = '';
+                shortRecoveryAutoPrefix = buildShortRecoveryPrefix({ dueDate, recoveryDate, daysDiff });
+                shortRecoveryProgrammaticNotesUpdate = true;
+                notesEl.value = shortRecoveryAutoPrefix + "\n";
+                shortRecoveryProgrammaticNotesUpdate = false;
+
+                notesEl.oninput = () => {
+                    if (shortRecoveryProgrammaticNotesUpdate) return;
+                };
+            }
+
+            updateShortRecoveryDerivedFields();
+            modal.style.display = 'flex';
+        }
+
+        function closeShortRecoveryModal() {
+            const modal = document.getElementById('shortRecoveryModal');
+            if (modal) modal.style.display = 'none';
+            shortRecoveryContext = null;
+            shortRecoveryAutoPrefix = '';
+            shortRecoveryProgrammaticNotesUpdate = false;
+        }
+
+        function confirmShortRecovery() {
+            if (!shortRecoveryContext) return;
+
+            const recoveryDate = document.getElementById('shortRecoveryDate')?.value || localTodayIso();
+            if (!isValidIsoDate(recoveryDate)) {
+                alert('Invalid recovery date.');
+                return;
+            }
+            const notesBase = String(document.getElementById('shortRecoveryNotes')?.value || '').trim();
+            const perDay = parseFloat(document.getElementById('shortRecoveryPenaltyPerDay')?.value || '500') || 0;
+            const daysDiff = diffDaysIso(shortRecoveryContext.dueDate, recoveryDate);
+            const penaltyAmt = Math.max(0, Math.floor(perDay * daysDiff));
+            const penaltyLine = `Penalty collected: ₹${penaltyAmt.toLocaleString()} (${daysDiff} days @ ₹${perDay}/day)`;
+            const notes = (notesBase ? (notesBase + "\n") : '') + penaltyLine;
+            if (!notes) {
+                alert('Please enter recovery notes.');
+                return;
+            }
+
+            document.getElementById('loadingOverlay').style.display = 'flex';
+
+            fetch('/api/payment-entry/recover-single', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    due_date: shortRecoveryContext.dueDate,
+                    recovery_date: recoveryDate,
+                    loan_id: shortRecoveryContext.loanId,
+                    notes: notes
+                })
+            }).then(async (r) => {
+                const payload = await r.json().catch(() => ({}));
+                if (!r.ok || !payload.success) {
+                    throw new Error(payload.error || payload.message || `HTTP ${r.status}`);
+                }
+
+                const stateResp = await fetch(`/api/payment-entry/day-state?date=${encodeURIComponent(targetDate)}&_=${Date.now()}`);
+                if (stateResp.ok) {
+                    const state = await stateResp.json();
+                    if (state && state.success) {
+                        totalRecoveredAmount = Number(state.totalRecoveredAmount || 0);
+                        recoveryHistory = Array.isArray(state.recoveryHistory) ? state.recoveryHistory : [];
+                        shortPayments = Array.isArray(state.pendingShortPayments) ? state.pendingShortPayments : [];
+                    }
+                }
+
+                const ctx = shortRecoveryContext;
+                const clientName = ctx?.clientName || 'Unknown Client';
+                const amount = Number(ctx?.amount || 0);
+                const dueDate = ctx?.dueDate || 'N/A';
+
+                closeShortRecoveryModal();
+                renderShortPayments();
+                updateHeaderSummary();
+
+                alert(`✅ Recovery completed!\n\n👤 ${clientName}\n💰 ₹${amount.toLocaleString()}\n📅 Due: ${dueDate}\n📆 Recovered: ${recoveryDate}\n📝 Notes: ${notes}`);
+            }).catch((err) => {
+                console.error('Recovery failed:', err);
+                alert('❌ Recovery failed: ' + (err?.message || err));
+            }).finally(() => {
+                document.getElementById('loadingOverlay').style.display = 'none';
+            });
+        }
+
+        function recoverSingleShort(element, loanId) {
+            if (element && element.classList && element.classList.contains('recovered')) {
+                return;
+            }
+            openShortRecoveryModalByLoanId(loanId);
+        }
+
+        // ✅ SHOW RECOVERY DETAILS MODAL
+        function showRecoveryDetails(recoveryId) {
+            const recovery = recoveryHistory.find(r => r.id === recoveryId);
+            if (!recovery) return;
+
+            const modal = document.getElementById('recoveryModal');
+            const content = document.getElementById('recoveryDetailsContent');
+
+            content.innerHTML = `
+                <div class="recovery-info">
+                    <div class="info-item">
+                        <div class="info-label">Client Name</div>
+                        <div class="info-value">${recovery.clientName}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Amount</div>
+                        <div class="info-value">₹${recovery.amount.toLocaleString()}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Payment Type</div>
+                        <div class="info-value">${recovery.type?.toUpperCase() || 'N/A'}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Originally Due</div>
+                        <div class="info-value">${recovery.unpaidDate}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Days Overdue</div>
+                        <div class="info-value">${recovery.daysDiff} days</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Recovered On</div>
+                        <div class="info-value">${(recovery.recoveryDate || (recovery.recoveredAt ? new Date(recovery.recoveredAt).toLocaleDateString() : ''))}</div>
+                    </div>
+                </div>
+                
+                <div class="recovery-notes">
+                    <div style="font-weight: 600; color: #666; font-size: 14px; margin-bottom: 10px;">📝 Recovery Notes:</div>
+                    <div style="font-size: 15px; color: #333; line-height: 1.4;">${recovery.notes}</div>
+                </div>
+            `;
+
+            // Store current recovery for printing
+            window.currentRecoveryDetails = recovery;
+            modal.style.display = 'flex';
+        }
+
+        // ✅ CLOSE RECOVERY MODAL
+        function closeRecoveryModal() {
+            document.getElementById('recoveryModal').style.display = 'none';
+            window.currentRecoveryDetails = null;
+        }
+
+        // ✅ PRINT RECOVERY DETAILS
+        function printRecoveryDetails() {
+            if (!window.currentRecoveryDetails) return;
+
+            const recovery = window.currentRecoveryDetails;
+            const printWindow = window.open('', '_blank');
+            
+            printWindow.document.write(`
+                <html>
+                <head>
+                    <title>Recovery Details - ${recovery.clientName}</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 20px; }
+                        .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 30px; }
+                        .details { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
+                        .detail-item { padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+                        .label { font-weight: bold; color: #666; font-size: 12px; text-transform: uppercase; }
+                        .value { font-size: 16px; color: #333; margin-top: 5px; }
+                        .notes { border: 2px solid #ff9800; padding: 20px; border-radius: 10px; background: #fff8e1; }
+                        .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>💰 Payment Recovery Details</h1>
+                        <p>Generated on: ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}</p>
+                    </div>
+                    
+                    <div class="details">
+                        <div class="detail-item">
+                            <div class="label">Client Name</div>
+                            <div class="value">${recovery.clientName}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="label">Amount</div>
+                            <div class="value">₹${recovery.amount.toLocaleString()}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="label">Payment Type</div>
+                            <div class="value">${recovery.type?.toUpperCase() || 'N/A'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="label">Originally Due</div>
+                            <div class="value">${recovery.unpaidDate}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="label">Days Overdue</div>
+                            <div class="value">${recovery.daysDiff} days</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="label">Recovered On</div>
+                            <div class="value">${(recovery.recoveryDate || (recovery.recoveredAt ? new Date(recovery.recoveredAt).toLocaleDateString() : ''))}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="notes">
+                        <h3>📝 Recovery Notes:</h3>
+                        <p>${recovery.notes}</p>
+                    </div>
+                    
+                    <div class="footer">
+                        <p>Payment Entry System - Recovery Report</p>
+                    </div>
+                </body>
+                </html>
+            `);
+            
+            printWindow.document.close();
+            printWindow.focus();
+            printWindow.print();
+        }
+
+        function updateSubtotals() {
+            const dailyCheckboxes = document.querySelectorAll('.payment-checkbox[data-type="daily"]:checked');
+            let dailyTotal = 0;
+            dailyCheckboxes.forEach(cb => dailyTotal += parseFloat(cb.dataset.amount || 0));
+            
+            const dailySubtotalEl = document.getElementById('daily-subtotal');
+            if (dailySubtotalEl) dailySubtotalEl.textContent = dailyTotal.toLocaleString();
+
+            const weeklyCheckboxes = document.querySelectorAll('.payment-checkbox[data-type="weekly"]:checked');
+            const tenDaysCheckboxes = document.querySelectorAll('.payment-checkbox[data-type="ten_days"]:checked');
+            const monthlyCheckboxes = document.querySelectorAll('.payment-checkbox[data-type="monthly"]:checked');
+            let weeklyTotal = 0;
+            let tenDaysTotal = 0;
+            let monthlyTotal = 0;
+            
+            weeklyCheckboxes.forEach(cb => weeklyTotal += parseFloat(cb.dataset.amount || 0));
+            tenDaysCheckboxes.forEach(cb => tenDaysTotal += parseFloat(cb.dataset.amount || 0));
+            monthlyCheckboxes.forEach(cb => monthlyTotal += parseFloat(cb.dataset.amount || 0));
+            
+            const combinedSubtotalEl = document.getElementById('combined-subtotal');
+            const weeklyBoxTotalEl = document.getElementById('weekly-box-total');
+            const tenDaysBoxTotalEl = document.getElementById('tendays-box-total');
+            const monthlySubtotalEl = document.getElementById('monthly-subtotal');
+            
+            if (combinedSubtotalEl) combinedSubtotalEl.textContent = (weeklyTotal + tenDaysTotal).toLocaleString();
+            if (weeklyBoxTotalEl) weeklyBoxTotalEl.textContent = `₹${weeklyTotal.toLocaleString()}`;
+            if (tenDaysBoxTotalEl) tenDaysBoxTotalEl.textContent = `₹${tenDaysTotal.toLocaleString()}`;
+            if (monthlySubtotalEl) monthlySubtotalEl.textContent = monthlyTotal.toLocaleString();
+        }
+
+        function submitPayments() {
+            if (currentSubmissionStatus) {
+                alert('⚠️ Payments already submitted for this date!');
+                return;
+            }
+
+            const checkedBoxes = document.querySelectorAll('.payment-checkbox:checked:not(:disabled)');
+            const payments = [];
+            
+            checkedBoxes.forEach(cb => {
+                const rawLoanId = cb.dataset.loanId;
+                const loanIdNum = Number(rawLoanId);
+                if (!rawLoanId || !Number.isFinite(loanIdNum) || loanIdNum <= 0) {
+                    return;
+                }
+                payments.push({
+                    loan_id: loanIdNum,
+                    amount: parseFloat(cb.dataset.amount),
+                    type: cb.dataset.type,
+                    client_name: cb.dataset.clientName
+                });
+            });
+
+            const totalAmount = payments.reduce((sum, p) => sum + p.amount, 0);
+            const shortCount = shortPayments.length;
+
+            if (!confirm(`Submit payments for ${targetDate}?\n\nCollected Payments: ${payments.length} (₹${totalAmount.toLocaleString()})\nShort Payments: ${shortCount} clients\nRecovered: ₹${totalRecoveredAmount.toLocaleString()}`)) {
+                return;
+            }
+
+            document.getElementById('loadingOverlay').style.display = 'flex';
+
+            fetch('/payment-entry/process', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    date: targetDate,
+                    payments: payments
+                })
+            }).then(async (r) => {
+                const payload = await r.json().catch(() => ({}));
+                if (!r.ok || !payload.success) {
+                    throw new Error(payload.error || payload.message || `HTTP ${r.status}`);
+                }
+
+                currentSubmissionStatus = true;
+
+                const statusBadge = document.getElementById('statusBadge');
+                if (statusBadge) {
+                    statusBadge.innerHTML = '✅ Submitted';
+                    statusBadge.className = 'status-badge status-submitted';
+                }
+
+                applyFreezeState();
+
+                alert(`✅ Payments submitted successfully!\n\nCollected: ₹${totalAmount.toLocaleString()}\nShort: ${shortCount} clients\nRecovered: ₹${totalRecoveredAmount.toLocaleString()}`);
+
+                try {
+                    const stateResp = await fetch(`/api/payment-entry/day-state?date=${encodeURIComponent(targetDate)}&_=${Date.now()}`);
+                    if (stateResp.ok) {
+                        const state = await stateResp.json();
+                        if (state && state.success) {
+                            totalRecoveredAmount = Number(state.totalRecoveredAmount || 0);
+                            recoveryHistory = Array.isArray(state.recoveryHistory) ? state.recoveryHistory : [];
+                            shortPayments = Array.isArray(state.pendingShortPayments) ? state.pendingShortPayments : [];
+                        }
+                    }
+                } catch (e) {
+                    console.error('Post-submit day-state fetch failed:', e);
+                }
+
+                renderShortPayments();
+                updateHeaderSummary();
+            }).catch((err) => {
+                console.error('Submit failed:', err);
+                alert('❌ Submit failed: ' + (err?.message || err));
+            }).finally(() => {
+                document.getElementById('loadingOverlay').style.display = 'none';
+            });
+        }
+
+        function editEntry() {
+            if (!confirm(`Clear all payments for ${targetDate} to allow editing?`)) {
+                return;
+            }
+
+            document.getElementById('loadingOverlay').style.display = 'flex';
+
+            fetch(`/payment-entry/edit/${encodeURIComponent(targetDate)}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({})
+            }).then(async (r) => {
+                const payload = await r.json().catch(() => ({}));
+                if (!r.ok || payload.success === false) {
+                    throw new Error(payload.error || payload.message || `HTTP ${r.status}`);
+                }
+
+                currentSubmissionStatus = false;
+
+                const indicator = document.querySelector('.freeze-indicator');
+                if (indicator) indicator.remove();
+
+                const statusBadge = document.getElementById('statusBadge');
+                if (statusBadge) {
+                    statusBadge.innerHTML = '⏳ Pending';
+                    statusBadge.className = 'status-badge status-pending';
+                }
+
+                alert('✅ Entry cleared for editing!');
+                await loadPaymentData();
+            }).catch((err) => {
+                console.error('Edit failed:', err);
+                alert('❌ Edit failed: ' + (err?.message || err));
+            }).finally(() => {
+                document.getElementById('loadingOverlay').style.display = 'none';
+            });
+        }
+
+        function deleteEntry() {
+            if (!confirm(`⚠️ DELETE all payment data for ${targetDate}?\n\nThis action cannot be undone!`)) {
+                return;
+            }
+
+            document.getElementById('loadingOverlay').style.display = 'flex';
+
+            fetch(`/payment-entry/delete/${encodeURIComponent(targetDate)}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({})
+            }).then(async (r) => {
+                const payload = await r.json().catch(() => ({}));
+                if (!r.ok || payload.success === false) {
+                    throw new Error(payload.error || payload.message || `HTTP ${r.status}`);
+                }
+
+                shortPayments = [];
+                totalRecoveredAmount = 0;
+                recoveryHistory = recoveryHistory.filter(r => r.date !== targetDate);
+                globalTotals = {daily: 0, weekly: 0, tenDays: 0, short: 0, recovered: 0, grand: 0};
+                currentSubmissionStatus = false;
+
+                localStorage.removeItem(`payment_backup_${targetDate}`);
+
+                alert('✅ Entry deleted successfully!');
+                document.getElementById('paymentSections').innerHTML = '<div class="text-center p-3">Entry deleted</div>';
+                renderShortPayments();
+                updateHeaderSummary();
+            }).catch((err) => {
+                console.error('Delete failed:', err);
+                alert('❌ Delete failed: ' + (err?.message || err));
+            }).finally(() => {
+                document.getElementById('loadingOverlay').style.display = 'none';
+            });
+        }
+
+        function exportPDF() {
+            const reportDate = document.getElementById('reportDate')?.value;
+            if (!reportDate) {
+                alert('Please select a report date first.');
+                return;
+            }
+            exportPDFWithOrientation('landscape', '_landscape');
+        }
+
+        async function printPaymentReport() {
+            const reportDate = document.getElementById('reportDate')?.value;
+            if (!reportDate) {
+                alert('Please select a report date first.');
+                return;
+            }
+
+            const fileName = `Payment_Entry_${reportDate}_print.pdf`;
+            const blob = await buildPaymentPdfBlob({ orientation: 'portrait', filename: fileName });
+            const url = URL.createObjectURL(blob);
+            const w = window.open(url, '_blank');
+            if (!w) {
+                alert('Pop-up blocked. Allow pop-ups to print.');
+                return;
+            }
+            w.addEventListener('load', () => {
+                try {
+                    w.focus();
+                    w.print();
+                } catch (_) {
+                    // ignore
+                }
+            });
+            setTimeout(() => URL.revokeObjectURL(url), 60_000);
+        }
+
+        async function downloadReportPDF() {
+            const reportDate = document.getElementById('reportDate')?.value;
+            if (!reportDate) {
+                alert('Please select a report date first.');
+                return;
+            }
+
+            const fileName = `Payment_Entry_Report_${reportDate}.pdf`;
+            try {
+                const blob = await buildPaymentPdfBlob({ orientation: 'portrait', filename: fileName });
+                const shared = await sharePaymentPdfBlob({
+                    blob,
+                    fileName,
+                    title: `Payment Entry Report - ${reportDate}`,
+                    text: `Payment Entry Report for ${reportDate}`
+                });
+
+                if (!shared) {
+                    downloadBlob(blob, fileName);
+                    const message = `Payment Entry Report for ${reportDate}.\nPDF downloaded—please attach it in WhatsApp.`;
+                    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+                }
+            } catch (err) {
+                if (err && err.name === 'AbortError') {
+                    return;
+                }
+                console.error('WhatsApp/share failed:', err);
+                alert('PDF generation failed: ' + (err?.message || err));
+            }
+        }
+
+        async function bulkSubmitLast100Days() {
+            if (!confirm('Submit last 100 days?\n\nThis will create missing submissions and short entries for the last 100 days.')) {
+                return;
+            }
+
+            const overlay = document.getElementById('loadingOverlay');
+            const prevOverlayDisplay = overlay ? overlay.style.display : '';
+            if (overlay) overlay.style.display = 'flex';
+
+            try {
+                const resp = await fetch('/payment-entry/bulk-submit-last-100-days', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+                const payload = await resp.json().catch(() => ({}));
+                if (!resp.ok || payload.success === false) {
+                    throw new Error(payload.error || payload.message || `HTTP ${resp.status}`);
+                }
+
+                alert(`✅ Bulk submit complete.\n\nDays processed: ${payload.processed_days || 0}\nCreated submissions: ${payload.created_submissions || 0}\nCreated short payments: ${payload.created_short_payments || 0}`);
+            } catch (err) {
+                console.error('Bulk submit failed:', err);
+                alert('❌ Bulk submit failed: ' + (err?.message || err));
+            } finally {
+                if (overlay) overlay.style.display = prevOverlayDisplay;
+            }
+        }
+
+        async function bulkDeleteLast100Days() {
+            if (!confirm('⚠️ DELETE last 100 days?\n\nThis will delete payments, shorts, recoveries, drafts, and submissions for the last 100 days.\n\nThis action cannot be undone!')) {
+                return;
+            }
+
+            const overlay = document.getElementById('loadingOverlay');
+            const prevOverlayDisplay = overlay ? overlay.style.display : '';
+            if (overlay) overlay.style.display = 'flex';
+
+            try {
+                const resp = await fetch('/payment-entry/bulk-delete-last-100-days', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+                const payload = await resp.json().catch(() => ({}));
+                if (!resp.ok || payload.success === false) {
+                    throw new Error(payload.error || payload.message || `HTTP ${resp.status}`);
+                }
+
+                alert(`✅ Bulk delete complete.\n\nDays processed: ${payload.processed_days || 0}\nDeleted submissions: ${payload.deleted_submissions || 0}\nDeleted payments: ${payload.deleted_payments || 0}\nDeleted short payments: ${payload.deleted_short_payments || 0}\nDeleted recoveries: ${payload.deleted_recoveries || 0}\nDeleted drafts: ${payload.deleted_drafts || 0}`);
+            } catch (err) {
+                console.error('Bulk delete failed:', err);
+                alert('❌ Bulk delete failed: ' + (err?.message || err));
+            } finally {
+                if (overlay) overlay.style.display = prevOverlayDisplay;
+            }
+        }
+
+        function exportExcel() {
+            const reportDate = document.getElementById('reportDate').value;
+            if (reportDate) {
+                alert(`Generating Excel for ${reportDate}...`);
+                window.open(`/daily-report/export/excel?date=${reportDate}`, '_blank');
+            }
+        }
+
+        // ✅ AUTO-LOAD ON PAGE LOAD
+        window.onload = async () => {
+            console.log('🚀 Payment System Starting...');
+            
+            await loadFromServer();
+            
+            if (targetDate) {
+                loadPaymentData();
+            }
+            
+            // Check and apply freeze if already submitted
+            setTimeout(() => {
+                applyFreezeState();
+            }, 1000);
+            
+            console.log('✅ Payment System Ready');
+        };
+
+        // ✅ AUTO-SAVE EVERY 60 SECONDS
+        setInterval(() => {
+            saveToServer();
+            console.log('🔄 Auto-saved at', new Date().toLocaleTimeString());
+        }, 60000);
+
+        // ✅ SAVE ON PAGE UNLOAD
+        window.addEventListener('beforeunload', function(e) {
+            saveToServer();
+            console.log('💾 Final save before page unload');
+        });
+
+        // Date change handler
+        document.getElementById('reportDate').addEventListener('change', function() {
+            const newDate = this.value;
+            if (newDate !== targetDate) {
+                targetDate = newDate;
+                loadPaymentData();
+            }
+        });
+    </script>
+    {% include "_pwa_scripts.html" %}
+
+</body>
+</html>

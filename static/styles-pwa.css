@@ -1,0 +1,16 @@
+:root{--bg:#ffffff;--fg:#111827;--muted:#6b7280;--card:#f3f4f6;--brand:#1a73e8}
+body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Arial;background:var(--bg);color:var(--fg);transition:background .2s,color .2s}
+a{color:var(--brand)}
+.pwa-container{max-width:1200px;margin:0 auto;padding:16px}
+.pwa-card{background:var(--card);border:1px solid rgba(0,0,0,.06);border-radius:12px;padding:14px;margin:12px 0}
+.pwa-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.pwa-stat{background:#fff;border-radius:12px;border:1px solid rgba(0,0,0,.06);padding:14px}
+.pwa-stat .label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.pwa-stat .value{font-size:24px;font-weight:800;margin-top:6px;color:var(--brand)}
+.pwa-btn{display:inline-block;border:0;border-radius:10px;padding:10px 14px;background:var(--brand);color:#fff;cursor:pointer}
+.pwa-offline{position:fixed;top:0;left:0;width:100%;z-index:99999;background:#f59e0b;color:#111827;text-align:center;padding:10px;font-weight:700}
+body.pwa-has-offline{padding-top:44px}
+
+/* dark mode */
+body.pwa-dark{--bg:#0b1220;--fg:#e5e7eb;--muted:#9ca3af;--card:#0f172a;--brand:#60a5fa}
+body.pwa-dark .pwa-stat{background:#0b1220}
