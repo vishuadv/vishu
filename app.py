@@ -3490,6 +3490,7 @@ def afin_ledger_page():
 
 
 @app.route("/loan", methods=["POST"])
+@csrf.exempt
 @login_required
 @page_required('loan_form')
 def add_loan():
@@ -3562,6 +3563,7 @@ def add_loan():
     return jsonify({"id": loan.id, "message": "Loan added"}), 201
 
 @app.route("/loan/<int:id>", methods=["PUT"])
+@csrf.exempt
 @login_required
 @page_required('loan_form')
 def update_loan(id):
@@ -3630,6 +3632,7 @@ def update_loan(id):
 
 
 @app.route("/client/<phone>/personal", methods=["PUT"])
+@csrf.exempt
 @login_required
 @page_required('loan_form')
 def update_client_personal_info(phone):
@@ -3685,6 +3688,7 @@ def update_client_personal_info(phone):
     })
 
 @app.route("/loan/<int:id>/close", methods=["POST"])
+@csrf.exempt
 @login_required
 @page_required('loan_form')
 def close_loan(id):
@@ -3722,6 +3726,7 @@ def close_loan(id):
 
 # ✅ NEW: Manual Loan Close Route for Sales Report
 @app.route("/loan/<int:id>/manual-close", methods=["POST"])
+@csrf.exempt
 @login_required
 @page_required('sales_report')
 def manual_close_loan(id):
@@ -8029,6 +8034,7 @@ def execute_batch_closing():
 
 # Individual loan closing route
 @app.route('/loan/close/<int:loan_id>', methods=['POST'])
+@csrf.exempt
 @login_required
 @page_required('loan_form')
 def close_individual_loan(loan_id):
