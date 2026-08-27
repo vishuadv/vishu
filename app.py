@@ -64,6 +64,11 @@ csrf.exempt('/api/payment-entry/profit-loss-report')
 csrf.exempt('/api/payment-entry/outstanding-report')
 csrf.exempt('/api/recovery/report')
 csrf.exempt('/clients')
+csrf.exempt('/loan')
+csrf.exempt('/loan/<int:id>')
+csrf.exempt('/loan/<int:id>/close')
+csrf.exempt('/loan/<int:id>/manual-close')
+csrf.exempt('/loan/close/<int:loan_id>')
 
 # 🔐 Flask-Login Configuration
 # Generate a secure secret key if not provided
