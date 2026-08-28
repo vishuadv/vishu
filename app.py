@@ -63,12 +63,24 @@ csrf.exempt('/api/payment-entry/penalty-collected')
 csrf.exempt('/api/payment-entry/profit-loss-report')
 csrf.exempt('/api/payment-entry/outstanding-report')
 csrf.exempt('/api/recovery/report')
+csrf.exempt('/api/delete-payment-data')
 csrf.exempt('/clients')
 csrf.exempt('/loan')
 csrf.exempt('/loan/<int:id>')
 csrf.exempt('/loan/<int:id>/close')
 csrf.exempt('/loan/<int:id>/manual-close')
 csrf.exempt('/loan/close/<int:loan_id>')
+csrf.exempt('/delete/customer')
+csrf.exempt('/client/<phone>')
+csrf.exempt('/receivable-report/snapshot')
+csrf.exempt('/daily-report/snapshot')
+csrf.exempt('/bulk-import-all')
+csrf.exempt('/batch/close-cases')
+csrf.exempt('/payment-entry/process')
+csrf.exempt('/payment-entry/edit')
+csrf.exempt('/payment-entry/delete')
+csrf.exempt('/payment-entry/bulk-submit-last-100-days')
+csrf.exempt('/payment-entry/bulk-delete-last-100-days')
 
 # 🔐 Flask-Login Configuration
 # Generate a secure secret key if not provided
@@ -745,6 +757,7 @@ def get_payment_data():
 
 
 @app.delete('/api/delete-payment-data')
+@csrf.exempt
 def delete_payment_data():
     draft_date = (request.args.get('date') or '').strip()
     if not draft_date:
@@ -2258,6 +2271,7 @@ def payment_entry():
                           can_edit=not payments_already_submitted or target_date == date.today())
 
 @payment_bp.route('/payment-entry/process', methods=['POST'])
+@csrf.exempt
 @login_required
 @page_required('payment_entry')
 def process_payments():
@@ -2404,6 +2418,7 @@ def recover_short_payments():
         return jsonify({"success": False, "error": str(e)}), 500
 
 @payment_bp.route('/payment-entry/edit/<target_date>', methods=['POST'])
+@csrf.exempt
 @login_required
 @page_required('payment_entry')
 def edit_payment_entry(target_date):
@@ -2429,6 +2444,7 @@ def edit_payment_entry(target_date):
     return jsonify({"success": True, "message": "Records cleared for editing"})
 
 @payment_bp.route('/payment-entry/delete/<target_date>', methods=['POST'])
+@csrf.exempt
 @login_required
 @page_required('payment_entry')
 def delete_payment_entry(target_date):
@@ -2451,6 +2467,7 @@ def delete_payment_entry(target_date):
 
 
 @payment_bp.post('/payment-entry/bulk-submit-last-100-days')
+@csrf.exempt
 @login_required
 @page_required('payment_entry')
 def bulk_submit_last_100_days():
@@ -2514,6 +2531,7 @@ def bulk_submit_last_100_days():
 
 
 @payment_bp.post('/payment-entry/bulk-delete-last-100-days')
+@csrf.exempt
 @login_required
 @page_required('payment_entry')
 def bulk_delete_last_100_days():
@@ -2920,6 +2938,7 @@ def recovery_report():
 
 
 @payment_bp.post('/api/payment-entry/penalty-collected')
+@csrf.exempt
 @login_required
 @page_required('penalty_report')
 def payment_entry_penalty_collected_set():
@@ -3783,6 +3802,9 @@ def manual_close_loan(id):
         db.session.rollback()
         return jsonify({"success": False, "error": f"Failed to close loan: {str(e)}"}), 500
 @app.delete("/loan/<int:id>")
+@csrf.exempt
+@login_required
+@page_required('loan_form')
 def delete_loan(id):
     """Delete an individual loan and all related records"""
     loan = db.session.get(Loan, id)
@@ -3805,6 +3827,9 @@ def delete_loan(id):
 
     
 @app.delete("/client/<phone>")
+@csrf.exempt
+@login_required
+@page_required('loan_form')
 def delete_client(phone):
     phone = phone.strip()
     if not phone:
@@ -3823,6 +3848,7 @@ def delete_client(phone):
     return jsonify({"message": f"✅ All data for {phone} deleted."})
 
 @app.route("/delete/customer", methods=["DELETE"])
+@csrf.exempt
 @login_required
 @page_required('loan_form')
 def delete_customer_route():
@@ -4507,6 +4533,9 @@ def get_receivable_report():
 
 
 @app.delete("/receivable-report/snapshot")
+@csrf.exempt
+@login_required
+@page_required('receivable')
 def delete_receivable_snapshot():
     """Delete the saved receivable snapshot for a given as_on_date.
 
@@ -5470,6 +5499,7 @@ def daily_collection_data():
 
 
 @app.delete("/daily-report/snapshot")
+@csrf.exempt
 @login_required
 @page_required('daily_report')
 def delete_daily_report_snapshot():
@@ -7644,6 +7674,7 @@ def import_real_data():
     '''
 
 @app.route('/bulk-import-all', methods=['POST'])
+@csrf.exempt
 @login_required
 @role_required('admin')
 def bulk_import_all():
@@ -7910,6 +7941,7 @@ def preview_batch_closing():
         return jsonify({"error": str(e)}), 500
 
 @app.route("/batch/close-cases", methods=["POST"])
+@csrf.exempt
 @login_required
 @page_required('sales_report')
 def execute_batch_closing():
