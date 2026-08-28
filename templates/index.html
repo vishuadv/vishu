@@ -20,7 +20,7 @@
       overflow-x: hidden;
       overflow-y: auto;
       position: relative;
-      background: linear-gradient(140deg, rgba(224, 242, 241, 0.95), rgba(178, 223, 219, 0.9));
+      background: linear-gradient(140deg, rgba(240, 249, 255, 0.95), rgba(224, 242, 254, 0.9));
       color: #0f172a;
     }
 
@@ -31,7 +31,7 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: linear-gradient(135deg, #0d3b36 0%, #134e4a 50%, #1a6b5f 100%);
+      background: linear-gradient(135deg, #0ea5e9 0%, #14b8a6 50%, #0284c7 100%);
       z-index: -3;
     }
 
@@ -43,9 +43,9 @@
       width: 100%;
       height: 100%;
       background:
-        radial-gradient(circle at 20% 80%, rgba(77, 182, 172, 0.3) 0%, transparent 50%),
-        radial-gradient(circle at 80% 20%, rgba(38, 166, 154, 0.3) 0%, transparent 50%),
-        radial-gradient(circle at 40% 40%, rgba(0, 150, 136, 0.2) 0%, transparent 40%);
+        radial-gradient(circle at 20% 80%, rgba(14, 165, 233, 0.5) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(20, 184, 166, 0.4) 0%, transparent 50%),
+        radial-gradient(circle at 40% 40%, rgba(2, 132, 199, 0.4) 0%, transparent 40%);
       animation: pulse 8s ease-in-out infinite;
     }
 
@@ -68,7 +68,7 @@
       position: absolute;
       width: 4px;
       height: 4px;
-      background: rgba(178, 223, 219, 0.4);
+      background: rgba(45, 212, 191, 0.4);
       border-radius: 50%;
       animation: float 15s infinite;
     }
@@ -101,41 +101,41 @@
     #clock-container {
       display: block;
       position: fixed;
-      top: 50%;
+      top: 20px;
       right: 30px;
-      transform: translateY(-50%);
       text-align: center;
       z-index: 100;
     }
 
     /* Modern Square Clock */
     #clock {
-      width: 250px; height: 250px;
-      border: 3px solid rgba(178, 223, 219, 0.8);
+      width: 160px; height: 160px;
+      border: 3px solid rgba(2, 132, 199, 0.9);
       border-radius: 20px;
-      background: linear-gradient(145deg, rgba(178, 223, 219, 0.2), rgba(77, 182, 172, 0.1));
+      background: linear-gradient(145deg, rgba(14, 165, 233, 0.4), rgba(20, 184, 166, 0.3));
       position: relative;
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
       backdrop-filter: blur(10px);
     }
 
-    /* Clock Dots (instead of numbers) */
-    .dot {
+    /* Clock Numbers */
+    .clock-number {
       position: absolute;
-      width: 8px; height: 8px;
-      background: rgba(178, 223, 219, 0.8);
-      border-radius: 50%;
+      font-size: 14px;
+      font-weight: bold;
+      color: rgba(8, 145, 178, 0.95);
+      text-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
     }
 
-    .dot-12 { top: 6%; left: 50%; transform: translateX(-50%); }
-    .dot-3 { top: 50%; right: 6%; transform: translateY(-50%); }
-    .dot-6 { bottom: 6%; left: 50%; transform: translateX(-50%); }
-    .dot-9 { top: 50%; left: 6%; transform: translateY(-50%); }
+    .num-12 { top: 8%; left: 50%; transform: translateX(-50%); }
+    .num-3 { top: 50%; right: 8%; transform: translateY(-50%); }
+    .num-6 { bottom: 8%; left: 50%; transform: translateX(-50%); }
+    .num-9 { top: 50%; left: 8%; transform: translateY(-50%); }
 
     /* Clock Hands */
     .hand {
       position: absolute;
-      background: rgba(178, 223, 219, 0.9);
+      background: rgba(8, 145, 178, 0.95);
       top: 50%; left: 50%;
       transform-origin: bottom center;
       border-radius: 10px;
@@ -153,17 +153,18 @@
 
     .second-hand {
       width: 2px; height: 80px;
-      background: #ff4444;
+      background: #f97316;
     }
 
     .center-dot {
       position: absolute;
       top: 50%; left: 50%;
       width: 12px; height: 12px;
-      background: rgba(178, 223, 219, 0.9);
+      background: rgba(8, 145, 178, 0.95);
       border-radius: 50%;
       transform: translate(-50%, -50%);
       z-index: 10;
+      box-shadow: 0 0 10px rgba(2, 132, 199, 0.8);
     }
 
     /* Date and Time Display */
@@ -206,10 +207,10 @@
     }
 
     h1 {
-      color: white;
+      color: #0891b2;
       font-size: 3.5rem;
       margin-bottom: 10px;
-      text-shadow: 0 0 30px rgba(34, 211, 238, 0.5);
+      text-shadow: 0 0 30px rgba(45, 212, 191, 0.5);
       font-weight: 700;
       letter-spacing: 2px;
     }
@@ -238,8 +239,8 @@
     }
 
     .report-button {
-      background: linear-gradient(135deg, rgba(77, 182, 172, 0.3), rgba(38, 166, 154, 0.2));
-      border: 2px solid rgba(178, 223, 219, 0.4);
+      background: linear-gradient(135deg, rgba(14, 165, 233, 0.5), rgba(20, 184, 166, 0.4));
+      border: 2px solid rgba(2, 132, 199, 0.6);
       padding: 20px;
       border-radius: 15px;
       color: white;
@@ -252,22 +253,22 @@
     }
 
     .report-button:hover {
-      background: linear-gradient(135deg, rgba(77, 182, 172, 0.5), rgba(38, 166, 154, 0.4));
-      border-color: rgba(77, 182, 172, 0.7);
+      background: linear-gradient(135deg, rgba(14, 165, 233, 0.7), rgba(20, 184, 166, 0.6));
+      border-color: rgba(2, 132, 199, 0.8);
       transform: translateY(-5px);
-      box-shadow: 0 12px 35px rgba(77, 182, 172, 0.4);
+      box-shadow: 0 12px 35px rgba(2, 132, 199, 0.5);
     }
 
     /* Special highlight for AFIN CLIENTS button */
     .report-button.afin-button {
-      background: linear-gradient(135deg, rgba(0, 150, 136, 0.4), rgba(38, 166, 154, 0.3));
-      border: 2px solid rgba(0, 150, 136, 0.6);
+      background: linear-gradient(135deg, rgba(240, 253, 250, 0.5), rgba(224, 242, 254, 0.4));
+      border: 2px solid rgba(94, 234, 212, 0.6);
     }
 
     .report-button.afin-button:hover {
-      background: linear-gradient(135deg, rgba(0, 150, 136, 0.6), rgba(38, 166, 154, 0.5));
-      border-color: rgba(0, 150, 136, 0.8);
-      box-shadow: 0 12px 35px rgba(0, 150, 136, 0.5);
+      background: linear-gradient(135deg, rgba(240, 253, 250, 0.7), rgba(224, 242, 254, 0.6));
+      border-color: rgba(94, 234, 212, 0.8);
+      box-shadow: 0 12px 35px rgba(94, 234, 212, 0.5);
     }
 
     /* Clients Modal */
@@ -282,8 +283,8 @@
     }
 
     .clients-modal .modal-content {
-      background: rgba(13, 59, 54, 0.92);
-      border: 1px solid rgba(178, 223, 219, 0.2);
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid rgba(2, 132, 199, 0.4);
       border-radius: 18px;
       min-height: 70vh;
       backdrop-filter: blur(12px);
@@ -380,8 +381,8 @@
       animation: fadeSlide 0.3s ease;
     }
 
-    .toast-message.info { background: rgba(77, 182, 172, 0.9); }
-    .toast-message.success { background: rgba(0, 150, 136, 0.95); }
+    .toast-message.info { background: rgba(14, 165, 233, 0.9); }
+    .toast-message.success { background: rgba(2, 132, 199, 0.95); }
     .toast-message.warning { background: rgba(255, 193, 7, 0.95); color: #1f1f1f; }
     .toast-message.error { background: rgba(220, 53, 69, 0.95); }
 
@@ -396,7 +397,11 @@
         width: 95%;
         padding: 30px 15px;
       }
-      
+
+      #clock {
+        width: 128px; height: 128px;
+      }
+
       .button-grid {
         grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
         gap: 18px;
@@ -422,13 +427,8 @@
       }
 
       #clock {
-        width: 130px; height: 130px;
+        width: 104px; height: 104px;
       }
-      
-      .dot-12 { top: 6%; left: 50%; transform: translateX(-50%); }
-      .dot-3 { top: 50%; right: 6%; transform: translateY(-50%); }
-      .dot-6 { bottom: 6%; left: 50%; transform: translateX(-50%); }
-      .dot-9 { top: 50%; left: 6%; transform: translateY(-50%); }
       
       .hour-hand {
         width: 5px; height: 40px;
@@ -554,15 +554,6 @@
         border-radius: 15px;
       }
       
-      .dot {
-        width: 6px; height: 6px;
-      }
-      
-      .dot-12 { top: 6%; left: 50%; transform: translateX(-50%); }
-      .dot-3 { top: 50%; right: 6%; transform: translateY(-50%); }
-      .dot-6 { bottom: 6%; left: 50%; transform: translateX(-50%); }
-      .dot-9 { top: 50%; left: 6%; transform: translateY(-50%); }
-      
       .hour-hand {
         width: 4px; height: 30px;
       }
@@ -661,10 +652,10 @@
   <!-- Modern Square Clock -->
   <div id="clock-container">
     <div id="clock">
-      <div class="dot dot-12"></div>
-      <div class="dot dot-3"></div>
-      <div class="dot dot-6"></div>
-      <div class="dot dot-9"></div>
+      <div class="clock-number num-12">12</div>
+      <div class="clock-number num-3">3</div>
+      <div class="clock-number num-6">6</div>
+      <div class="clock-number num-9">9</div>
 
       <div class="hand hour-hand"></div>
       <div class="hand minute-hand"></div>
@@ -749,7 +740,7 @@
   <!-- Clients Search Modal -->
   <div class="modal fade" id="clientsSearchModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
-      <div class="modal-content" style="background: rgba(13, 59, 54, 0.92); color: #fff; border: 1px solid rgba(178, 223, 219, 0.2);">
+      <div class="modal-content" style="background: rgba(255, 255, 255, 0.92); color: #333; border: 1px solid rgba(2, 132, 199, 0.4);">
         <div class="modal-header border-0">
           <div>
             <h5 class="modal-title">Client Directory</h5>
@@ -817,7 +808,7 @@
   <!-- Alerts Modal -->
   <div class="modal fade" id="alertsModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
-      <div class="modal-content" style="background: rgba(13, 59, 54, 0.92); color: #fff; border: 1px solid rgba(178, 223, 219, 0.2);">
+      <div class="modal-content" style="background: rgba(255, 255, 255, 0.92); color: #333; border: 1px solid rgba(2, 132, 199, 0.4);">
         <div class="modal-header border-0">
           <h5 class="modal-title">EMI Due Alerts (Today)</h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
